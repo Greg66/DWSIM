@@ -1861,9 +1861,9 @@ namespace DWSIM.UI.Forms
                             default:
                                 break;
                         }
-                        outtxt.SelectionBold = true;
+                        //outtxt.SelectionBold = true;
                         outtxt.Append("\n", true);
-                        outtxt.Selection = new Range<int>(outtxt.Text.Length);
+                        //outtxt.Selection = new Range<int>(outtxt.Text.Length);
                     }
                     catch { }
 
