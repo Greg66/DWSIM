@@ -116,16 +116,20 @@
     </Reference>
     <Reference Include="Eto, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Eto.Forms.2.5.11\lib\netstandard2.0\Eto.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="FileHelpers, Version=3.4.2.0, Culture=neutral, PublicKeyToken=3e0c08d59cc3d657, processorArchitecture=MSIL">
       <HintPath>..\packages\FileHelpers.3.4.2\lib\net45\FileHelpers.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="SkiaSharp, Version=2.80.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
       <HintPath>..\packages\SkiaSharp.2.80.2\lib\net462\SkiaSharp.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Annotations, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ComponentModel.Annotations.4.7.0\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
@@ -280,36 +284,44 @@ erase /s /q "$(SolutionDir)DistPackages\Windows\plugins\*Skia*.*" 2&gt;nul 1&gt;
 erase /s /q "$(SolutionDir)DistPackages\Windows\plugins\*Eto*.*" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows\plugins\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows\plugins\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\Windows\plugins\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 
 erase /s /q "$(SolutionDir)DistPackages\Windows_32\plugins\*Skia*.*" 2&gt;nul 1&gt;nul 4&gt;nul
 erase /s /q "$(SolutionDir)DistPackages\Windows_32\plugins\*Eto*.*" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows_32\plugins\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows_32\plugins\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\Windows_32\plugins\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 
 erase /s /q "$(SolutionDir)DistPackages\macOS\plugins\*Skia*.*" 2&gt;nul 1&gt;nul 4&gt;nul
 erase /s /q "$(SolutionDir)DistPackages\macOS\plugins\*Eto*.*" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\macOS\plugins\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\macOS\plugins\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\macOS\plugins\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 
 erase /s /q "$(SolutionDir)DistPackages\Linux\plugins\*Skia*.*" 2&gt;nul 1&gt;nul 4&gt;nul
 erase /s /q "$(SolutionDir)DistPackages\Linux\plugins\*Eto*.*" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Linux\plugins\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Linux\plugins\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\Linux\plugins\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 
 erase /s /q "$(SolutionDir)DistPackages\Windows\plugins\*.dylib" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\Windows\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 
 erase /s /q "$(SolutionDir)DistPackages\Windows_32\plugins\*.dylib" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows_32\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Windows_32\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\Windows_32\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 
 rd /s /q "$(SolutionDir)DistPackages\macOS\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\macOS\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\macOS\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 
 erase /s /q "$(SolutionDir)DistPackages\Linux\plugins\*.dylib" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Linux\x86" 2&gt;nul 1&gt;nul 4&gt;nul
 rd /s /q "$(SolutionDir)DistPackages\Linux\x64" 2&gt;nul 1&gt;nul 4&gt;nul
+rd /s /q "$(SolutionDir)DistPackages\Linux\arm64" 2&gt;nul 1&gt;nul 4&gt;nul
 )</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\packages\SkiaSharp.2.80.2\build\net462\SkiaSharp.targets" Condition="Exists('..\packages\SkiaSharp.2.80.2\build\net462\SkiaSharp.targets')" />
