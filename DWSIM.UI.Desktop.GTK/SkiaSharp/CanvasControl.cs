@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DWSIM.Drawing.SkiaSharp;
 using DWSIM.UI.Controls;
 using SkiaSharp;
-using Eto.Forms;
-using Eto.GtkSharp.Forms;
-using Eto.Drawing;
-using Eto.GtkSharp;
+using SkiaSharp.Views.Desktop;
+using SkiaSharp.Views.Gtk;
 
 namespace DWSIM.UI.Desktop.GTK
 {
-    public class FlowsheetSurfaceControlHandler : Eto.GtkSharp.Forms.GtkControl<Gtk.EventBox, FlowsheetSurfaceControl, FlowsheetSurfaceControl.ICallback>, FlowsheetSurfaceControl.IFlowsheetSurface
+    public class FlowsheetSurfaceControlHandler : Eto.GtkSharp.Forms.GtkControl<Gtk.Widget, FlowsheetSurfaceControl, FlowsheetSurfaceControl.ICallback>, FlowsheetSurfaceControl.IFlowsheetSurface
     {
         private FlowsheetSurface_GTK nativecontrol;
 
@@ -29,7 +25,7 @@ namespace DWSIM.UI.Desktop.GTK
             nativecontrol.fbase = this.Widget.FlowsheetObject;
             nativecontrol.fsurface = this.Widget.FlowsheetSurface;
             nativecontrol.DragDataGet += (sender, e2) => {
-                Console.WriteLine(e2.SelectionData.Type.Name);
+                //Console.WriteLine(e2.SelectionData.Type.Name);
             };
             nativecontrol.DragEnd += (sender, e2) => {
                 foreach (var item in e2.Args)
@@ -86,6 +82,7 @@ namespace DWSIM.UI.Desktop.GTK
     public class FlowsheetSurface_GTK : Gtk.EventBox
     {
 
+        private SKDrawingArea skiaView;
         public GraphicsSurface fsurface;
         public DWSIM.UI.Desktop.Shared.Flowsheet fbase;
 
@@ -103,6 +100,10 @@ namespace DWSIM.UI.Desktop.GTK
             var targets = new List<Gtk.TargetEntry>();
             targets.Add(new Gtk.TargetEntry("ObjectName", 0, 1));
             Gtk.Drag.DestSet(this, Gtk.DestDefaults.All, targets.ToArray(), Gdk.DragAction.Copy | Gdk.DragAction.Link | Gdk.DragAction.Move);
+
+            skiaView = new SKDrawingArea();
+            skiaView.PaintSurface += OnPaintSurface;
+            skiaView.Show();
 
         }
 
@@ -158,41 +159,22 @@ namespace DWSIM.UI.Desktop.GTK
 
         }
 
-        protected override bool OnExposeEvent(Gdk.EventExpose evnt)
+        private void OnPaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
+            // the the canvas and properties
+            var canvas = e.Surface.Canvas;
 
-            var rect = Allocation;
+            // get the screen density for scaling
+            var scale = 1f;
 
-            if (rect.Width > 0 && rect.Height > 0)
-            {
-                var area = evnt.Area;
-                SKColorType ctype = SKColorType.Bgra8888;
-                if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac) ctype = SKColorType.Rgba8888;
-                using (Cairo.Context cr = Gdk.CairoHelper.Create(base.GdkWindow))
-                {
-                    if (cr == null) { Console.WriteLine("Cairo Context is null"); }
-                    using (var bitmap = new SKBitmap(rect.Width, rect.Height, ctype, SKAlphaType.Premul))
-                    {
-                        if (bitmap == null) { Console.WriteLine("Bitmap is null"); }
-                        IntPtr len;
-                        using (var skSurface = SKSurface.Create(bitmap.Info.Width, bitmap.Info.Height, ctype, SKAlphaType.Premul, bitmap.GetPixels(out len), bitmap.Info.RowBytes))
-                        {
-                            if (skSurface == null) { Console.WriteLine("skSurface is null"); }
-                            if (fsurface != null) fsurface.UpdateSurface(skSurface);
-                            skSurface.Canvas.Flush();
-                            using (Cairo.Surface surface = new Cairo.ImageSurface(bitmap.GetPixels(out len), Cairo.Format.Argb32, bitmap.Width, bitmap.Height, bitmap.Width * 4))
-                            {
-                                surface.MarkDirty();
-                                cr.SetSourceSurface(surface, 0, 0);
-                                cr.Paint();
-                            }
-                        }
-                    }
-                }
+            // handle the device screen density
+            canvas.Scale(scale);
 
-            }
-            
-            return true;
+            // make sure the canvas is blank
+            canvas.Clear(SKColors.White);
+
+            if (fsurface != null) fsurface.UpdateSurface(e.Surface);
+
         }
 
     }

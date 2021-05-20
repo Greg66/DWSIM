@@ -110,9 +110,11 @@ namespace DWSIM.UI.Forms.Forms
                     case "19.4.0.0": osinfo = "macOS Catalina (v10.15.4)"; break;
                     case "19.5.0.0": osinfo = "macOS Catalina (v10.15.5)"; break;
                     case "19.6.0.0": osinfo = "macOS Catalina (v10.15.7)"; break;
-                    case "20.0.0.0": osinfo = "macOS Big Sur (v11.0.0)"; break;
-                    case "20.1.0.0": osinfo = "macOS Big Sur (v11.0.1)"; break;
-                    case "20.3.0.0": osinfo = "macOS Big Sur (v11.1.0)"; break;
+                    case "20.0.0.0": osinfo = "macOS Big Sur"; break;
+                    case "20.1.0.0": osinfo = "macOS Big Sur"; break;
+                    case "20.3.0.0": osinfo = "macOS Big Sur"; break;
+                    case "20.4.0.0": osinfo = "macOS Big Sur"; break;
+                    case "20.5.0.0": osinfo = "macOS Big Sur"; break;
                     default: osinfo = "macOS (v" + osversion + ")"; break;
                 }
             }

@@ -63,7 +63,7 @@ namespace DWSIM.UI.Desktop.Editors.Dynamics
 
             Rows.Add(new TableRow(tl1w));
 
-            var DocumentContainer = new DocumentControl() { AllowReordering = false, DisplayArrows = false };
+            var DocumentContainer = new DocumentControl() { AllowReordering = false };
 
             DocumentContainer.Pages.Add(new DocumentPage { Text = "Model Status", Closable = false });
             DocumentContainer.Pages.Add(new DocumentPage { Text = "Event Sets", Closable = false });

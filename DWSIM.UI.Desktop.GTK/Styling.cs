@@ -28,7 +28,7 @@ namespace DWSIM.UI.Desktop.GTK
 
             Eto.Style.Add<LabelHandler>("fixedwidth", label =>
             {
-                label.Control.MaxWidthChars = 100;
+                //label.Control.MaxWidthChars = 100;
                 label.BackgroundColor = Color.FromArgb(232, 232, 232);
             });
 

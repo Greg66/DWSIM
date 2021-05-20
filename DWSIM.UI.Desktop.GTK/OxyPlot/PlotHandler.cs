@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Eto.OxyPlot.Gtk
 {
-    public class PlotHandler : GtkSharp.Forms.GtkControl<global::OxyPlot.GtkSharp.PlotView, Eto.OxyPlot.Plot, Control.ICallback>, Plot.IHandler
+    public class PlotHandler : GtkSharp.Forms.GtkControl<PlotView, Eto.OxyPlot.Plot, Control.ICallback>, Plot.IHandler
     {
         public PlotModel Model
         {

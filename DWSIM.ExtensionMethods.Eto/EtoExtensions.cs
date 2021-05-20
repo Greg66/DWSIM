@@ -138,7 +138,7 @@ namespace DWSIM.UI.Shared
                 //Resizable = true
             };
 
-            var tabctrl = new DocumentControl { DisplayArrows = false, AllowReordering = true };
+            var tabctrl = new DocumentControl { AllowReordering = true };
             foreach (var tab in tabs)
             {
                 tabctrl.Pages.Add(tab);

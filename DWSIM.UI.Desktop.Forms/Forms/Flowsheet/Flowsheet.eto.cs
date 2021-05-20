@@ -155,15 +155,8 @@ namespace DWSIM.UI.Forms
 
             Title = "New Flowsheet";
 
-            if (s.FlowsheetRenderer == s.SkiaCanvasRenderer.CPU)
-            {
-                FlowsheetControl = new DWSIM.UI.Controls.FlowsheetSurfaceControl() { FlowsheetObject = FlowsheetObject, FlowsheetSurface = (DWSIM.Drawing.SkiaSharp.GraphicsSurface)FlowsheetObject.GetSurface() };
-            }
-            else
-            {
-                FlowsheetControl = new DWSIM.UI.Controls.FlowsheetSurfaceControl_OpenGL() { FlowsheetObject = FlowsheetObject, FlowsheetSurface = (DWSIM.Drawing.SkiaSharp.GraphicsSurface)FlowsheetObject.GetSurface() };
-            }
-
+            FlowsheetControl = new DWSIM.UI.Controls.FlowsheetSurfaceControl() { FlowsheetObject = FlowsheetObject, FlowsheetSurface = (DWSIM.Drawing.SkiaSharp.GraphicsSurface)FlowsheetObject.GetSurface() };
+            
             FlowsheetObject.FlowsheetControl = FlowsheetControl;
 
             FlowsheetControl.FlowsheetSurface.InvalidateCallback = (() =>
@@ -831,9 +824,9 @@ namespace DWSIM.UI.Forms
             var Split2 = new Eto.Forms.Splitter { Orientation = Orientation.Vertical, FixedPanel = SplitterFixedPanel.Panel2 };
             var Split3 = new Eto.Forms.Splitter { Orientation = Orientation.Vertical, FixedPanel = SplitterFixedPanel.Panel2 };
 
-            EditorHolder = new DocumentControl() { AllowReordering = true, DisplayArrows = false };
+            EditorHolder = new DocumentControl() { AllowReordering = true };
 
-            var PanelEditors = new DocumentControl() { TabBarBackgroundColor = SystemColors.Highlight };
+            var PanelEditors = new DocumentControl() {};
             PanelEditors.Pages.Add(new DocumentPage(EditorHolder) { Text = "Object Editors", Closable = false });
 
             Split1.Panel1 = PanelEditors;
@@ -885,7 +878,7 @@ namespace DWSIM.UI.Forms
             objcontainer.Pages.Add(new DocumentPage(panelindicators) { Closable = false, Text = "Indicators" });
             objcontainer.Pages.Add(new DocumentPage(panelother) { Closable = false, Text = "Other" });
 
-            var PanelObjects = new DocumentControl() { DisplayArrows = false, TabBarBackgroundColor = SystemColors.Highlight };
+            var PanelObjects = new DocumentControl() {};
             PanelObjects.Pages.Add(new DocumentPage(objcontainer) { Text = "Object Palette", Closable = false });
 
             Split2.Panel2 = PanelObjects;
@@ -1305,7 +1298,7 @@ namespace DWSIM.UI.Forms
 
             DocumentPageSpreadsheet = new DocumentPage { Content = SpreadsheetControl, Text = "Spreadsheet", Closable = false };
 
-            DocumentContainer = new DocumentControl() { AllowReordering = false, DisplayArrows = false };
+            DocumentContainer = new DocumentControl() { AllowReordering = false};
             DocumentContainer.Pages.Add(new DocumentPage { Content = Split2, Text = "Flowsheet", Closable = false });
             DocumentContainer.Pages.Add(new DocumentPage { Content = MaterialStreamListControl, Text = "Material Streams", Closable = false });
             DocumentContainer.Pages.Add(DocumentPageSpreadsheet);
@@ -1791,7 +1784,7 @@ namespace DWSIM.UI.Forms
             outtxt.ReadOnly = true;
             outtxt.SelectionBold = true;
 
-            var container = new DocumentControl() { DisplayArrows = false };
+            var container = new DocumentControl();
 
             container.Pages.Add(new DocumentPage(outtxt) { Text = "Log Panel", Closable = false });
 

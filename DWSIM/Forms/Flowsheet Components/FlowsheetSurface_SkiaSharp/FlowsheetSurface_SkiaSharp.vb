@@ -31,19 +31,11 @@ Public Class FlowsheetSurface_SkiaSharp
         ' This call is required by the designer.
         InitializeComponent()
 
-        If My.Settings.FlowsheetRenderer = 0 Then
-            Dim fscontrol As New FlowsheetSurfaceControl
-            fscontrol.Dock = DockStyle.Fill
-            fscontrol.FlowsheetObject = Flowsheet
-            FlowsheetSurface = fscontrol.FlowsheetSurface
-            FControl = fscontrol
-        Else
-            Dim fscontrol As New FlowsheetSurfaceGLControl
-            fscontrol.Dock = DockStyle.Fill
-            fscontrol.FlowsheetObject = Flowsheet
-            FlowsheetSurface = fscontrol.FlowsheetSurface
-            FControl = fscontrol
-        End If
+        Dim fscontrol As New FlowsheetSurfaceControl
+        fscontrol.Dock = DockStyle.Fill
+        fscontrol.FlowsheetObject = Flowsheet
+        FlowsheetSurface = fscontrol.FlowsheetSurface
+        FControl = fscontrol
 
     End Sub
 
@@ -61,11 +53,7 @@ Public Class FlowsheetSurface_SkiaSharp
             Flowsheet = My.Application.ActiveSimulation
         End If
 
-        If My.Settings.FlowsheetRenderer = 0 Then
-            DirectCast(FControl, FlowsheetSurfaceControl).FlowsheetObject = Flowsheet
-        Else
-            DirectCast(FControl, FlowsheetSurfaceGLControl).FlowsheetObject = Flowsheet
-        End If
+        DirectCast(FControl, FlowsheetSurfaceControl).FlowsheetObject = Flowsheet
 
         TableLayoutPanel1.Controls.Add(FControl, 1, 1)
 

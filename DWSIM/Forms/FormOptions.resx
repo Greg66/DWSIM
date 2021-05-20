@@ -907,7 +907,7 @@
     <value>NoControl</value>
   </data>
   <data name="chkAA.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 54</value>
+    <value>13, 26</value>
   </data>
   <data name="chkAA.Size" type="System.Drawing.Size, System.Drawing">
     <value>178, 17</value>
@@ -933,71 +933,11 @@
   <data name="&gt;&gt;chkAA.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="cbRenderer.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
-  <data name="cbRenderer.Items" xml:space="preserve">
-    <value>Software (CPU)</value>
-  </data>
-  <data name="cbRenderer.Items1" xml:space="preserve">
-    <value>Hardware (OpenGL)</value>
-  </data>
-  <data name="cbRenderer.Location" type="System.Drawing.Point, System.Drawing">
-    <value>142, 23</value>
-  </data>
-  <data name="cbRenderer.Size" type="System.Drawing.Size, System.Drawing">
-    <value>187, 21</value>
-  </data>
-  <data name="cbRenderer.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;cbRenderer.Name" xml:space="preserve">
-    <value>cbRenderer</value>
-  </data>
-  <data name="&gt;&gt;cbRenderer.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;cbRenderer.Parent" xml:space="preserve">
-    <value>GroupBox13</value>
-  </data>
-  <data name="&gt;&gt;cbRenderer.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="Label23.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="Label23.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="Label23.Location" type="System.Drawing.Point, System.Drawing">
-    <value>10, 26</value>
-  </data>
-  <data name="Label23.Size" type="System.Drawing.Size, System.Drawing">
-    <value>118, 13</value>
-  </data>
-  <data name="Label23.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="Label23.Text" xml:space="preserve">
-    <value>Motor de Renderização</value>
-  </data>
-  <data name="&gt;&gt;Label23.Name" xml:space="preserve">
-    <value>Label23</value>
-  </data>
-  <data name="&gt;&gt;Label23.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;Label23.Parent" xml:space="preserve">
-    <value>GroupBox13</value>
-  </data>
-  <data name="&gt;&gt;Label23.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
   <data name="GroupBox13.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 97</value>
   </data>
   <data name="GroupBox13.Size" type="System.Drawing.Size, System.Drawing">
-    <value>340, 86</value>
+    <value>340, 58</value>
   </data>
   <data name="GroupBox13.TabIndex" type="System.Int32, mscorlib">
     <value>16</value>
@@ -1327,7 +1267,7 @@
     <value>4</value>
   </data>
   <data name="GroupBox12.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 246</value>
+    <value>8, 219</value>
   </data>
   <data name="GroupBox12.Size" type="System.Drawing.Size, System.Drawing">
     <value>340, 147</value>
@@ -1390,7 +1330,7 @@
     <value>0</value>
   </data>
   <data name="GroupBox11.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 186</value>
+    <value>8, 159</value>
   </data>
   <data name="GroupBox11.Size" type="System.Drawing.Size, System.Drawing">
     <value>340, 54</value>
@@ -2684,7 +2624,7 @@
         AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj00LjAuMC4w
         LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkFAQAAACZTeXN0
         ZW0uV2luZG93cy5Gb3Jtcy5JbWFnZUxpc3RTdHJlYW1lcgEAAAAERGF0YQcCAgAAAAkDAAAADwMAAABo
-        KgAAAk1TRnQBSQFMAgEBCgEAASQBCgEkAQoBEAEAARABAAT/ARkBAAj/AUIBTQE2BwABNgMAASgDAAFA
+        KgAAAk1TRnQBSQFMAgEBCgEAATQBCgE0AQoBEAEAARABAAT/ARkBAAj/AUIBTQE2BwABNgMAASgDAAFA
         AwABMAMAAQEBAAEYBgABJBIAAekCpwHpAqcB5wKlAeUCowHlAqMB5QKjAeQCogHiAqAB4QKfAd4CnAHe
         ApwB3AKaAdoCmAHaApgB2gKYAdoCmAHkAqIB4gKgAeECnwHeApwB3AGcAZoB2gKYAdoCmAHZApcB1wKV
         AdYClAHTApEB0wKRAdECjwHPAo0BzwKNAc8CjWAABvYD9APzAfIB8wHyA/ED8APuA+0D6wPpA+gB5wLm
@@ -2892,6 +2832,9 @@
   <data name="OpenFileDialog1.Title" xml:space="preserve">
     <value>Importar Componentes</value>
   </data>
+  <metadata name="$this.Language" type="System.Globalization.CultureInfo, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>en</value>
+  </metadata>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>

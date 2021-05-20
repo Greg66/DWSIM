@@ -296,8 +296,7 @@
       <HintPath>References\ReoGrid.Eto\DWSIM.CrossPlatform.UI.Controls.ReoGrid.dll</HintPath>
     </Reference>
     <Reference Include="Eto, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>References\Eto.Forms\Release\net45\Eto.dll</HintPath>
+      <HintPath>..\packages\Eto.Forms.2.5.11\lib\netstandard2.0\Eto.dll</HintPath>
     </Reference>
     <Reference Include="Eto.OxyPlot, Version=1.0.5911.41864, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Eto.OxyPlot.1.2.0-beta\lib\net45\Eto.OxyPlot.dll</HintPath>
@@ -305,13 +304,11 @@
     <Reference Include="Eto.OxyPlot.Wpf, Version=1.0.5911.42160, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Eto.OxyPlot.Wpf.1.2.0-beta\lib\net45\Eto.OxyPlot.Wpf.dll</HintPath>
     </Reference>
-    <Reference Include="Eto.WinForms, Version=2.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>References\Eto.Forms\Release\net45\Eto.WinForms.dll</HintPath>
+    <Reference Include="Eto.WinForms, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Eto.Platform.Windows.2.5.11\lib\net462\Eto.WinForms.dll</HintPath>
     </Reference>
-    <Reference Include="Eto.Wpf, Version=2.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>References\Eto.Forms\Release\net45\Eto.Wpf.dll</HintPath>
+    <Reference Include="Eto.Wpf, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Eto.Platform.Wpf.2.5.11\lib\net462\Eto.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="ExcelApi">
       <HintPath>References\ExcelApi.dll</HintPath>
@@ -372,6 +369,12 @@
     <Reference Include="Microsoft.Scripting.Metadata, Version=1.2.3.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
       <HintPath>..\packages\DynamicLanguageRuntime.1.2.3\lib\net45\Microsoft.Scripting.Metadata.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Windows7APICodePack-Core.1.1.0.0\lib\Microsoft.WindowsAPICodePack.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.Shell, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Windows7APICodePack-Shell.1.1.0.0\lib\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
+    </Reference>
     <Reference Include="NeoDataType.MyNeoReport, Version=1.4.0.0, Culture=neutral, PublicKeyToken=cc45d3430ba4f561, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>References\NeoDataType.MyNeoReport.dll</HintPath>
@@ -389,10 +392,6 @@
     </Reference>
     <Reference Include="OpenTK, Version=3.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <HintPath>..\packages\OpenTK.3.1.0\lib\net20\OpenTK.dll</HintPath>
-    </Reference>
-    <Reference Include="OpenTK.GLControl, Version=3.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
-      <HintPath>..\packages\OpenTK.GLControl.3.1.0\lib\net20\OpenTK.GLControl.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="OxyPlot, Version=2.0.0.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
       <HintPath>..\packages\OxyPlot.Core.2.0.0-unstable1035\lib\net45\OxyPlot.dll</HintPath>
@@ -423,9 +422,8 @@
       <HintPath>..\packages\jacobslusser.ScintillaNET.3.6.3\lib\net40\ScintillaNET.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SkiaSharp, Version=1.68.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <HintPath>..\packages\SkiaSharp.1.68.2.1\lib\net45\SkiaSharp.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="SkiaSharp, Version=2.80.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\packages\SkiaSharp.2.80.2\lib\net462\SkiaSharp.dll</HintPath>
     </Reference>
     <Reference Include="SkiaSharp.Extended, Version=1.60.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
       <HintPath>..\packages\SkiaSharp.Extended.1.60.0\lib\netstandard2.0\SkiaSharp.Extended.dll</HintPath>
@@ -438,6 +436,10 @@
     <Reference Include="System.Buffers, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.4.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
     </Reference>
+    <Reference Include="System.ComponentModel.Annotations, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ComponentModel.Annotations.4.7.0\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
@@ -478,6 +480,21 @@
       <HintPath>References\ReoGrid.WinForms\unvell.ReoScript.EditorLib.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
+    <Reference Include="Xceed.Wpf.AvalonDock, Version=3.6.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.3.6.0\lib\net40\Xceed.Wpf.AvalonDock.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Aero, Version=3.6.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.3.6.0\lib\net40\Xceed.Wpf.AvalonDock.Themes.Aero.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Metro, Version=3.6.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.3.6.0\lib\net40\Xceed.Wpf.AvalonDock.Themes.Metro.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.VS2010, Version=3.6.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.3.6.0\lib\net40\Xceed.Wpf.AvalonDock.Themes.VS2010.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.Toolkit, Version=3.6.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.3.6.0\lib\net40\Xceed.Wpf.Toolkit.dll</HintPath>
+    </Reference>
     <Reference Include="Yeppp.CLR.Bundle">
       <HintPath>..\packages\Yeppp.CLR.Bundle.1.0.1-prerelease\lib\net20\Yeppp.CLR.Bundle.dll</HintPath>
     </Reference>
@@ -563,12 +580,6 @@
     </Compile>
     <Compile Include="Forms\Flowsheet Components\FlowsheetSurface_SkiaSharp\FlowsheetSurfaceControl.vb">
       <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Forms\Flowsheet Components\FlowsheetSurface_SkiaSharp\FlowsheetSurfaceGLControl.Designer.vb">
-      <DependentUpon>FlowsheetSurfaceGLControl.vb</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\Flowsheet Components\FlowsheetSurface_SkiaSharp\FlowsheetSurfaceGLControl.vb">
-      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Forms\Flowsheet Components\FlowsheetSurface_SkiaSharp\FlowsheetSurface_SkiaSharp.designer.vb">
       <DependentUpon>FlowsheetSurface_SkiaSharp.vb</DependentUpon>
@@ -3579,7 +3590,8 @@ erase /S  /Q "$(SolutionDir)DistPackages\Windows_32\*.dylib" 2&gt;nul 1&gt;nul 4
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\packages\SkiaSharp.1.68.2.1\build\net45\SkiaSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SkiaSharp.1.68.2.1\build\net45\SkiaSharp.targets'))" />
+    <Error Condition="!Exists('..\packages\SkiaSharp.2.80.2\build\net462\SkiaSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SkiaSharp.2.80.2\build\net462\SkiaSharp.targets'))" />
+    <Error Condition="!Exists('..\packages\Eto.Forms.2.5.11\build\Eto.Forms.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Eto.Forms.2.5.11\build\Eto.Forms.targets'))" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -3600,5 +3612,6 @@ erase /S  /Q "$(SolutionDir)DistPackages\Windows_32\*.dylib" 2&gt;nul 1&gt;nul 4
     </ItemGroup>
     <Message Importance="normal" Text="Adding back DesignTimeFacades from ReferencePath now that SGen has run." />
   </Target>
-  <Import Project="..\packages\SkiaSharp.1.68.2.1\build\net45\SkiaSharp.targets" Condition="Exists('..\packages\SkiaSharp.1.68.2.1\build\net45\SkiaSharp.targets')" />
+  <Import Project="..\packages\SkiaSharp.2.80.2\build\net462\SkiaSharp.targets" Condition="Exists('..\packages\SkiaSharp.2.80.2\build\net462\SkiaSharp.targets')" />
+  <Import Project="..\packages\Eto.Forms.2.5.11\build\Eto.Forms.targets" Condition="Exists('..\packages\Eto.Forms.2.5.11\build\Eto.Forms.targets')" />
 </Project>
