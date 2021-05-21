@@ -78,6 +78,12 @@ namespace DWSIM.UI.Forms
 
             lbl5.TextColor = new Color(0.051f, 0.447f, 0.651f);
 
+            var lblpatrons = new Label { Style = "splashlabels1", Text = "Special thanks to the following Patrons: " + Patrons.GetList() };
+
+            lblpatrons.TextColor = new Color(0.051f, 0.447f, 0.651f);
+            lblpatrons.Width = (int)(sf * 650);
+            lblpatrons.Height = (int)(sf * 227);
+
             var layout = new PixelLayout();
 
             ImageView img;
@@ -88,6 +94,7 @@ namespace DWSIM.UI.Forms
                 layout.Add(img, 0, 0);
                 lbl1a.BackgroundColor = Colors.WhiteSmoke;
                 lbl5.BackgroundColor = Colors.WhiteSmoke;
+                lblpatrons.BackgroundColor = Colors.WhiteSmoke; 
                 lbl3.BackgroundColor = Colors.WhiteSmoke;
             }
             else
@@ -99,12 +106,6 @@ namespace DWSIM.UI.Forms
             layout.Add(lbl1a, (int)(sf * (334 - dx)), (int)(sf * (114 - dy)));
             layout.Add(lbl5, (int)(sf * (334 - dx)), (int)(sf * (430 - dy)));
             layout.Add(lbl3, (int)(sf * (334 - dx)), (int)(sf * (139 - dy)));
-
-            var lblpatrons = new Label { Style = "splashlabels1", Text = "Special thanks to the following Patrons: " + Patrons.GetList() };
-
-            lblpatrons.TextColor = new Color(0.051f, 0.447f, 0.651f);
-            lblpatrons.Width = (int)(sf * 650);
-            lblpatrons.Height = (int)(sf * 227);
 
             layout.Add(lblpatrons, (int)(sf * (334 - dx)), (int)(sf * (190 - dy)));
 

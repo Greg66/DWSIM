@@ -876,10 +876,26 @@ Public Class GraphicsSurface
 
         Else
 
-            If MultiSelectMode Then
-                SelectRectangle = Not My.Computer.Keyboard.ShiftKeyDown
+            If GlobalSettings.Settings.OldUI Then
+                If MultiSelectMode Then
+                    SelectRectangle = Not My.Computer.Keyboard.ShiftKeyDown
+                Else
+                    SelectRectangle = My.Computer.Keyboard.ShiftKeyDown
+                End If
             Else
-                SelectRectangle = My.Computer.Keyboard.ShiftKeyDown
+                If Not Eto.Forms.Application.Instance.Platform.IsGtk Then
+                    If MultiSelectMode Then
+                        SelectRectangle = Not My.Computer.Keyboard.ShiftKeyDown
+                    Else
+                        SelectRectangle = My.Computer.Keyboard.ShiftKeyDown
+                    End If
+                Else
+                    If MultiSelectMode Then
+                        SelectRectangle = True
+                    Else
+                        SelectRectangle = False
+                    End If
+                End If
             End If
 
             Dim mousePT As New SKPoint(x, y)
@@ -897,19 +913,44 @@ Public Class GraphicsSurface
                     justselected = False
                     draggingfs = Not SelectRectangle
                 Else
-                    If My.Computer.Keyboard.CtrlKeyDown And MultiSelectMode Then
-                        If Not Me.SelectedObjects.ContainsKey(Me.SelectedObject.Name) Then
-                            Me.SelectedObjects.Add(Me.SelectedObject.Name, Me.SelectedObject)
+                    If GlobalSettings.Settings.OldUI Then
+                        If My.Computer.Keyboard.CtrlKeyDown And MultiSelectMode Then
+                            If Not Me.SelectedObjects.ContainsKey(Me.SelectedObject.Name) Then
+                                Me.SelectedObjects.Add(Me.SelectedObject.Name, Me.SelectedObject)
+                            Else
+                                Me.SelectedObjects.Remove(Me.SelectedObject.Name)
+                            End If
+                            justselected = True
                         Else
-                            Me.SelectedObjects.Remove(Me.SelectedObject.Name)
+                            If Not justselected Then Me.SelectedObjects.Clear()
+                            If Not Me.SelectedObjects.ContainsKey(Me.SelectedObject.Name) Then
+                                Me.SelectedObjects.Add(Me.SelectedObject.Name, Me.SelectedObject)
+                            End If
+                            justselected = False
                         End If
-                        justselected = True
                     Else
-                        If Not justselected Then Me.SelectedObjects.Clear()
-                        If Not Me.SelectedObjects.ContainsKey(Me.SelectedObject.Name) Then
-                            Me.SelectedObjects.Add(Me.SelectedObject.Name, Me.SelectedObject)
+                        If Not Eto.Forms.Application.Instance.Platform.IsGtk Then
+                            If My.Computer.Keyboard.CtrlKeyDown And MultiSelectMode Then
+                                If Not Me.SelectedObjects.ContainsKey(Me.SelectedObject.Name) Then
+                                    Me.SelectedObjects.Add(Me.SelectedObject.Name, Me.SelectedObject)
+                                Else
+                                    Me.SelectedObjects.Remove(Me.SelectedObject.Name)
+                                End If
+                                justselected = True
+                            Else
+                                If Not justselected Then Me.SelectedObjects.Clear()
+                                If Not Me.SelectedObjects.ContainsKey(Me.SelectedObject.Name) Then
+                                    Me.SelectedObjects.Add(Me.SelectedObject.Name, Me.SelectedObject)
+                                End If
+                                justselected = False
+                            End If
+                        Else
+                            If Not justselected Then Me.SelectedObjects.Clear()
+                            If Not Me.SelectedObjects.ContainsKey(Me.SelectedObject.Name) Then
+                                Me.SelectedObjects.Add(Me.SelectedObject.Name, Me.SelectedObject)
+                            End If
+                            justselected = False
                         End If
-                        justselected = False
                     End If
                 End If
 

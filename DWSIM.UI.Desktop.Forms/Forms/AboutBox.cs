@@ -37,8 +37,6 @@ namespace DWSIM.UI.Forms.Forms
             center.Y -= h / 2;
 
             Location = new Point(center);
-
-            ClientSize = new Size(w, h);
             
             Maximizable = false;
 
@@ -49,7 +47,6 @@ namespace DWSIM.UI.Forms.Forms
             ShowInTaskbar = false;
 
             AddComponentInfo();
-            AddComponentInfoN();
 
             string imgprefix = "DWSIM.UI.Forms.Resources.Icons.";
 
@@ -223,74 +220,45 @@ namespace DWSIM.UI.Forms.Forms
             var tab1 = new TabPage { Content = container1, Text = "General Information" };
             var tab2 = new TabPage { Content = new Scrollable { Content = t1 }, Text = "GPLv3 License" };
             var tab3 = new TabPage { Content = new Scrollable { Content = listcontainer }, Text = "External Components" };
-            var tab4 = new TabPage { Content = new Scrollable { Content = listcontainern }, Text = "NuGet Packages" };
 
             var tabc = new TabControl();
             tabc.Pages.Add(tab1);
             tabc.Pages.Add(tab2);
             tabc.Pages.Add(tab3);
-            tabc.Pages.Add(tab4);
 
             var tablecontainer = new TableLayout { Padding = new Padding(10), Spacing = new Size(5, 5) };
 
             tablecontainer.Rows.Add(new TableRow(layout));
             tablecontainer.Rows.Add(new TableRow(tabc));
 
+            if (Application.Instance.Platform.IsGtk)
+                tablecontainer.Width = w - 20;
+
             Content = tablecontainer;
 
+            ClientSize = new Size(w, h);
         }
 
         private void AddComponentInfo()
         {
-            components.Add(new ComponentInfo("CoolProp", "6.0.0", "2016", "Ian H. Bell", "http://wwww.coolprop.org", "MIT-style License", "https://github.com/ibell/coolprop/blob/master/LICENSE"));
-            components.Add(new ComponentInfo("ChemSep Database", "7.30", "2018", "Harry Kooijman, Ross Taylor", "http://www.chemsep.org", "Perl Artistic License v2", "http://www.perlfoundation.org/artistic_license_2_0"));
+            components.Add(new ComponentInfo("CoolProp", "6.4.0", "2021", "Ian H. Bell", "http://wwww.coolprop.org", "MIT-style License", "https://github.com/ibell/coolprop/blob/master/LICENSE"));
+            components.Add(new ComponentInfo("ChemSep Database", "8.26", "2021", "Harry Kooijman, Ross Taylor", "http://www.chemsep.org", "Perl Artistic License v2", "http://www.perlfoundation.org/artistic_license_2_0"));
             components.Add(new ComponentInfo("Flee", "0.9.14", "2009", "Eugene Ciloci", "https://flee.codeplex.com", "LGPLv2", "http://www.gnu.org/licenses/lgpl.html"));
             components.Add(new ComponentInfo("DotNumerics", "1.0", "2009", "Jose Antonio De Santiago Castillo", "http://www.dotnumerics.com", "GPLv3", "http://www.gnu.org/licenses/gpl.html"));
-            components.Add(new ComponentInfo("FileHelpers", "3.2.7", "2018", "Marcos Meli", "https://sourceforge.net/projects/filehelpers", "LGPLv2", "http://www.gnu.org/licenses/lgpl.html"));
-            components.Add(new ComponentInfo("SharpZipLib", "0.85.4.369", "2010", "IC#Code", "http://www.icsharpcode.net/OpenSource/SharpZipLib", "GPLv2", "http://www.gnu.org/licenses/gpl.html"));
+            components.Add(new ComponentInfo("FileHelpers", "3.4", "2020", "Marcos Meli", "https://sourceforge.net/projects/filehelpers", "LGPLv2", "http://www.gnu.org/licenses/lgpl.html"));
             components.Add(new ComponentInfo("Nini", "1.1", "2010", "Brent R. Matzelle", "https://sourceforge.net/projects/nini", "MIT License", "http://www.opensource.org/licenses/mit-license.html"));
             components.Add(new ComponentInfo("ScintillaNET", "3.5.1.0", "2015", "Jacob Slusser", "https://github.com/jacobslusser/scintillaNET", "MIT License", "http://www.opensource.org/licenses/mit-license.html"));
             components.Add(new ComponentInfo("Yeppp!", "1.0.0.1", "2014", "Marat Dukhan", "http://www.yeppp.info", "Yeppp! License", "http://www.yeppp.info/resources/yeppp-license.txt"));
             components.Add(new ComponentInfo("SwarmOps", "3.1", "2011", "Magnus Erik Hvass Pedersen", "http://www.hvass-labs.org/projects/swarmops/cs/", "MIT-style License", "http://www.hvass-labs.org/projects/swarmops/cs/files/license.txt"));
             components.Add(new ComponentInfo("RandomOps", "2.1", "2010", "Magnus Erik Hvass Pedersen", "http://www.hvass-labs.org/projects/randomops/cs/", "MIT-style License", "http://www.hvass-labs.org/projects/randomops/cs/files/license.txt" ));
             components.Add(new ComponentInfo("OxyPlot", "2.0", "2017", "OxyPlot team", "http://www.oxyplot.org", "MIT License", "http://www.opensource.org/licenses/mit-license.html"));
-            components.Add(new ComponentInfo("SkiaSharp", "1.68.0", "2020", "Xamarin team", "https://github.com/mono/SkiaSharp/", "MIT License", "https://github.com/mono/SkiaSharp/blob/master/LICENSE.md"));
-            components.Add(new ComponentInfo("Eto.Forms", "custom version", "2019", "", "https://github.com/DanWBR/Eto", "BSD-style License", "https://github.com/DanWBR/Eto/blob/develop/LICENSE.txt"));
-            components.Add(new ComponentInfo("Eto.Platform.Gtk2", "custom version", "2019", "", "https://github.com/DanWBR/Eto", "BSD-style License", "https://github.com/DanWBR/Eto/blob/develop/LICENSE.txt"));
-            components.Add(new ComponentInfo("Eto.Platform.Windows", "custom version", "2019", "", "https://github.com/DanWBR/Eto", "BSD-style License", "https://github.com/DanWBR/Eto/blob/develop/LICENSE.txt"));
-            components.Add(new ComponentInfo("Eto.Platform.Wpf", "custom version", "2019", "", "https://github.com/DanWBR/Eto", "BSD-style License", "https://github.com/DanWBR/Eto/blob/develop/LICENSE.txt"));
-            components.Add(new ComponentInfo("Eto.Platform.XamMac2", "custom version", "2019", "", "https://github.com/DanWBR/Eto", "BSD-style License", "https://github.com/DanWBR/Eto/blob/develop/LICENSE.txt"));
+            components.Add(new ComponentInfo("SkiaSharp", "2.80.2", "2021", "Xamarin team", "https://github.com/mono/SkiaSharp/", "MIT License", "https://github.com/mono/SkiaSharp/blob/master/LICENSE.md"));
+            components.Add(new ComponentInfo("Eto.Forms", "2.5.11", "2021", "", "https://github.com/picoe/Eto", "BSD-style License", "https://github.com/picoe/Eto/blob/develop/LICENSE.txt"));
+            components.Add(new ComponentInfo("Eto.Platform.Gtk2", "2.5.11", "2021", "", "https://github.com/picoe/Eto", "BSD-style License", "https://github.com/picoe/Eto/blob/develop/LICENSE.txt"));
+            components.Add(new ComponentInfo("Eto.Platform.Windows", "2.5.11", "2021", "", "https://github.com/picoe/Eto", "BSD-style License", "https://github.com/picoe/Eto/blob/develop/LICENSE.txt"));
+            components.Add(new ComponentInfo("Eto.Platform.Wpf", "2.5.11", "2021", "", "https://github.com/picoe/Eto", "BSD-style License", "https://github.com/picoe/Eto/blob/develop/LICENSE.txt"));
+            components.Add(new ComponentInfo("Eto.Platform.XamMac2", "2.5.11", "2021", "", "https://github.com/picoe/Eto", "BSD-style License", "https://github.com/picoe/Eto/blob/develop/LICENSE.txt"));
             components.Add(new ComponentInfo("ReoGrid", "custom version", "2020", "", "https://github.com/DanWBR/ReoGrid", "MIT-style License", "https://github.com/DanWBR/ReoGrid/blob/master/LICENSE"));
-        }
-
-        private void AddComponentInfoN()
-        {
-           
-            componentsn.Add(new ComponentInfo("cef.redist.x64", "75.1.14", "https://raw.github.com/cefsharp/cef-binary/master/LICENSE.txt"));
-            componentsn.Add(new ComponentInfo("cef.redist.x86", "75.1.14", "https://raw.github.com/cefsharp/cef-binary/master/LICENSE.txt"));
-            componentsn.Add(new ComponentInfo("CefSharp.Common", "75.1.14", "https://raw.github.com/cefsharp/CefSharp/master/LICENSE"));
-            componentsn.Add(new ComponentInfo("CefSharp.WinForms", "75.1.14", "https://raw.github.com/cefsharp/CefSharp/master/LICENSE"));
-            componentsn.Add(new ComponentInfo("DynamicLanguageRuntime", "1.2.3", "https://github.com/IronLanguages/dlr/blob/master/LICENSE"));
-            componentsn.Add(new ComponentInfo("IronPython", "2.7.10", "https://github.com/IronLanguages/ironpython2/blob/master/LICENSE"));
-            componentsn.Add(new ComponentInfo("IronPython.StdLib", "2.7.10", "http://docs.python.org/license.html"));
-            componentsn.Add(new ComponentInfo("jacobslusser.ScintillaNET", "3.6.3", ""));
-            componentsn.Add(new ComponentInfo("MathNet.Numerics", "4.7.0", "https://numerics.mathdotnet.com/License.html"));
-            componentsn.Add(new ComponentInfo("Newtonsoft.Json", "12.0.3", "https://raw.github.com/JamesNK/Newtonsoft.Json/master/LICENSE.md"));
-            componentsn.Add(new ComponentInfo("OpenTK", "3.0.", "http://github.com/opentk/opentk/blob/master/License.txt"));
-            componentsn.Add(new ComponentInfo("OpenTK.GLControl", "3.0.1", "http://github.com/opentk/opentk/blob/master/License.txt"));
-            componentsn.Add(new ComponentInfo("OxyPlot.Core", "2.0.0-unstable0956", "https://raw.githubusercontent.com/oxyplot/oxyplot/master/LICENSE"));
-            componentsn.Add(new ComponentInfo("OxyPlot.Wpf", "2.0.0-unstable0956", "https://raw.githubusercontent.com/oxyplot/oxyplot/master/LICENSE"));
-            componentsn.Add(new ComponentInfo("SharpDX", "4.0.1", "http://sharpdx.org/License.txt"));
-            componentsn.Add(new ComponentInfo("SharpDX.Direct2D1", "4.0.1", "http://sharpdx.org/License.txt"));
-            componentsn.Add(new ComponentInfo("SharpDX.DXGI", "4.0.1", "http://sharpdx.org/License.txt"));
-            componentsn.Add(new ComponentInfo("SharpDX.Mathematics", "4.0.1", "http://sharpdx.org/License.txt"));
-            componentsn.Add(new ComponentInfo("SharpZipLib", "1.1.0", "https://github.com/icsharpcode/SharpZipLib/blob/master/LICENSE.txt"));
-            componentsn.Add(new ComponentInfo("SkiaSharp", "1.68.2.1", "https://github.com/mono/SkiaSharp/blob/master/LICENSE.md"));
-            componentsn.Add(new ComponentInfo("SkiaSharp.Extended", "1.68.2.1", "https://github.com/mono/SkiaSharp.Extended/blob/master/LICENSE"));
-            componentsn.Add(new ComponentInfo("System.ComponentModel", "4.3.0", "http://go.microsoft.com/fwlink/?LinkId=329770"));
-            componentsn.Add(new ComponentInfo("System.Runtime.Serialization.Primitives", "4.3.0", "http://go.microsoft.com/fwlink/?LinkId=329770"));
-            componentsn.Add(new ComponentInfo("Eto.OxyPlot", "1.2.0-beta", ""));
-            componentsn.Add(new ComponentInfo("Eto.OxyPlot.Wpf", "1.2.0-beta", ""));
         }
 
         public class ComponentInfo

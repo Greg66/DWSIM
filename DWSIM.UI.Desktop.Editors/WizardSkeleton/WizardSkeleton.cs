@@ -51,7 +51,6 @@ namespace DWSIM.UI.Desktop.Editors
         public void Init(int width, int height)
         {
 
-
             string imgprefix = "DWSIM.UI.Desktop.Editors.Resources.Icons.";
 
             Icon = Eto.Drawing.Icon.FromResource(imgprefix + "DWSIM_ico.ico");
@@ -157,9 +156,17 @@ namespace DWSIM.UI.Desktop.Editors
 
             Location = new Point(center);
 
+            if (Application.Instance.Platform.IsGtk)
+            {
+                Width = width + 30;
+                Height = height + topcontainer.Height + footercontainer.Height + 150;
+                ContentContainer.Height = height;
+                ContentContainer.Width = width;
+            }
+
             Topmost = true;
 
-            Visible = true;
+            //Visible = true;
         }
 
     }

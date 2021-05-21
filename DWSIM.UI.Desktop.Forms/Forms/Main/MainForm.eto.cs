@@ -151,7 +151,8 @@ namespace DWSIM.UI
             var link3 = new LinkButton { Text = "Create New", Width = (int)(140 * sf), Font = boldfont2 };
             pccreator.Add(link3, dx2, (int)(100 * sf - rfh - dy));
 
-            link3.Click += (sender, e) => {
+            link3.Click += (sender, e) =>
+            {
                 var form = new Desktop.Editors.CompoundCreatorWizard(null);
                 form.SetupAndDisplayPage(1);
             };
@@ -194,7 +195,8 @@ namespace DWSIM.UI
                 {
                     Process.Start(basepath + Path.DirectorySeparatorChar + "docs" + Path.DirectorySeparatorChar + "user_guide.pdf");
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     MessageBox.Show(ex.Message, "Error opening User Guide", MessageBoxButtons.OK, MessageBoxType.Error, MessageBoxDefaultButton.OK);
                 }
             };
@@ -308,6 +310,7 @@ namespace DWSIM.UI
             {
                 if (File.Exists(item)) SampleList.Items.Add(new ListItem { Text = Path.GetFileNameWithoutExtension(item), Key = item });
             }
+            SampleList.SelectedIndex = -1;
 
             foreach (String f in invertedlist)
             {
@@ -347,12 +350,15 @@ namespace DWSIM.UI
                             FOSSEEList.Items.Add(new ListItem { Text = item.DisplayName, Key = item.DownloadLink });
                         }
                     }
+                    FOSSEEList.SelectedIndex = -1;
                 });
             });
 
+            var tabchanged = false;
+
             FoldersList.SelectedIndexChanged += (sender, e) =>
             {
-                if (FoldersList.SelectedIndex >= 0)
+                if (!tabchanged && FoldersList.SelectedIndex >= 0)
                 {
                     var dialog = new OpenFileDialog();
                     dialog.Title = "Open File".Localize();
@@ -365,31 +371,34 @@ namespace DWSIM.UI
                         LoadSimulation(dialog.FileName);
                     }
                 }
+                tabchanged = false;
             };
 
             MostRecentList.SelectedItemChanged += (sender, e) =>
             {
-                if (MostRecentList.SelectedItem != null)
+                if (!tabchanged && MostRecentList.SelectedItem != null)
                 {
                     var si = (TreeGridItem)MostRecentList.SelectedItem;
                     var data = (Dictionary<string, string>)si.Tag;
                     LoadSimulation(data["Path"]);
                     MostRecentList.UnselectAll();
                 };
+                tabchanged = false;
             };
 
-            SampleList.SelectedIndexChanged += (sender, e) =>
+            SampleList.SelectedValueChanged += (sender, e) =>
             {
-                if (SampleList.SelectedIndex >= 0)
+                if (!tabchanged && SampleList.SelectedIndex >= 0)
                 {
                     LoadSimulation(SampleList.SelectedKey);
                     SampleList.SelectedValue = null;
                 };
+                tabchanged = false;
             };
 
-            FOSSEEList.SelectedIndexChanged += (sender, e) =>
+            FOSSEEList.SelectedValueChanged += (sender, e) =>
             {
-                if (FOSSEEList.SelectedIndex >= 0 && FOSSEEList.SelectedKey != "")
+                if (!tabchanged && FOSSEEList.SelectedIndex >= 0 && FOSSEEList.SelectedKey != "")
                 {
                     var item = fslist[FOSSEEList.SelectedKey];
                     var sb = new StringBuilder();
@@ -426,6 +435,7 @@ namespace DWSIM.UI
                         FOSSEEList.SelectedIndex = -1;
                     }
                 };
+                tabchanged = false;
             };
 
             var fosseecontainer = c.GetDefaultContainer();
@@ -449,10 +459,21 @@ namespace DWSIM.UI
 
             if (Application.Instance.Platform.IsGtk)
             {
-                tabview.Size = new Size((int)(480 * sf), (int)(636 - dy * 4 - bfh));
+                ClientSize = new Size((int)(width * sf), (int)((height + 15) * sf));
+                MostRecentList.Width = (int)(470 * sf);
+                SampleList.Width = (int)(470 * sf);
+                fosseecontainer.Width = (int)(470 * sf);
+                FoldersList.Width = (int)(470 * sf);
+                tabview.Width = (int)(480 * sf);
+                tabview.Height = (int)(636 - dy * 4 - bfh);
+                tabview.SelectedIndexChanged += (s, e) =>
+                {
+                    tabchanged = true;
+                };
             }
             else
             {
+                tabchanged = false;
                 tabview.Size = new Size((int)(480 * sf), (int)(ClientSize.Height - dy * 4 - bfh));
             }
 
@@ -508,7 +529,7 @@ namespace DWSIM.UI
             var hitem4 = new ButtonMenuItem { Text = "Go to DWSIM's Website".Localize(), Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "help_browser.png")) };
             hitem4.Click += (sender, e) =>
             {
-               "http://dwsim.inforside.com.br".OpenURL();
+                "http://dwsim.inforside.com.br".OpenURL();
             };
 
             // create menu

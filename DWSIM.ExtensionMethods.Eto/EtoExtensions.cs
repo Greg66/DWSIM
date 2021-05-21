@@ -529,7 +529,7 @@ namespace DWSIM.UI.Shared
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
             txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
-            var editor = new NumericStepper { Value = currval, DecimalPlaces = decimalplaces, MinValue = minval, MaxValue = maxval };
+            var editor = new NumericStepper {Value = currval, DecimalPlaces = decimalplaces, MinValue = minval, MaxValue = maxval };
             editor.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) editor.Width = (int)(sf * 140);
 
@@ -887,11 +887,18 @@ namespace DWSIM.UI.Shared
         public static void CreateAndAddEmptySpace(this DynamicLayout container)
         {
 
-            var height = GlobalSettings.Settings.CrossPlatformUIItemSpacing;
-
-            var h = height * GetEditorFontSize() / (int)(new Eto.Drawing.Font(Eto.Drawing.SystemFont.Label).Size);
-
-            container.AddRow(new Label { Text = "", Height = (int)(sf * h) });
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Linux)
+            {
+                var height = 3;
+                var h = height * GetEditorFontSize() / (int)(new Eto.Drawing.Font(Eto.Drawing.SystemFont.Label).Size);
+                container.AddRow(new Panel {Height = h });
+            }
+            else
+            {
+                var height = GlobalSettings.Settings.CrossPlatformUIItemSpacing;
+                var h = height * GetEditorFontSize() / (int)(new Eto.Drawing.Font(Eto.Drawing.SystemFont.Label).Size);
+                container.AddRow(new Label { Text = "", Height = (int)(sf * h) });
+            }
         }
 
         public static TextBox CreateAndAddFullTextBoxRow(this DynamicLayout container, String text, Action<TextBox, EventArgs> command)

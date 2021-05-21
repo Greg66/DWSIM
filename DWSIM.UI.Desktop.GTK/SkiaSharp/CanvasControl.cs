@@ -92,6 +92,8 @@ namespace DWSIM.UI.Desktop.GTK
         public FlowsheetSurface_GTK()
         {
             this.AddEvents((int)Gdk.EventMask.PointerMotionMask);
+            this.AddEvents((int)Gdk.EventMask.SmoothScrollMask);
+            this.AddEvents((int)Gdk.EventMask.ScrollMask);
             this.ButtonPressEvent += FlowsheetSurface_GTK_ButtonPressEvent;
             this.ButtonReleaseEvent += FlowsheetSurface_GTK_ButtonReleaseEvent;
             this.MotionNotifyEvent += FlowsheetSurface_GTK_MotionNotifyEvent;
@@ -104,6 +106,7 @@ namespace DWSIM.UI.Desktop.GTK
             skiaView = new SKDrawingArea();
             skiaView.PaintSurface += OnPaintSurface;
             skiaView.Show();
+            Child = skiaView;
 
         }
 
@@ -161,14 +164,16 @@ namespace DWSIM.UI.Desktop.GTK
 
         private void OnPaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
+            
             // the the canvas and properties
             var canvas = e.Surface.Canvas;
 
             // get the screen density for scaling
             var scale = 1f;
+            var scaledSize = new SKSize(e.Info.Width / scale, e.Info.Height / scale);
 
             // handle the device screen density
-            canvas.Scale(scale);
+            //canvas.Scale(scale);
 
             // make sure the canvas is blank
             canvas.Clear(SKColors.White);
