@@ -7,12 +7,12 @@ Andras Nady
 Anders Andreasen
 Andrew Dickson
 Bednarz Marc
+Bernhard Seyfang
 Bruce Rising
 Bryan Evans
 Camilo Gantiva
 Carlos G. C. Reetz
 Casey Houston
-Chris Verbert
 Christian Hornhofer
 Christian Jordan
 Christian Pedersen
@@ -39,6 +39,7 @@ Jeremiah McAfoose
 John Kossik
 Jonathan
 Joseph Attia
+Juan Moreno
 Kiran Pashikanti
 Lauterbach Verfahrenstechnik GmbH
 Leonard Seed
@@ -59,12 +60,14 @@ Pedro Sabóia
 Petroconsulting LLC
 Protherm Systems
 Rafael Melo-González
+Rainer Scheuring
 Richard Huntington
 Roland Berger
 Ronald J. Dunbar
 Ronald Visness
 Rupert Easter
 Ryszard Sadowski
+Shailesh Paranjpe
 Shankar Ananth
 Shijin Roh
 Steven Sandoval
