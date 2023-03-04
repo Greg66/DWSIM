@@ -1138,7 +1138,15 @@ Namespace UnitOperations
                         Try
                             Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
                             If prop = String.Format("Stream '{0}' Stage Index", streamtag) Then
-                                value = StageIndex(si.AssociatedStage)
+                                If si.StreamBehavior = StreamInformation.Behavior.BottomsLiquid Then
+                                    value = Stages.Count - 1
+                                ElseIf si.StreamBehavior = StreamInformation.Behavior.Distillate Then
+                                    value = 0
+                                ElseIf si.StreamBehavior = StreamInformation.Behavior.OverheadVapor Then
+                                    value = 0
+                                Else
+                                    value = StageIndex(si.AssociatedStage)
+                                End If
                                 Return value
                             End If
                         Catch ex As Exception
@@ -1165,6 +1173,7 @@ Namespace UnitOperations
         End Function
 
         Public Overrides Function GetPropertyUnit(ByVal prop As String, Optional ByVal su As Interfaces.IUnitsOfMeasure = Nothing) As String
+
             Dim u0 As String = MyBase.GetPropertyUnit(prop, su)
 
             If u0 <> "NF" Then
@@ -1492,27 +1501,80 @@ Namespace UnitOperations
                     For i = 0 To 1
                         proplist.Add("PROP_AC_" + CStr(i))
                     Next
+                    For i = 1 To Me.Stages.Count
+                        proplist.Add("Stage_Efficiency_" + CStr(i))
+                    Next
+                    For Each si In MaterialStreams.Values
+                        Try
+                            Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                            proplist.Add(String.Format("Stream '{0}' Stage Index", streamtag))
+                        Catch ex As Exception
+                        End Try
+                    Next
+                    For Each si In MaterialStreams.Values
+                        If si.StreamBehavior = StreamInformation.Behavior.Sidedraw Then
+                            Try
+                                Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                                proplist.Add(String.Format("Stream '{0}' Side Draw Molar Flow", streamtag))
+                            Catch ex As Exception
+                            End Try
+                        End If
+                    Next
+                    proplist.Add("Estimated Height")
+                    proplist.Add("Estimated Diameter")
+                    proplist.Add("Number of Stages")
                 Case PropertyType.ALL
                     For i = 0 To 2
                         proplist.Add("PROP_AC_" + CStr(i))
                     Next
+                    For i = 1 To Me.Stages.Count
+                        proplist.Add("Stage_Efficiency_" + CStr(i))
+                    Next
+                    For Each si In MaterialStreams.Values
+                        Try
+                            Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                            proplist.Add(String.Format("Stream '{0}' Stage Index", streamtag))
+                        Catch ex As Exception
+                        End Try
+                    Next
+                    For Each si In MaterialStreams.Values
+                        If si.StreamBehavior = StreamInformation.Behavior.Sidedraw Then
+                            Try
+                                Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                                proplist.Add(String.Format("Stream '{0}' Side Draw Molar Flow", streamtag))
+                            Catch ex As Exception
+                            End Try
+                        End If
+                    Next
                     proplist.Add("Estimated Height")
                     proplist.Add("Estimated Diameter")
+                    proplist.Add("Number of Stages")
             End Select
             Return proplist.ToArray(GetType(System.String))
             proplist = Nothing
         End Function
 
         Public Overrides Function GetPropertyValue(ByVal prop As String, Optional ByVal su As Interfaces.IUnitsOfMeasure = Nothing) As Object
+
             Dim val0 As Object = MyBase.GetPropertyValue(prop, su)
 
             If Not val0 Is Nothing Then
+
                 Return val0
+
             Else
+
                 If su Is Nothing Then su = New SystemsOfUnits.SI
                 Dim cv As New SystemsOfUnits.Converter
                 Dim value As Double = 0
-                Dim propidx As Integer = Convert.ToInt32(prop.Split("_")(2))
+
+                Dim propidx As Integer = -1
+
+                Try
+                    Integer.TryParse(prop.Split("_")(2), propidx)
+                Catch ex As Exception
+
+                End Try
 
                 Select Case propidx
 
@@ -1540,9 +1602,53 @@ Namespace UnitOperations
                         value = EstimatedHeight
                     Case "Estimated Diameter"
                         value = EstimatedDiameter
+                    Case "Number of Stages"
+                        value = NumberOfStages
                 End Select
 
+                If prop.Contains("Stage_Efficiency_") Then
+                    Dim stageindex As Integer = prop.Split("_")(2)
+                    If Me.Stages.Count >= stageindex Then value = Me.Stages(stageindex - 1).Efficiency
+                End If
+
+                If prop.Contains("Global_Stage_Efficiency") Then value = "N/D"
+
+                If prop.Contains("Stage Index") Then
+                    For Each si In MaterialStreams.Values
+                        Try
+                            Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                            If prop = String.Format("Stream '{0}' Stage Index", streamtag) Then
+                                If si.StreamBehavior = StreamInformation.Behavior.BottomsLiquid Then
+                                    value = Stages.Count - 1
+                                ElseIf si.StreamBehavior = StreamInformation.Behavior.Distillate Then
+                                    value = 0
+                                ElseIf si.StreamBehavior = StreamInformation.Behavior.OverheadVapor Then
+                                    value = 0
+                                Else
+                                    value = StageIndex(si.AssociatedStage)
+                                End If
+                                Return value
+                            End If
+                        Catch ex As Exception
+                        End Try
+                    Next
+                End If
+
+                If prop.Contains("Side Draw Molar Flow") Then
+                    For Each si In MaterialStreams.Values
+                        Try
+                            Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                            If prop = String.Format("Stream '{0}' Side Draw Molar Flow", streamtag) Then
+                                value = si.FlowRate.Value.ConvertFromSI(su.molarflow)
+                                Return value
+                            End If
+                        Catch ex As Exception
+                        End Try
+                    Next
+                End If
+
                 Return value
+
             End If
 
         End Function
@@ -1551,7 +1657,14 @@ Namespace UnitOperations
             If su Is Nothing Then su = New SystemsOfUnits.SI
             Dim cv As New SystemsOfUnits.Converter
             Dim value As String = ""
-            Dim propidx As Integer = Convert.ToInt32(prop.Split("_")(2))
+
+            Dim propidx As Integer = -1
+
+            Try
+                Integer.TryParse(prop.Split("_")(2), propidx)
+            Catch ex As Exception
+
+            End Try
 
             Select Case propidx
 
@@ -1573,6 +1686,9 @@ Namespace UnitOperations
                     value = su.diameter
             End Select
 
+            If prop.Contains("Stage_Efficiency") Then value = ""
+            If prop.Contains("Molar Flow") Then value = su.molarflow
+
             Return value
 
         End Function
@@ -1580,12 +1696,60 @@ Namespace UnitOperations
         Public Overrides Function SetPropertyValue(ByVal prop As String, ByVal propval As Object, Optional ByVal su As Interfaces.IUnitsOfMeasure = Nothing) As Boolean
 
             If MyBase.SetPropertyValue(prop, propval, su) Then Return True
-            Dim propidx As Integer = Convert.ToInt32(prop.Split("_")(2))
+
+            Dim propidx As Integer = -1
+
+            Try
+                Integer.TryParse(prop.Split("_")(2), propidx)
+            Catch ex As Exception
+
+            End Try
 
             Select Case propidx
                 Case 2
                     SetNumberOfStages(propval)
             End Select
+
+            If prop.Contains("Stage_Efficiency_") Then
+                Dim stageindex As Integer = prop.Split("_")(2)
+                If Me.Stages.Count >= stageindex Then Me.Stages(stageindex - 1).Efficiency = propval
+            End If
+
+            If prop = "Global_Stage_Efficiency" Then
+                For Each st As Stage In Me.Stages
+                    st.Efficiency = propval
+                Next
+            ElseIf prop = "Number of Stages" Then
+                SetNumberOfStages(propval)
+            End If
+
+            If prop.Contains("Stage Index") Then
+                For Each si In MaterialStreams.Values
+                    Try
+                        Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                        If prop = String.Format("Stream '{0}' Stage Index", streamtag) Then
+                            si.AssociatedStage = Stages(Convert.ToInt32(propval)).Name
+                            Exit For
+                        End If
+                    Catch ex As Exception
+                    End Try
+                Next
+            End If
+
+            If prop.Contains("Side Draw Molar Flow") Then
+                For Each si In MaterialStreams.Values
+                    Try
+                        Dim streamtag = FlowSheet.SimulationObjects(si.StreamID).GraphicObject.Tag
+                        If prop = String.Format("Stream '{0}' Side Draw Molar Flow", streamtag) Then
+                            si.FlowRate.Value = Convert.ToDouble(propval).ConvertToSI(su.molarflow)
+                            Exit For
+                        End If
+                    Catch ex As Exception
+                    End Try
+                Next
+            End If
+
+
             Return 1
 
         End Function

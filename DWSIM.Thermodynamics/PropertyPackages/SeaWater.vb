@@ -33,6 +33,8 @@ Namespace PropertyPackages
 
         Protected SIA As New Seawater
 
+        Public Overrides ReadOnly Property Popular As Boolean = True
+
         Public Sub New(ByVal comode As Boolean)
 
             MyBase.New(comode)
@@ -48,6 +50,18 @@ Namespace PropertyPackages
             Me.IsConfigurable = True
 
             Me._packagetype = PropertyPackages.PackageType.Miscelaneous
+
+            With PropertyMethodsInfo
+                .Vapor_Fugacity = "Ideal"
+                .Vapor_Thermal_Conductivity = "IAPWS-08 Seawater"
+                .Vapor_Viscosity = "IAPWS-08 Seawater"
+                .Vapor_Enthalpy_Entropy_CpCv = "IAPWS-08 Seawater"
+                .Vapor_Density = "IAPWS-08 Seawater"
+                .Liquid_Fugacity = "Vapor Pressure / Henry's Constant"
+                .Liquid_Enthalpy_Entropy_CpCv = "IAPWS-08 Seawater"
+                .Liquid_ThermalConductivity = "IAPWS-08 Seawater"
+                .Liquid_Viscosity = "IAPWS-08 Seawater"
+            End With
 
         End Sub
 

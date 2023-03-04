@@ -1,5 +1,5 @@
 ﻿'    Peng-Robinson-Stryjek-Vera 2 w/ Van Laar Mixing Rules Property Package 
-'    Copyright 2012 Daniel Wagner O. de Medeiros
+'    Copyright 2012-2023 Daniel Wagner O. de Medeiros
 '
 '    This file is part of DWSIM.
 '
@@ -30,6 +30,12 @@ Namespace PropertyPackages
         Private m_props As New PropertyPackages.Auxiliary.PROPS
         Public m_pr As New PropertyPackages.Auxiliary.PRSV2VL
 
+        Public Overrides ReadOnly Property Popular As Boolean = True
+
+        Public Overrides ReadOnly Property DisplayName As String = "Peng-Robinson-Strÿjek-Vera 2 (Van-Laar Mixing Rule)"
+
+        Public Overrides ReadOnly Property DisplayDescription As String = "Modified version of the PR EOS that improves predictions for slightly polar mixtures."
+
         Public Sub New(ByVal comode As Boolean)
             MyBase.New(comode)
         End Sub
@@ -44,6 +50,15 @@ Namespace PropertyPackages
 
             Me.IsConfigurable = True
             Me._packagetype = PropertyPackages.PackageType.EOS
+
+            With PropertyMethodsInfo
+                .Vapor_Fugacity = "Peng-Robinson-Strÿjek-Vera EOS"
+                .Vapor_Enthalpy_Entropy_CpCv = "Peng-Robinson-Strÿjek-Vera EOS"
+                .Vapor_Density = "Peng-Robinson-Strÿjek-Vera EOS"
+                .Liquid_Fugacity = "Peng-Robinson-Strÿjek-Vera EOS"
+                .Liquid_Enthalpy_Entropy_CpCv = "Peng-Robinson-Strÿjek-Vera EOS"
+                .Liquid_Density = "Peng-Robinson-Strÿjek-Vera EOS / Experimental / Rackett / COSTALD"
+            End With
 
         End Sub
 

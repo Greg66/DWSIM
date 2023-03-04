@@ -33,7 +33,8 @@ Namespace PropertyPackages
         Public Shadows Const ClassId As String = "170D6E8A-8880-4bf9-B7A0-E4A3FDBFD589"
 
         Friend m_iapws97 As New IAPWS_IF97
-        'Protected m_steam67 As New STEAM67
+
+        Public Overrides ReadOnly Property Popular As Boolean = True
 
         Public Sub New(ByVal comode As Boolean)
             MyBase.New(comode)
@@ -45,6 +46,18 @@ Namespace PropertyPackages
             Me._packagetype = PropertyPackages.PackageType.Miscelaneous
 
             IsConfigurable = False
+
+            With PropertyMethodsInfo
+                .Vapor_Fugacity = "Ideal"
+                .Vapor_Thermal_Conductivity = "IAPWS-IF97 Steam Tables"
+                .Vapor_Viscosity = "IAPWS-IF97 Steam Tables"
+                .Vapor_Enthalpy_Entropy_CpCv = "IAPWS-IF97 Steam Tables"
+                .Vapor_Density = "IAPWS-IF97 Steam Tables"
+                .Liquid_Fugacity = "Vapor Pressure / Henry's Constant"
+                .Liquid_Enthalpy_Entropy_CpCv = "IAPWS-IF97 Steam Tables"
+                .Liquid_ThermalConductivity = "IAPWS-IF97 Steam Tables"
+                .Liquid_Viscosity = "IAPWS-IF97 Steam Tables"
+            End With
 
         End Sub
         Public Overrides Function GetModel() As Object

@@ -261,6 +261,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                             fbag.SimulationObjects(myObj.AttachedSpecId).Solve()
                         End If
                     End If
+                    myObj.Solve()
                     If myObj.IsSpecAttached = True Then
                         If myObj.SpecVarType = SpecVarType.Source And fbag.FlowsheetOptions.SpecCalculationMode = SpecCalcMode.AfterSourceObject Then
                             fbag.SimulationObjects(myObj.AttachedSpecId).Solve()
@@ -416,15 +417,17 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
 
         Dim exlist As New List(Of Exception)
 
-        If mode = 0 Or mode = 1 Then
-            'bg thread
-            exlist = ProcessQueueInternalAsync(fobj, ct)
-            If Not Adjusting Then SolveSimultaneousAdjustsAsync(fobj, ct)
-        ElseIf mode = 2 Then
-            'bg parallel threads
-            exlist = ProcessQueueInternalAsyncParallel(fobj, orderedlist, ct)
-            If Not Adjusting Then SolveSimultaneousAdjustsAsync(fobj, ct)
-        End If
+        'If mode = 0 Or mode = 1 Then
+        'bg thread
+
+        exlist = ProcessQueueInternalAsync(fobj, ct)
+        If Not Adjusting Then SolveSimultaneousAdjustsAsync(fobj, ct)
+
+        'ElseIf mode = 2 Then
+        '    'bg parallel threads
+        '    exlist = ProcessQueueInternalAsyncParallel(fobj, orderedlist, ct)
+        '    If Not Adjusting Then SolveSimultaneousAdjustsAsync(fobj, ct)
+        'End If
 
         Return exlist
 
@@ -694,10 +697,8 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                 DirectCast(obj, IMaterialStream).SetPropertyPackageObject(DirectCast(obj, IMaterialStream).GetPropertyPackageObjectCopy)
                 DirectCast(obj, IMaterialStream).SetCurrentMaterialStream(obj)
             ElseIf TypeOf obj Is ISimulationObject Then
-                If Not obj.PropertyPackage Is Nothing Then
-                    obj.PropertyPackage = Nothing
-                    obj.PropertyPackage = DirectCast(obj, ISimulationObject).PropertyPackage.Clone
-                End If
+                obj.PropertyPackage = Nothing
+                obj.PropertyPackage = DirectCast(obj, ISimulationObject).PropertyPackage.Clone()
             End If
         Next
 
@@ -1077,6 +1078,8 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                                           Optional ByVal FinishAny As Action = Nothing,
                                           Optional ByVal ChangeCalcOrder As Boolean = False) As List(Of Exception)
 
+        GlobalSettings.Settings.LockModelParameters = True
+
         If GlobalSettings.Settings.CalculatorActivated Then
 
             Dim fs As IFlowsheet = TryCast(fobj, IFlowsheet)
@@ -1224,6 +1227,11 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
             'adds a message to the log window to indicate that the flowsheet started solving
 
             fgui.ShowMessage(fgui.GetTranslatedString("FSstartedsolving"), IFlowsheet.MessageType.Information)
+
+            If fgui.FlowsheetOptions.ForceStreamPhase <> ForcedPhase.None Then
+                fgui.ShowMessage(fgui.GetTranslatedString(String.Format("Global Phase Override is defined to '{0}'",
+                                                          fgui.FlowsheetOptions.ForceStreamPhase)), IFlowsheet.MessageType.Warning)
+            End If
 
             'process scripts associated with the solverstarted event
 
@@ -1612,8 +1620,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
 
             If age Is Nothing Then
 
-                fgui.ShowMessage(fgui.GetTranslatedString("FSfinishedsolvingok"), IFlowsheet.MessageType.Information)
-                fgui.ShowMessage(fgui.GetTranslatedString("Runtime") & " (s): " & (Date.Now - d1).TotalSeconds.ToString("G4"), IFlowsheet.MessageType.Information)
+                fgui.ShowMessage(fgui.GetTranslatedString("FSfinishedsolvingok") + " [" & (Date.Now - d1).TotalSeconds.ToString("G4") + "s]", IFlowsheet.MessageType.Information)
 
                 IObj?.Paragraphs.Add(String.Format("Solver finished calculation of all objects in {0} seconds.", (Date.Now - d1).TotalSeconds))
 
@@ -1661,6 +1668,8 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                     IObj?.Paragraphs.Add(baseexception.Message)
                 Next
 
+                fgui.ShowMessage(fgui.GetTranslatedString("If Anonymous Analytics Sharing is enabled, the developers will be notified shortly about the errors. Thank you for your contribution!"), IFlowsheet.MessageType.GeneralError)
+
                 fs.Solved = False
                 If baseexception IsNot Nothing Then fs.ErrorMessage = baseexception.ToString
 
@@ -1683,6 +1692,8 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
 
             IObj?.Close()
 
+            GlobalSettings.Settings.LockModelParameters = False
+
             FinishAny?.Invoke()
 
             If age Is Nothing Then
@@ -1692,10 +1703,12 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
             Else
                 FinishWithErrors?.Invoke()
                 RaiseEvent FlowsheetCalculationFinished(fobj, New System.EventArgs(), age.InnerExceptions.ToList())
-                Return age.InnerExceptions.ToList()
+                Return age.Flatten().InnerExceptions.ToList()
             End If
 
         Else
+
+            GlobalSettings.Settings.LockModelParameters = False
 
             FinishAny?.Invoke()
 

@@ -134,4 +134,8 @@ Imports DWSIM.Interfaces.Enums.GraphicObjects
 
     Property SpecCalculationMode As SpecCalcMode
 
+    Property ForceObjectSolving As Boolean
+
+    Property SaveFlowsheetMessagesInFile As Boolean
+
 End Interface

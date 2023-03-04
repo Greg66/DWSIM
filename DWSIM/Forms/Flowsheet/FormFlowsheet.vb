@@ -181,7 +181,11 @@ Public Class FormFlowsheet
         ' icon
 
 #If LINUX = False Then
-        If Not FormMain.IsPro Then Icon = My.Resources.DWSIM_Icon_v8
+        If Not FormMain.IsPro Then
+            Icon = My.Resources.DWSIM_Icon_v8
+        Else
+            Icon = My.Resources.Icon1282
+        End If
 #End If
 
     End Sub
@@ -621,11 +625,11 @@ Public Class FormFlowsheet
             My.Application.MainWindowForm.CloseAllToolstripMenuItem.Enabled = True
         End If
 
-        WriteToLog(DWSIM.App.GetLocalTipString("FLSH003"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
-        WriteToLog(DWSIM.App.GetLocalTipString("FLSH001"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
-        WriteToLog(DWSIM.App.GetLocalTipString("FLSH002"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
-        WriteToLog(DWSIM.App.GetLocalTipString("FLSH005"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
-        WriteToLog(DWSIM.App.GetLocalTipString("FLSH008"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
+        'WriteToLog(DWSIM.App.GetLocalTipString("FLSH003"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
+        'WriteToLog(DWSIM.App.GetLocalTipString("FLSH001"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
+        'WriteToLog(DWSIM.App.GetLocalTipString("FLSH002"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
+        'WriteToLog(DWSIM.App.GetLocalTipString("FLSH005"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
+        'WriteToLog(DWSIM.App.GetLocalTipString("FLSH008"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
 
         FormSurface.FlowsheetSurface.DrawFloatingTable = Options.DisplayFloatingPropertyTables
         FormSurface.FlowsheetSurface.DrawPropertyList = Options.DisplayCornerPropertyList
@@ -1014,6 +1018,12 @@ Public Class FormFlowsheet
 
     End Sub
 
+    Public Sub Solve()
+
+        SolveFlowsheet2()
+
+    End Sub
+
     Public Sub SolveFlowsheet2()
 
         If Not DynamicMode Then
@@ -1138,6 +1148,15 @@ Public Class FormFlowsheet
                                Me.FormLog.Grid1.Rows.Clear()
                            End Sub)
 
+
+            Dim data As New Dictionary(Of String, String)
+            data.Add("Compounds", Me.SelectedCompounds.Count)
+            data.Add("Objects", Me.SimulationObjects.Count)
+            data.Add("Reactions", Me.Reactions.Count)
+            data.Add("Property Packages", Me.PropertyPackages.Count)
+
+            FormMain.AnalyticsProvider?.RegisterEvent("Requested Flowsheet Solving", "", data)
+
             RaiseEvent ToolOpened("Solve Flowsheet", New EventArgs())
             Settings.TaskCancellationTokenSource = Nothing
             My.Application.ActiveSimulation = Me
@@ -1160,9 +1179,9 @@ Public Class FormFlowsheet
                                                      End Function)
             t.ContinueWith(Sub(tres)
                                RaiseEvent FinishedSolving(Me, New EventArgs())
-                               For Each item In tres.Result
-                                   ShowMessage(item.Message, IFlowsheet.MessageType.GeneralError)
-                               Next
+                               'For Each item In tres.Result
+                               '    ShowMessage(item.Message, IFlowsheet.MessageType.GeneralError)
+                               'Next
                            End Sub)
             t.Start()
         Else
@@ -1804,7 +1823,7 @@ Public Class FormFlowsheet
 
     Public Sub DisconnectObject(ByRef gObjFrom As GraphicObject, ByRef gObjTo As GraphicObject, Optional ByVal triggercalc As Boolean = False)
 
-        Me.WriteToLog(DWSIM.App.GetLocalTipString("FLSH007"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
+        'Me.WriteToLog(DWSIM.App.GetLocalTipString("FLSH007"), Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
 
         Dim conObj As ConnectorGraphic = Nothing
         Dim SelObj As GraphicObject = gObjFrom
@@ -3000,7 +3019,7 @@ Public Class FormFlowsheet
             Case Interfaces.IFlowsheet.MessageType.Warning
                 WriteToLog(text, Color.OrangeRed, SharedClasses.DWSIM.Flowsheet.MessageType.Warning)
             Case Interfaces.IFlowsheet.MessageType.Tip
-                WriteToLog(text, Color.Blue, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
+                'WriteToLog(text, Color.Blue, SharedClasses.DWSIM.Flowsheet.MessageType.Tip)
             Case Interfaces.IFlowsheet.MessageType.Other
                 WriteToLog(text, Color.Black, SharedClasses.DWSIM.Flowsheet.MessageType.Information)
         End Select
@@ -3192,24 +3211,21 @@ Public Class FormFlowsheet
                                    UpdateOpenEditForms()
                                End Sub
             If Not sender Is Nothing Then
-                Task.Factory.StartNew(Sub()
-                                          If ExternalFlowsheetSolver IsNot Nothing Then
-                                              ExternalFlowsheetSolver.SolveFlowsheet(Me)
-                                          Else
-                                              FlowsheetSolver.FlowsheetSolver.CalculateObject(Me, sender.Name)
-                                          End If
-                                          UpdateOpenEditForms()
-                                      End Sub)
+                If ExternalFlowsheetSolver IsNot Nothing Then
+                    ExternalFlowsheetSolver.SolveFlowsheet(Me)
+                Else
+                    FlowsheetSolver.FlowsheetSolver.CalculateObject(Me, sender.Name)
+                End If
+                UpdateOpenEditForms()
             Else
-                Task.Factory.StartNew(Sub()
-                                          If ExternalFlowsheetSolver IsNot Nothing Then
-                                              ExternalFlowsheetSolver.SolveFlowsheet(Me)
-                                          Else
-                                              FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Me, Settings.SolverMode,
+                If ExternalFlowsheetSolver IsNot Nothing Then
+                    ExternalFlowsheetSolver.SolveFlowsheet(Me)
+                Else
+                    FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Me, Settings.SolverMode,
                                                                                          Nothing, False, False,
                                                                                          Nothing, Nothing, finishaction)
-                                          End If
-                                      End Sub)
+                End If
+                UpdateOpenEditForms()
             End If
             UpdateInterface()
         End If
@@ -3707,7 +3723,7 @@ Public Class FormFlowsheet
 
     End Sub
 
-    Private Sub BotãoToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles BotãoToolStripMenuItem.Click
+    Private Sub BotaoToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles BotaoToolStripMenuItem.Click
         Dim myTextObject As New Shapes.ButtonGraphic()
         Dim gObj As GraphicObject = Nothing
         gObj = myTextObject
@@ -3767,7 +3783,7 @@ Public Class FormFlowsheet
 
     End Sub
 
-    Private Sub CriadorDeComponentesSólidosToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles CriadorDeComponentesSólidosToolStripMenuItem.Click
+    Private Sub CriadorDeComponentesSolidosToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles CriadorDeComponentesSolidosToolStripMenuItem.Click
         Dim fqc As New FormCreateNewSolid()
         fqc.ShowDialog(Me)
     End Sub
@@ -4104,6 +4120,14 @@ Public Class FormFlowsheet
         Await fh.Viewer.EnsureCoreWebView2Async()
         fh.Viewer.NavigateToString(htmlcontent)
         fh.Show(dckPanel)
+
+    End Sub
+
+    Public Sub SetDirtyStatus() Implements IFlowsheet.SetDirtyStatus
+
+        For Each obj In SimulationObjects.Values
+            obj.SetDirtyStatus(True)
+        Next
 
     End Sub
 

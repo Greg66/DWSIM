@@ -105,6 +105,8 @@ Namespace PropertyPackages
         Miscelaneous = 4
         CorrespondingStates = 5
         CAPEOPEN = 6
+        Electrolytes = 7
+        Specialized = 8
     End Enum
 
     Public Enum FlashMethod
@@ -246,6 +248,10 @@ Namespace PropertyPackages
         Public Property FlashCalculationApproach As FlashCalculationApproachType = FlashCalculationApproachType.NestedLoops
 
         Public Property SingleCompoundCheckThreshold As Double = 0.99999
+
+        Public Property UseHenryConstants As Boolean = True
+
+        Public Property AutoEstimateMissingNRTLUNIQUACParameters = True
 
         ''' <summary>
         ''' ' For mobile compatibility only.
@@ -459,6 +465,14 @@ Namespace PropertyPackages
 
 #Region "   Properties"
 
+        Public Overridable ReadOnly Property Popular As Boolean = False
+
+        Public Property PropertyMethodsInfo As New PropertyPackageMethods
+
+        Public Overridable ReadOnly Property DisplayName As String = "" Implements IPropertyPackage.DisplayName
+
+        Public Overridable ReadOnly Property DisplayDescription As String = "A Property Package consists in a set of property methods and procedures used to calculate chemical phase equilibria and physical properties." Implements IPropertyPackage.DisplayDescription
+
         Public Property OverrideKvalFugCoeff As Boolean = False
 
         Public KvalFugacityCoefficientOverride As Func(Of Double(), Double, Double, State, Double())
@@ -659,10 +673,13 @@ Namespace PropertyPackages
 
         Public Overridable Function Clone() As PropertyPackage
 
-            Dim pp As PropertyPackage = Me.MemberwiseClone()
+            Dim data = SaveData()
 
-            pp.FlashSettings = New Dictionary(Of FlashSetting, String)(FlashSettings)
-            pp.ForcedSolids = New List(Of String)(ForcedSolids)
+            Dim pp As PropertyPackage = Activator.CreateInstance(Me.GetType())
+
+            pp.LoadData(data)
+
+            pp.UniqueID = "PP-" + Guid.NewGuid().ToString()
 
             Return pp
 
@@ -1292,6 +1309,22 @@ Namespace PropertyPackages
         ''' <remarks>The composition vector must follow the same sequence as the components which were added in the material stream.</remarks>
         Public Overridable Overloads Function DW_CalcKvalue(ByVal Vx As Double(), ByVal Vy As Double(), ByVal T As Double, ByVal P As Double, Optional ByVal type As String = "LV") As Double()
 
+            If Vx.HasNaN() Or Vx.HasInf() Then
+                Throw New Exception(String.Format(Flowsheet.GetTranslatedString("Tried to calculate K-values with invalid liquid composition: {0}"), Vx.ToArrayString()))
+            End If
+
+            If Vy.HasNaN() Or Vy.HasInf() Then
+                Throw New Exception(String.Format(Flowsheet.GetTranslatedString("Tried to calculate K-values with invalid vapor composition: {0}"), Vy.ToArrayString()))
+            End If
+
+            If Double.IsNaN(T) Or Double.IsInfinity(T) Then
+                Throw New Exception(String.Format(Flowsheet.GetTranslatedString("Tried to calculate K-values with invalid temperature: {0} K"), T))
+            End If
+
+            If Double.IsNaN(P) Or Double.IsInfinity(P) Then
+                Throw New Exception(String.Format(Flowsheet.GetTranslatedString("Tried to calculate K-values with invalid pressure: {0} Pa"), P))
+            End If
+
             Dim IObj As Inspector.InspectorItem = Inspector.Host.GetNewInspectorItem()
 
             Inspector.Host.CheckAndAdd(IObj, "", "DW_CalcKvalue", ComponentName & " K-value calculation (Property Package)", "Property Package K-value Calculation Routine")
@@ -1648,8 +1681,9 @@ Namespace PropertyPackages
             Dim VPc = RET_VPC()
 
             Dim V0 = 0.08664 * 8.314 * VTc.DivideY(VPc).MultiplyY(Vz).SumY
+            Dim T0 = VTc.MultiplyY(Vz).SumY
 
-            Return gm.CriticalPoint(Vz, VTc.Min, VTc.Max, V0, 3.85 * V0)
+            Return gm.CriticalPoint(Vz, V0, T0)
 
         End Function
 
@@ -3446,11 +3480,18 @@ redirect2:                  IObj?.SetCurrent()
             Dim Vz(n) As Double
             Dim comp As Interfaces.ICompound
 
+            Dim Vn = RET_VNAMES().ToList()
+
             i = 0
             For Each comp In Me.CurrentMaterialStream.Phases(0).Compounds.Values
-                Vz(i) += comp.MoleFraction.GetValueOrDefault
+                Vz(i) = comp.MoleFraction.GetValueOrDefault
                 i += 1
             Next
+
+            If peoptions.ImmiscibleWater And Vn.Contains("Water") Then
+                Vz(Vn.IndexOf("Water")) = 0.0
+                Vz = Vz.NormalizeY()
+            End If
 
             Dim j, k, l As Integer
             i = 0
@@ -3498,7 +3539,7 @@ redirect2:                  IObj?.SetCurrent()
                     .BubbleCurveDeltaP = 101325
                     .BubbleCurveDeltaT = 1.0
                     .BubbleCurveInitialPressure = 0.0#
-                    .BubbleCurveInitialTemperature = RET_VTF.Min
+                    .BubbleCurveInitialTemperature = RET_VTB.Min * 0.3
                     .BubbleCurveInitialFlash = "TVF"
                     .BubbleCurveMaximumPoints = 500
                     .BubbleCurveMaximumTemperature = RET_VTC.Max * 1.2
@@ -3607,6 +3648,29 @@ redirect2:                  IObj?.SetCurrent()
                 j = j + 1
             Loop Until j = n + 1
 
+            If peoptions.ImmiscibleWater And Vn.Contains("Water") Then
+
+                Dim Twx As Double = 273.15
+                Dim Pwx As Double = 0.0
+                Dim st As New Auxiliary.IAPWS_IF97
+
+                For i = 0 To 10000
+
+                    TOWF.Add(Twx)
+                    Pwx = AUX_PVAPi("Water", Twx)
+                    POWF.Add(Pwx)
+                    HOWF.Add(st.enthalpySatVapTW(Twx))
+                    SOWF.Add(st.entropySatVapTW(Twx))
+                    VOWF.Add(1 / st.densSatVapTW(Twx) * Me.AUX_MMM(Phase.Mixture))
+
+                    Twx += 5.0
+
+                    If Pwx > 217.7 * 101325 Then Exit For
+
+                Next
+
+            End If
+
             i = 0
             P = options.BubbleCurveInitialPressure
             T = options.BubbleCurveInitialTemperature
@@ -3615,22 +3679,22 @@ redirect2:                  IObj?.SetCurrent()
                 If i < 2 Then
 
                     If options.BubbleCurveInitialFlash = "TVF" Then
-                        tmp2 = Me.FlashBase.Flash_TV(Me.RET_VMOL(Phase.Mixture), T, 0, options.BubbleCurveInitialPressure, Me)
+                        tmp2 = Me.FlashBase.Flash_TV(Vz, T, 0, options.BubbleCurveInitialPressure, Me)
                         TVB.Add(T)
                         PB.Add(tmp2(4))
                         P = PB(PB.Count - 1)
-                        HB.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                        SB.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                        VB.Add(1 / Me.AUX_LIQDENS(T, Me.RET_VMOL(Phase.Mixture), P, P) * Me.AUX_MMM(Phase.Mixture))
+                        HB.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Liquid))
+                        SB.Add(Me.DW_CalcEntropy(Vz, T, P, State.Liquid))
+                        VB.Add(1 / Me.AUX_LIQDENS(T, Vz, P, P) * Me.AUX_MMM(Phase.Mixture))
                         KI = tmp2(6)
                     Else
-                        tmp2 = Me.FlashBase.Flash_PV(Me.RET_VMOL(Phase.Mixture), P, 0, options.BubbleCurveInitialTemperature, Me)
+                        tmp2 = Me.FlashBase.Flash_PV(Vz, P, 0, options.BubbleCurveInitialTemperature, Me)
                         TVB.Add(tmp2(4))
                         PB.Add(P)
                         T = TVB(TVB.Count - 1)
-                        HB.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                        SB.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                        VB.Add(1 / Me.AUX_LIQDENS(T, Me.RET_VMOL(Phase.Mixture), P, P) * Me.AUX_MMM(Phase.Mixture))
+                        HB.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Liquid))
+                        SB.Add(Me.DW_CalcEntropy(Vz, T, P, State.Liquid))
+                        VB.Add(1 / Me.AUX_LIQDENS(T, Vz, P, P) * Me.AUX_MMM(Phase.Mixture))
                         KI = tmp2(6)
                     End If
 
@@ -3680,26 +3744,26 @@ redirect2:                  IObj?.SetCurrent()
 
                     If beta < 20 Then
                         Try
-                            tmp2 = Me.FlashBase.Flash_TV(Me.RET_VMOL(Phase.Mixture), T, 0, PB(PB.Count - 1), Me, True, KI)
+                            tmp2 = Me.FlashBase.Flash_TV(Vz, T, 0, PB(PB.Count - 1), Me, True, KI)
                             TVB.Add(T)
                             PB.Add(tmp2(4))
                             P = PB(PB.Count - 1)
-                            HB.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                            SB.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                            VB.Add(1 / Me.AUX_LIQDENS(T, Me.RET_VMOL(Phase.Mixture), P, P) * Me.AUX_MMM(Phase.Mixture))
+                            HB.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Liquid))
+                            SB.Add(Me.DW_CalcEntropy(Vz, T, P, State.Liquid))
+                            VB.Add(1 / Me.AUX_LIQDENS(T, Vz, P, P) * Me.AUX_MMM(Phase.Mixture))
                             KI = tmp2(6)
                             beta = (Math.Log(PB(PB.Count - 1) / 101325) - Math.Log(PB(PB.Count - 2) / 101325)) / (Math.Log(TVB(TVB.Count - 1)) - Math.Log(TVB(TVB.Count - 2)))
                         Catch ex As Exception
                         End Try
                     Else
                         Try
-                            tmp2 = Me.FlashBase.Flash_PV(Me.RET_VMOL(Phase.Mixture), P, 0, TVB(TVB.Count - 1), Me, True, KI)
+                            tmp2 = Me.FlashBase.Flash_PV(Vz, P, 0, TVB(TVB.Count - 1), Me, True, KI)
                             TVB.Add(tmp2(4))
                             PB.Add(P)
                             T = TVB(TVB.Count - 1)
-                            HB.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                            SB.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Liquid))
-                            VB.Add(1 / Me.AUX_LIQDENS(T, Me.RET_VMOL(Phase.Mixture), P, P) * Me.AUX_MMM(Phase.Mixture))
+                            HB.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Liquid))
+                            SB.Add(Me.DW_CalcEntropy(Vz, T, P, State.Liquid))
+                            VB.Add(1 / Me.AUX_LIQDENS(T, Vz, P, P) * Me.AUX_MMM(Phase.Mixture))
                             KI = tmp2(6)
                             beta = (Math.Log(PB(PB.Count - 1) / 101325) - Math.Log(PB(PB.Count - 2) / 101325)) / (Math.Log(TVB(TVB.Count - 1)) - Math.Log(TVB(TVB.Count - 2)))
                         Catch ex As Exception
@@ -3798,22 +3862,22 @@ redirect2:                  IObj?.SetCurrent()
                 If i < 2 Then
 
                     If options.DewCurveInitialFlash = "TVF" Then
-                        tmp2 = Me.FlashBase.Flash_TV(Me.RET_VMOL(Phase.Mixture), T, 1, options.DewCurveInitialPressure, Me)
+                        tmp2 = Me.FlashBase.Flash_TV(Vz, T, 1, options.DewCurveInitialPressure, Me)
                         TVD.Add(T)
                         PO.Add(tmp2(4))
                         P = PO(PO.Count - 1)
-                        HO.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
-                        SO.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
+                        HO.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Vapor))
+                        SO.Add(Me.DW_CalcEntropy(Vz, T, P, State.Vapor))
                         VO.Add(1 / Me.AUX_VAPDENS(T, P) * Me.AUX_MMM(Phase.Mixture))
                         KI = tmp2(6)
                         T = T + options.DewCurveDeltaT
                     Else
-                        tmp2 = Me.FlashBase.Flash_PV(Me.RET_VMOL(Phase.Mixture), P, 1, options.DewCurveInitialTemperature, Me)
+                        tmp2 = Me.FlashBase.Flash_PV(Vz, P, 1, options.DewCurveInitialTemperature, Me)
                         TVD.Add(tmp2(4))
                         PO.Add(P)
                         T = TVD(TVD.Count - 1)
-                        HO.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
-                        SO.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
+                        HO.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Vapor))
+                        SO.Add(Me.DW_CalcEntropy(Vz, T, P, State.Vapor))
                         VO.Add(1 / Me.AUX_VAPDENS(T, P) * Me.AUX_MMM(Phase.Mixture))
                         KI = tmp2(6)
                         P = P + options.DewCurveDeltaP
@@ -3823,24 +3887,24 @@ redirect2:                  IObj?.SetCurrent()
 
                     If beta < 0.0 Then
                         Try
-                            tmp2 = Me.FlashBase.Flash_TV(Me.RET_VMOL(Phase.Mixture), T, 1, PO(PO.Count - 1), Me, False, KI)
+                            tmp2 = Me.FlashBase.Flash_TV(Vz, T, 1, PO(PO.Count - 1), Me, False, KI)
                             TVD.Add(T)
                             PO.Add(tmp2(4))
                             P = PO(PO.Count - 1)
-                            HO.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
-                            SO.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
+                            HO.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Vapor))
+                            SO.Add(Me.DW_CalcEntropy(Vz, T, P, State.Vapor))
                             VO.Add(1 / Me.AUX_VAPDENS(T, P) * Me.AUX_MMM(Phase.Mixture))
                             KI = tmp2(6)
                         Catch ex As Exception
                         End Try
                     Else
                         Try
-                            tmp2 = Me.FlashBase.Flash_PV(Me.RET_VMOL(Phase.Mixture), P, 1, TVD(TVD.Count - 1), Me, False, KI)
+                            tmp2 = Me.FlashBase.Flash_PV(Vz, P, 1, TVD(TVD.Count - 1), Me, False, KI)
                             TVD.Add(tmp2(4))
                             PO.Add(P)
                             T = TVD(TVD.Count - 1)
-                            HO.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
-                            SO.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), T, P, State.Vapor))
+                            HO.Add(Me.DW_CalcEnthalpy(Vz, T, P, State.Vapor))
+                            SO.Add(Me.DW_CalcEntropy(Vz, T, P, State.Vapor))
                             VO.Add(1 / Me.AUX_VAPDENS(T, P) * Me.AUX_MMM(Phase.Mixture))
                             KI = tmp2(6)
                         Catch ex As Exception
@@ -3974,8 +4038,8 @@ redirect2:                  IObj?.SetCurrent()
                     TVB.Add(Tc)
                     PB.Add(Pc)
                     VB.Add(Vc)
-                    HB.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), Tc, Pc, State.Vapor))
-                    SB.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), Tc, Pc, State.Vapor))
+                    HB.Add(Me.DW_CalcEnthalpy(Vz, Tc, Pc, State.Vapor))
+                    SB.Add(Me.DW_CalcEntropy(Vz, Tc, Pc, State.Vapor))
 
                     TVB.Add(0.0#)
                     PB.Add(0.0#)
@@ -3998,8 +4062,8 @@ redirect2:                  IObj?.SetCurrent()
                     TVD.Add(Tc)
                     PO.Add(Pc)
                     VO.Add(Vc)
-                    HO.Add(Me.DW_CalcEnthalpy(Me.RET_VMOL(Phase.Mixture), Tc, Pc, State.Vapor))
-                    SO.Add(Me.DW_CalcEntropy(Me.RET_VMOL(Phase.Mixture), Tc, Pc, State.Vapor))
+                    HO.Add(Me.DW_CalcEnthalpy(Vz, Tc, Pc, State.Vapor))
+                    SO.Add(Me.DW_CalcEntropy(Vz, Tc, Pc, State.Vapor))
 
                     TVD.Add(0.0#)
                     PO.Add(0.0#)
@@ -4108,7 +4172,7 @@ redirect2:                  IObj?.SetCurrent()
                 Do
                     If i < 2 Then
                         Try
-                            tmp2 = Me.FlashBase.Flash_PV(Me.RET_VMOL(Phase.Mixture), P, options.QualityValue, 0, Me, False, KI)
+                            tmp2 = Me.FlashBase.Flash_PV(Vz, P, options.QualityValue, 0, Me, False, KI)
                             TQ.Add(tmp2(4))
                             PQ.Add(P)
                             T = TQ(TQ.Count - 1)
@@ -4124,7 +4188,7 @@ redirect2:                  IObj?.SetCurrent()
                     Else
                         If beta < 2 Then
                             Try
-                                tmp2 = Me.FlashBase.Flash_TV(Me.RET_VMOL(Phase.Mixture), T, options.QualityValue, PQ(PQ.Count - 1), Me, True, KI)
+                                tmp2 = Me.FlashBase.Flash_TV(Vz, T, options.QualityValue, PQ(PQ.Count - 1), Me, True, KI)
                                 TQ.Add(T)
                                 PQ.Add(tmp2(4))
                                 P = PQ(PQ.Count - 1)
@@ -4148,7 +4212,7 @@ redirect2:                  IObj?.SetCurrent()
                             End Try
                         Else
                             Try
-                                tmp2 = Me.FlashBase.Flash_PV(Me.RET_VMOL(Phase.Mixture), P, options.QualityValue, TQ(TQ.Count - 1), Me, True, KI)
+                                tmp2 = Me.FlashBase.Flash_PV(Vz, P, options.QualityValue, TQ(TQ.Count - 1), Me, True, KI)
                                 TQ.Add(tmp2(4))
                                 PQ.Add(P)
                                 T = TQ(TQ.Count - 1)
@@ -5242,6 +5306,14 @@ redirect2:                  IObj?.SetCurrent()
             Next
 
             Return val
+
+        End Function
+
+        Public Function HasHenryConstants(compname As String) As Boolean
+
+            Dim CAS = Me.CurrentMaterialStream.Phases(0).Compounds(compname).ConstantProperties.CAS_Number
+
+            Return m_Henry.ContainsKey(CAS)
 
         End Function
 
@@ -6684,7 +6756,11 @@ Final3:
             If T / constprop.Critical_Temperature < 1 Then
                 With constprop
                     If .SurfaceTensionEquation <> "" And .SurfaceTensionEquation <> "0" And Not .IsIon And Not .IsSalt Then
-                        val = CalcCSTDepProp(.SurfaceTensionEquation, .Surface_Tension_Const_A, .Surface_Tension_Const_B, .Surface_Tension_Const_C, .Surface_Tension_Const_D, .Surface_Tension_Const_E, T, .Critical_Temperature)
+                        If Integer.TryParse(.SurfaceTensionEquation, New Integer) Then
+                            val = CalcCSTDepProp(.SurfaceTensionEquation, .Surface_Tension_Const_A, .Surface_Tension_Const_B, .Surface_Tension_Const_C, .Surface_Tension_Const_D, .Surface_Tension_Const_E, T, .Critical_Temperature)
+                        Else
+                            val = ParseEquation(.SurfaceTensionEquation, .Surface_Tension_Const_A, .Surface_Tension_Const_B, .Surface_Tension_Const_C, .Surface_Tension_Const_D, .Surface_Tension_Const_E, T)
+                        End If
                     ElseIf .IsIon Or .IsSalt Then
                         val = 0.0#
                     Else
@@ -11664,16 +11740,23 @@ Final3:
 
             Dim ci As Globalization.CultureInfo = Globalization.CultureInfo.InvariantCulture
 
-            Try
-                Me.UniqueID = (From el As XElement In data Select el Where el.Name = "ID").FirstOrDefault.Value
-                Me.Tag = (From el As XElement In data Select el Where el.Name = "Tag").FirstOrDefault.Value
-            Catch ex As Exception
-            End Try
+            Dim uid_el = (From el As XElement In data Select el Where el.Name = "ID").FirstOrDefault()
+            Dim tag_el = (From el As XElement In data Select el Where el.Name = "Tag").FirstOrDefault()
+
+            If uid_el IsNot Nothing Then Me.UniqueID = uid_el.Value
+            If tag_el IsNot Nothing Then Me.Tag = tag_el.Value
+
             Me.ComponentName = (From el As XElement In data Select el Where el.Name = "ComponentName").FirstOrDefault.Value
             Me.ComponentDescription = (From el As XElement In data Select el Where el.Name = "ComponentDescription").FirstOrDefault.Value
 
             Dim e1 = (From el As XElement In data Select el Where el.Name = "Parameters").FirstOrDefault
             If e1 IsNot Nothing Then Me.ParametersXMLString = e1.ToString()
+
+            e1 = (From el As XElement In data Select el Where el.Name = "UseHenryConstants").FirstOrDefault
+            If e1 IsNot Nothing Then UseHenryConstants = e1.Value
+
+            e1 = (From el As XElement In data Select el Where el.Name = "AutoEstimateMissingNRTLUNIQUACParameters").FirstOrDefault
+            If e1 IsNot Nothing Then AutoEstimateMissingNRTLUNIQUACParameters = e1.Value
 
             e1 = (From el As XElement In data Select el Where el.Name = "SingleCompoundCheckThreshold").FirstOrDefault
             If e1 IsNot Nothing Then SingleCompoundCheckThreshold = e1.Value.ToDoubleFromInvariant()
@@ -12269,6 +12352,9 @@ Final3:
                 If Not FlashSettings.ContainsKey(Interfaces.Enums.FlashSetting.PVFlash_TryIdealCalcOnFailure) Then
                     FlashSettings.Add(Interfaces.Enums.FlashSetting.PVFlash_TryIdealCalcOnFailure, True)
                 End If
+                If Not FlashSettings.ContainsKey(Interfaces.Enums.FlashSetting.FailSafeCalculationMode) Then
+                    FlashSettings.Add(Interfaces.Enums.FlashSetting.FailSafeCalculationMode, 1)
+                End If
             End If
 
         End Function
@@ -12291,6 +12377,9 @@ Final3:
                     Catch ex As Exception
                     End Try
                 End If
+
+                .Add(New XElement("UseHenryConstants", UseHenryConstants))
+                .Add(New XElement("AutoEstimateMissingNRTLUNIQUACParameters", AutoEstimateMissingNRTLUNIQUACParameters))
 
                 .Add(New XElement("SingleCompoundCheckThreshold", SingleCompoundCheckThreshold.ToString(ci)))
 

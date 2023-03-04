@@ -45,6 +45,9 @@ Partial Class SimulationObjectsPanel
         Me.PanelCE = New System.Windows.Forms.FlowLayoutPanel()
         Me.TabPage10 = New System.Windows.Forms.TabPage()
         Me.PanelUser = New System.Windows.Forms.FlowLayoutPanel()
+        Me.TabPage15 = New System.Windows.Forms.TabPage()
+        Me.PanelCustomModelsFOSSEE = New System.Windows.Forms.FlowLayoutPanel()
+        Me.Button1 = New System.Windows.Forms.Button()
         Me.TabPage11 = New System.Windows.Forms.TabPage()
         Me.PanelLogical = New System.Windows.Forms.FlowLayoutPanel()
         Me.TabPage13 = New System.Windows.Forms.TabPage()
@@ -64,6 +67,7 @@ Partial Class SimulationObjectsPanel
         Me.TabPage8.SuspendLayout()
         Me.TabPage9.SuspendLayout()
         Me.TabPage10.SuspendLayout()
+        Me.TabPage15.SuspendLayout()
         Me.TabPage11.SuspendLayout()
         Me.TabPage13.SuspendLayout()
         Me.TabPage14.SuspendLayout()
@@ -77,7 +81,6 @@ Partial Class SimulationObjectsPanel
         '
         'TabControl1
         '
-        resources.ApplyResources(Me.TabControl1, "TabControl1")
         Me.TabControl1.Controls.Add(Me.TabPage1)
         Me.TabControl1.Controls.Add(Me.TabPage2)
         Me.TabControl1.Controls.Add(Me.TabPage3)
@@ -88,26 +91,28 @@ Partial Class SimulationObjectsPanel
         Me.TabControl1.Controls.Add(Me.TabPage8)
         Me.TabControl1.Controls.Add(Me.TabPage9)
         Me.TabControl1.Controls.Add(Me.TabPage10)
+        Me.TabControl1.Controls.Add(Me.TabPage15)
         Me.TabControl1.Controls.Add(Me.TabPage11)
         Me.TabControl1.Controls.Add(Me.TabPage13)
         Me.TabControl1.Controls.Add(Me.TabPage14)
         Me.TabControl1.Controls.Add(Me.TabPage12)
+        resources.ApplyResources(Me.TabControl1, "TabControl1")
         Me.TabControl1.Name = "TabControl1"
         Me.TabControl1.SelectedIndex = 0
         '
         'TabPage1
         '
-        resources.ApplyResources(Me.TabPage1, "TabPage1")
+        Me.TabPage1.BackColor = System.Drawing.Color.White
         Me.TabPage1.Controls.Add(Me.PanelStreams)
+        resources.ApplyResources(Me.TabPage1, "TabPage1")
         Me.TabPage1.Name = "TabPage1"
-        Me.TabPage1.UseVisualStyleBackColor = True
         '
         'TabPage2
         '
-        resources.ApplyResources(Me.TabPage2, "TabPage2")
+        Me.TabPage2.BackColor = System.Drawing.Color.White
         Me.TabPage2.Controls.Add(Me.PanelPressure)
+        resources.ApplyResources(Me.TabPage2, "TabPage2")
         Me.TabPage2.Name = "TabPage2"
-        Me.TabPage2.UseVisualStyleBackColor = True
         '
         'PanelPressure
         '
@@ -116,146 +121,181 @@ Partial Class SimulationObjectsPanel
         '
         'TabPage3
         '
-        resources.ApplyResources(Me.TabPage3, "TabPage3")
         Me.TabPage3.Controls.Add(Me.PanelSeparators)
+        resources.ApplyResources(Me.TabPage3, "TabPage3")
         Me.TabPage3.Name = "TabPage3"
         Me.TabPage3.UseVisualStyleBackColor = True
         '
         'PanelSeparators
         '
         resources.ApplyResources(Me.PanelSeparators, "PanelSeparators")
+        Me.PanelSeparators.BackColor = System.Drawing.Color.White
         Me.PanelSeparators.Name = "PanelSeparators"
         '
         'TabPage4
         '
-        resources.ApplyResources(Me.TabPage4, "TabPage4")
         Me.TabPage4.Controls.Add(Me.PanelMixers)
+        resources.ApplyResources(Me.TabPage4, "TabPage4")
         Me.TabPage4.Name = "TabPage4"
         Me.TabPage4.UseVisualStyleBackColor = True
         '
         'PanelMixers
         '
         resources.ApplyResources(Me.PanelMixers, "PanelMixers")
+        Me.PanelMixers.BackColor = System.Drawing.Color.White
         Me.PanelMixers.Name = "PanelMixers"
         '
         'TabPage5
         '
-        resources.ApplyResources(Me.TabPage5, "TabPage5")
         Me.TabPage5.Controls.Add(Me.PanelExchangers)
+        resources.ApplyResources(Me.TabPage5, "TabPage5")
         Me.TabPage5.Name = "TabPage5"
         Me.TabPage5.UseVisualStyleBackColor = True
         '
         'PanelExchangers
         '
         resources.ApplyResources(Me.PanelExchangers, "PanelExchangers")
+        Me.PanelExchangers.BackColor = System.Drawing.Color.White
         Me.PanelExchangers.Name = "PanelExchangers"
         '
         'TabPage6
         '
-        resources.ApplyResources(Me.TabPage6, "TabPage6")
         Me.TabPage6.Controls.Add(Me.PanelReactors)
+        resources.ApplyResources(Me.TabPage6, "TabPage6")
         Me.TabPage6.Name = "TabPage6"
         Me.TabPage6.UseVisualStyleBackColor = True
         '
         'PanelReactors
         '
         resources.ApplyResources(Me.PanelReactors, "PanelReactors")
+        Me.PanelReactors.BackColor = System.Drawing.Color.White
         Me.PanelReactors.Name = "PanelReactors"
         '
         'TabPage7
         '
-        resources.ApplyResources(Me.TabPage7, "TabPage7")
         Me.TabPage7.Controls.Add(Me.PanelColumns)
+        resources.ApplyResources(Me.TabPage7, "TabPage7")
         Me.TabPage7.Name = "TabPage7"
         Me.TabPage7.UseVisualStyleBackColor = True
         '
         'PanelColumns
         '
         resources.ApplyResources(Me.PanelColumns, "PanelColumns")
+        Me.PanelColumns.BackColor = System.Drawing.Color.White
         Me.PanelColumns.Name = "PanelColumns"
         '
         'TabPage8
         '
-        resources.ApplyResources(Me.TabPage8, "TabPage8")
         Me.TabPage8.Controls.Add(Me.PanelSolids)
+        resources.ApplyResources(Me.TabPage8, "TabPage8")
         Me.TabPage8.Name = "TabPage8"
         Me.TabPage8.UseVisualStyleBackColor = True
         '
         'PanelSolids
         '
         resources.ApplyResources(Me.PanelSolids, "PanelSolids")
+        Me.PanelSolids.BackColor = System.Drawing.Color.White
         Me.PanelSolids.Name = "PanelSolids"
         '
         'TabPage9
         '
-        resources.ApplyResources(Me.TabPage9, "TabPage9")
         Me.TabPage9.Controls.Add(Me.PanelCE)
+        resources.ApplyResources(Me.TabPage9, "TabPage9")
         Me.TabPage9.Name = "TabPage9"
         Me.TabPage9.UseVisualStyleBackColor = True
         '
         'PanelCE
         '
         resources.ApplyResources(Me.PanelCE, "PanelCE")
+        Me.PanelCE.BackColor = System.Drawing.Color.White
         Me.PanelCE.Name = "PanelCE"
         '
         'TabPage10
         '
-        resources.ApplyResources(Me.TabPage10, "TabPage10")
         Me.TabPage10.Controls.Add(Me.PanelUser)
+        resources.ApplyResources(Me.TabPage10, "TabPage10")
         Me.TabPage10.Name = "TabPage10"
         Me.TabPage10.UseVisualStyleBackColor = True
         '
         'PanelUser
         '
         resources.ApplyResources(Me.PanelUser, "PanelUser")
+        Me.PanelUser.BackColor = System.Drawing.Color.White
         Me.PanelUser.Name = "PanelUser"
+        '
+        'TabPage15
+        '
+        Me.TabPage15.Controls.Add(Me.PanelCustomModelsFOSSEE)
+        Me.TabPage15.Controls.Add(Me.Button1)
+        resources.ApplyResources(Me.TabPage15, "TabPage15")
+        Me.TabPage15.Name = "TabPage15"
+        Me.TabPage15.UseVisualStyleBackColor = True
+        '
+        'PanelCustomModelsFOSSEE
+        '
+        resources.ApplyResources(Me.PanelCustomModelsFOSSEE, "PanelCustomModelsFOSSEE")
+        Me.PanelCustomModelsFOSSEE.BackColor = System.Drawing.Color.White
+        Me.PanelCustomModelsFOSSEE.Name = "PanelCustomModelsFOSSEE"
+        '
+        'Button1
+        '
+        Me.Button1.BackColor = System.Drawing.Color.White
+        Me.Button1.BackgroundImage = Global.DWSIM.My.Resources.Resources.fossee
+        resources.ApplyResources(Me.Button1, "Button1")
+        Me.Button1.FlatAppearance.BorderSize = 0
+        Me.Button1.Name = "Button1"
+        Me.Button1.UseVisualStyleBackColor = False
         '
         'TabPage11
         '
-        resources.ApplyResources(Me.TabPage11, "TabPage11")
         Me.TabPage11.Controls.Add(Me.PanelLogical)
+        resources.ApplyResources(Me.TabPage11, "TabPage11")
         Me.TabPage11.Name = "TabPage11"
         Me.TabPage11.UseVisualStyleBackColor = True
         '
         'PanelLogical
         '
         resources.ApplyResources(Me.PanelLogical, "PanelLogical")
+        Me.PanelLogical.BackColor = System.Drawing.Color.White
         Me.PanelLogical.Name = "PanelLogical"
         '
         'TabPage13
         '
-        resources.ApplyResources(Me.TabPage13, "TabPage13")
         Me.TabPage13.Controls.Add(Me.PanelIndicators)
+        resources.ApplyResources(Me.TabPage13, "TabPage13")
         Me.TabPage13.Name = "TabPage13"
         Me.TabPage13.UseVisualStyleBackColor = True
         '
         'PanelIndicators
         '
         resources.ApplyResources(Me.PanelIndicators, "PanelIndicators")
+        Me.PanelIndicators.BackColor = System.Drawing.Color.White
         Me.PanelIndicators.Name = "PanelIndicators"
         '
         'TabPage14
         '
-        resources.ApplyResources(Me.TabPage14, "TabPage14")
         Me.TabPage14.Controls.Add(Me.PanelControllers)
+        resources.ApplyResources(Me.TabPage14, "TabPage14")
         Me.TabPage14.Name = "TabPage14"
         Me.TabPage14.UseVisualStyleBackColor = True
         '
         'PanelControllers
         '
         resources.ApplyResources(Me.PanelControllers, "PanelControllers")
+        Me.PanelControllers.BackColor = System.Drawing.Color.White
         Me.PanelControllers.Name = "PanelControllers"
         '
         'TabPage12
         '
-        resources.ApplyResources(Me.TabPage12, "TabPage12")
         Me.TabPage12.Controls.Add(Me.PanelOther)
+        resources.ApplyResources(Me.TabPage12, "TabPage12")
         Me.TabPage12.Name = "TabPage12"
         Me.TabPage12.UseVisualStyleBackColor = True
         '
         'PanelOther
         '
         resources.ApplyResources(Me.PanelOther, "PanelOther")
+        Me.PanelOther.BackColor = System.Drawing.Color.White
         Me.PanelOther.Name = "PanelOther"
         '
         'SimulationObjectsPanel
@@ -276,6 +316,7 @@ Partial Class SimulationObjectsPanel
         Me.TabPage8.ResumeLayout(False)
         Me.TabPage9.ResumeLayout(False)
         Me.TabPage10.ResumeLayout(False)
+        Me.TabPage15.ResumeLayout(False)
         Me.TabPage11.ResumeLayout(False)
         Me.TabPage13.ResumeLayout(False)
         Me.TabPage14.ResumeLayout(False)
@@ -312,4 +353,7 @@ Partial Class SimulationObjectsPanel
     Friend WithEvents PanelControllers As FlowLayoutPanel
     Friend WithEvents TabPage9 As TabPage
     Friend WithEvents PanelCE As FlowLayoutPanel
+    Friend WithEvents TabPage15 As TabPage
+    Friend WithEvents PanelCustomModelsFOSSEE As FlowLayoutPanel
+    Friend WithEvents Button1 As Button
 End Class

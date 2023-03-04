@@ -13,6 +13,8 @@ Imports DWSIM.SharedClasses.DWSIM.Flowsheet
 Imports IronPython.Hosting
 Imports DWSIM.Interfaces
 Imports DWSIM.SharedClassesCSharp.FilePicker
+Imports Microsoft.Scripting.Utils
+Imports PythonConsoleControl
 
 <System.Serializable()> Public Class FormScript
 
@@ -28,6 +30,22 @@ Imports DWSIM.SharedClassesCSharp.FilePicker
     Private Sub FormVBScript_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Me.Load
 
         ExtensionMethods.ChangeDefaultFont(Me)
+
+        Using g1 = Me.CreateGraphics()
+
+            Settings.DpiScale = g1.DpiX / 96.0
+
+            Me.ToolStrip1.AutoSize = False
+            Me.ToolStrip1.Size = New Size(ToolStrip1.Width, 28 * Settings.DpiScale)
+            Me.ToolStrip1.ImageScalingSize = New Size(20 * Settings.DpiScale, 20 * Settings.DpiScale)
+            For Each item In Me.ToolStrip1.Items
+                If TryCast(item, ToolStripButton) IsNot Nothing Then
+                    DirectCast(item, ToolStripButton).Size = New Size(ToolStrip1.ImageScalingSize.Width, ToolStrip1.ImageScalingSize.Height)
+                End If
+            Next
+            Me.ToolStrip1.Invalidate()
+
+        End Using
 
         AddHandler fc.FormSurface.FlowsheetSurface.StatusUpdate, Sub(sender2, e2)
                                                                      ShouldUpdateSnippets = True
@@ -183,9 +201,15 @@ Imports DWSIM.SharedClassesCSharp.FilePicker
 
         Dim paths(My.Settings.ScriptPaths.Count - 1) As String
 
+        Dim paths0 = engine.GetSearchPaths().ToList()
+
         My.Settings.ScriptPaths.CopyTo(paths, 0)
+
+        paths0.AddRange(paths)
+        paths0.Add(Path.Combine(My.Application.Info.DirectoryPath, "Lib"))
+
         Try
-            engine.SetSearchPaths(paths)
+            engine.SetSearchPaths(paths0)
         Catch ex As Exception
         End Try
 

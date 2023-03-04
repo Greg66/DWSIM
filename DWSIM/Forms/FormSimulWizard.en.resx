@@ -213,10 +213,10 @@ Click "Next" to continue.</value>
     <value>698, 286</value>
   </data>
   <data name="PictureBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>293, 299</value>
+    <value>253, 346</value>
   </data>
   <data name="Label10.Location" type="System.Drawing.Point, System.Drawing">
-    <value>312, 303</value>
+    <value>272, 350</value>
   </data>
   <data name="Label10.Size" type="System.Drawing.Size, System.Drawing">
     <value>324, 15</value>
@@ -225,7 +225,7 @@ Click "Next" to continue.</value>
     <value>,  but you can use all available packages without restrictions.</value>
   </data>
   <data name="Label9.Location" type="System.Drawing.Point, System.Drawing">
-    <value>51, 303</value>
+    <value>11, 350</value>
   </data>
   <data name="Label9.Size" type="System.Drawing.Size, System.Drawing">
     <value>237, 15</value>
@@ -269,26 +269,32 @@ Click "Next" to continue.</value>
   <data name="rbNoFlash.Text" xml:space="preserve">
     <value>Do not calculate</value>
   </data>
+  <data name="FlowLayoutPanel1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>10, 371</value>
+  </data>
   <data name="Button8.Text" xml:space="preserve">
     <value>Add</value>
   </data>
-  <data name="LinkLabel2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>543, 15</value>
+  <data name="cbPPFilter.Location" type="System.Drawing.Point, System.Drawing">
+    <value>74, 19</value>
   </data>
-  <data name="LinkLabel2.Text" xml:space="preserve">
-    <value>Click here to get help on selecting the best Thermodynamic Model/Property Package for your system.</value>
+  <data name="cbPPFilter.Size" type="System.Drawing.Size, System.Drawing">
+    <value>245, 23</value>
   </data>
-  <data name="LinkLabelPropertyMethods.Size" type="System.Drawing.Size, System.Drawing">
-    <value>593, 15</value>
-  </data>
-  <data name="LinkLabelPropertyMethods.Text" xml:space="preserve">
-    <value>Click here to learn which methods and correlations are being used by the packages to calculate fluid properties.</value>
+  <data name="Label11.Location" type="System.Drawing.Point, System.Drawing">
+    <value>7, 24</value>
   </data>
   <data name="Column6.ToolTipText" xml:space="preserve">
     <value>Recommended</value>
   </data>
   <data name="DataGridViewTextBoxColumn2.HeaderText" xml:space="preserve">
     <value>Type</value>
+  </data>
+  <data name="DataGridViewPP.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 48</value>
+  </data>
+  <data name="GroupBox6.Size" type="System.Drawing.Size, System.Drawing">
+    <value>325, 298</value>
   </data>
   <data name="GroupBox6.Text" xml:space="preserve">
     <value>Available Property Packages</value>
@@ -299,6 +305,12 @@ Click "Next" to continue.</value>
   <data name="Column17.HeaderText" xml:space="preserve">
     <value>Type</value>
   </data>
+  <data name="dgvpp.Size" type="System.Drawing.Size, System.Drawing">
+    <value>292, 276</value>
+  </data>
+  <data name="GroupBox12.Size" type="System.Drawing.Size, System.Drawing">
+    <value>298, 298</value>
+  </data>
   <data name="GroupBox12.Text" xml:space="preserve">
     <value>Added Property Packages</value>
   </data>
@@ -307,12 +319,6 @@ Click "Next" to continue.</value>
   </data>
   <data name="Label4.Text" xml:space="preserve">
     <value>Select and Add the Property Packages that you want to use in your simulation. The first on the list will be used by default by all flowsheet objects. Click "Next" to continue.</value>
-  </data>
-  <data name="PictureBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>11, 295</value>
-  </data>
-  <data name="PictureBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>32, 32</value>
   </data>
   <data name="WizardPage3.Text" xml:space="preserve">
     <value>Property Packages</value>
@@ -353,6 +359,12 @@ Click "Finish" to exit the wizard and start designing the simulation model.</val
   </data>
   <data name="WizardPage5.Text" xml:space="preserve">
     <value>System of Units</value>
+  </data>
+  <data name="Label18.Size" type="System.Drawing.Size, System.Drawing">
+    <value>663, 50</value>
+  </data>
+  <data name="Label17.Size" type="System.Drawing.Size, System.Drawing">
+    <value>663, 50</value>
   </data>
   <data name="StepWizardControl1.Title" xml:space="preserve">
     <value>Simulation Configuration Wizard</value>

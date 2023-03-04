@@ -98,6 +98,8 @@ Public Class FormSimulSettings
 
     Private Sub FormStSim_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
 
+        FormMain.AnalyticsProvider?.RegisterEvent("Number of Reactions", CurrentFlowsheet.Reactions.Count, Nothing)
+
         If Me.CurrentFlowsheet.Options.SelectedComponents.Count = 0 And Me.CurrentFlowsheet.Options.PropertyPackages.Count = 0 Then
             MessageBox.Show(DWSIM.App.GetLocalString("Adicionesubstnciassi"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
             MessageBox.Show(DWSIM.App.GetLocalString("NoexistemPacotesdePr"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -129,6 +131,8 @@ Public Class FormSimulSettings
         '    SetHeights = True
 
         'End If
+
+        CurrentFlowsheet.SetDirtyStatus()
 
         Dim pathsep As Char = Path.DirectorySeparatorChar
 
@@ -299,6 +303,8 @@ Public Class FormSimulSettings
 
         cbSpecCalcMode.SelectedIndex = CurrentFlowsheet.Options.SpecCalculationMode
 
+        chkForceObjectCalculation.Checked = CurrentFlowsheet.Options.ForceObjectSolving
+
         Select Case CurrentFlowsheet.Options.ForceStreamPhase
             Case ForcedPhase.None
                 cbForcePhase.SelectedIndex = 0
@@ -319,6 +325,8 @@ Public Class FormSimulSettings
         chkESShowE.Checked = CurrentFlowsheet.Options.DisplayEnergyStreamPowerValue
 
         chkShowDynProps.Checked = CurrentFlowsheet.Options.DisplayDynamicPropertyValues
+
+        chkIncludeFlowsheetMessagesInFile.Checked = CurrentFlowsheet.Options.SaveFlowsheetMessagesInFile
 
         Me.loaded = True
 
@@ -729,7 +737,7 @@ Public Class FormSimulSettings
 
     Private Sub DataGridView1_CellValueChanged1(ByVal sender As Object, ByVal e As System.Windows.Forms.DataGridViewCellEventArgs) Handles DataGridView1.CellValueChanged
 
-        If loaded Then
+        If loaded And e.RowIndex >= 0 Then
 
             Dim cell As DataGridViewCell = Me.DataGridView1.Rows(e.RowIndex).Cells(e.ColumnIndex)
             Dim oldvalue As String = ""
@@ -1170,7 +1178,7 @@ Public Class FormSimulSettings
 
     Private Sub dgvpp_CellValueChanged(ByVal sender As System.Object, ByVal e As System.Windows.Forms.DataGridViewCellEventArgs) Handles dgvpp.CellValueChanged
         If loaded Then
-            CurrentFlowsheet.Options.PropertyPackages(dgvpp.Rows(e.RowIndex).Cells(0).Value).Tag = dgvpp.Rows(e.RowIndex).Cells(1).Value
+            If e.RowIndex >= 0 Then CurrentFlowsheet.Options.PropertyPackages(dgvpp.Rows(e.RowIndex).Cells(0).Value).Tag = dgvpp.Rows(e.RowIndex).Cells(1).Value
         End If
     End Sub
 
@@ -1306,7 +1314,7 @@ Public Class FormSimulSettings
         End If
 
         Dim pp As PropertyPackages.PropertyPackage
-        pp = FormMain.PropertyPackages(Me.DataGridViewPP.SelectedRows(0).Cells(0).Value).Clone
+        pp = FormMain.PropertyPackages(Me.DataGridViewPP.SelectedRows(0).Cells(0).Value).Clone()
 
         If pp Is Nothing Then Exit Sub
 
@@ -1866,7 +1874,21 @@ Public Class FormSimulSettings
     End Sub
 
     Private Sub cbSpecCalcMode_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbSpecCalcMode.SelectedIndexChanged
+
         CurrentFlowsheet.Options.SpecCalculationMode = cbSpecCalcMode.SelectedIndex
+
+    End Sub
+
+    Private Sub chkForceObjectCalculation_CheckedChanged(sender As Object, e As EventArgs) Handles chkForceObjectCalculation.CheckedChanged
+
+        CurrentFlowsheet.Options.ForceObjectSolving = chkForceObjectCalculation.Checked
+
+    End Sub
+
+    Private Sub chkIncludeFlowsheetMessagesInFile_CheckedChanged(sender As Object, e As EventArgs) Handles chkIncludeFlowsheetMessagesInFile.CheckedChanged
+
+        CurrentFlowsheet.Options.SaveFlowsheetMessagesInFile = chkIncludeFlowsheetMessagesInFile.Checked
+
     End Sub
 
     Private Sub FormSimulSettings_Shown(sender As Object, e As EventArgs) Handles Me.Shown

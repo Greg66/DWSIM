@@ -116,8 +116,6 @@ Public Class FormMain
 
         ExtensionMethods.ChangeDefaultFont(Me)
 
-        If IsPro Then StatusStrip1.Visible = False
-
         Using g1 = Me.CreateGraphics()
 
             Settings.DpiScale = g1.DpiX / 96.0
@@ -141,10 +139,6 @@ Public Class FormMain
         ' SharedClassesCSharp.FilePicker.FilePickerService.GetInstance().SetFilePickerFactory(Function() New Simulate365.FormFactories.S365FilePickerForm())
 
         If GlobalSettings.Settings.OldUI Then
-
-#If LINUX = False Then
-            If Not IsPro Then Icon = My.Resources.DWSIM_Icon_41
-#End If
 
             calculatorassembly = My.Application.Info.LoadedAssemblies.Where(Function(x) x.FullName.Contains("DWSIM.Thermodynamics,")).FirstOrDefault
             unitopassembly = My.Application.Info.LoadedAssemblies.Where(Function(x) x.FullName.Contains("DWSIM.UnitOperations")).FirstOrDefault
@@ -184,7 +178,11 @@ Public Class FormMain
                 My.Application.UtilityPlugins.Add(ip.UniqueID, ip)
             Next
 
-            LoadExtenders()
+            tsmiFreeProTrial.Visible = Not IsPro
+
+#If LINUX = False Then
+            If IsPro Then StatusStrip1.Visible = False
+#End If
 
             'Search and populate CAPE-OPEN Flowsheet Monitoring Object collection
             'SearchCOMOs() 'doing this only when the user hovers the mouse over the plugins toolstrip menu item
@@ -201,6 +199,19 @@ Public Class FormMain
             SetupWelcomeScreen()
 
         End If
+
+    End Sub
+
+    Private Sub UpdateIcon()
+
+
+#If LINUX = False Then
+        If Not IsPro Then
+            Icon = My.Resources.DWSIM_Icon_41
+        Else
+            Icon = My.Resources.Icon1282
+        End If
+#End If
 
     End Sub
 
@@ -780,11 +791,11 @@ Public Class FormMain
         SRKPP.ComponentDescription = DWSIM.App.GetLocalString("DescSoaveRedlichKwongSRK")
         PropertyPackages.Add(SRKPP.ComponentName.ToString, SRKPP)
 
-        Dim PRLKPP As PengRobinsonLKPropertyPackage = New PengRobinsonLKPropertyPackage()
-        PRLKPP.ComponentName = "Peng-Robinson / Lee-Kesler (PR/LK)"
-        PRLKPP.ComponentDescription = DWSIM.App.GetLocalString("DescPRLK")
+        'Dim PRLKPP As PengRobinsonLKPropertyPackage = New PengRobinsonLKPropertyPackage()
+        'PRLKPP.ComponentName = "Peng-Robinson / Lee-Kesler (PR/LK)"
+        'PRLKPP.ComponentDescription = DWSIM.App.GetLocalString("DescPRLK")
 
-        PropertyPackages.Add(PRLKPP.ComponentName.ToString, PRLKPP)
+        'PropertyPackages.Add(PRLKPP.ComponentName.ToString, PRLKPP)
 
         Dim UPP As UNIFACPropertyPackage = New UNIFACPropertyPackage()
         UPP.ComponentName = "UNIFAC"
@@ -876,11 +887,11 @@ Public Class FormMain
 
         'PropertyPackages.Add(DHPP.ComponentName.ToString, DHPP)
 
-        Dim BOPP As BlackOilPropertyPackage = New BlackOilPropertyPackage()
-        BOPP.ComponentName = "Black Oil"
-        BOPP.ComponentDescription = DWSIM.App.GetLocalString("DescBOPP")
+        'Dim BOPP As BlackOilPropertyPackage = New BlackOilPropertyPackage()
+        'BOPP.ComponentName = "Black Oil"
+        'BOPP.ComponentDescription = DWSIM.App.GetLocalString("DescBOPP")
 
-        PropertyPackages.Add(BOPP.ComponentName.ToString, BOPP)
+        'PropertyPackages.Add(BOPP.ComponentName.ToString, BOPP)
 
         Dim GERGPP As GERG2008PropertyPackage = New GERG2008PropertyPackage()
 
@@ -896,13 +907,13 @@ Public Class FormMain
 
         PropertyPackages.Add(PR78PP.ComponentName.ToString, PR78PP)
 
-        Dim PR78Adv As PengRobinson1978AdvancedPropertyPackage = New PengRobinson1978AdvancedPropertyPackage()
+        'Dim PR78Adv As PengRobinson1978AdvancedPropertyPackage = New PengRobinson1978AdvancedPropertyPackage()
 
-        PropertyPackages.Add(PR78Adv.ComponentName.ToString, PR78Adv)
+        'PropertyPackages.Add(PR78Adv.ComponentName.ToString, PR78Adv)
 
-        Dim SRKAdv As SoaveRedlichKwongAdvancedPropertyPackage = New SoaveRedlichKwongAdvancedPropertyPackage()
+        'Dim SRKAdv As SoaveRedlichKwongAdvancedPropertyPackage = New SoaveRedlichKwongAdvancedPropertyPackage()
 
-        PropertyPackages.Add(SRKAdv.ComponentName.ToString, SRKAdv)
+        'PropertyPackages.Add(SRKAdv.ComponentName.ToString, SRKAdv)
 
         Dim otherpps = SharedClasses.Utility.LoadAdditionalPropertyPackages()
 
@@ -965,7 +976,7 @@ Public Class FormMain
 
     Private Sub FormParent_Shown(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Shown
 
-        tsmiFreeProTrial.Visible = Not IsPro
+        UpdateIcon()
 
         Dim cmdLine() As String = System.Environment.GetCommandLineArgs()
 
@@ -1020,6 +1031,14 @@ Public Class FormMain
 
             OpenWelcomeScreen()
 
+        End If
+
+        Dim currver = Assembly.GetExecutingAssembly().GetName().Version.ToString()
+        If (Settings.CurrentVersion <> currver) Then
+            Settings.CurrentVersion = currver
+            My.Settings.CurrentVersion = currver
+            Dim frmwn As New FormWhatsNew()
+            frmwn.Show()
         End If
 
         AnalyticsProvider?.SetMainForm(Me)
@@ -2796,7 +2815,7 @@ Public Class FormMain
                 form.WriteToLog(ex.Message.ToString & ": " & ex.InnerException.ToString, Color.Red, MessageType.GeneralError)
             Next
         Else
-            form.WriteToLog(DWSIM.App.GetLocalString("Arquivo") & filename & DWSIM.App.GetLocalString("carregadocomsucesso"), Color.Blue, MessageType.Information)
+            'form.WriteToLog(DWSIM.App.GetLocalString("Arquivo") & filename & DWSIM.App.GetLocalString("carregadocomsucesso"), Color.Blue, MessageType.Information)
         End If
 
         form.UpdateFormText()
@@ -3338,7 +3357,7 @@ Public Class FormMain
                 form.WriteToLog(ex.Message.ToString & ": " & ex.InnerException.ToString, Color.Red, MessageType.GeneralError)
             Next
         Else
-            form.WriteToLog(DWSIM.App.GetLocalString("Arquivo") & DWSIM.App.GetLocalString("carregadocomsucesso"), Color.Blue, MessageType.Information)
+            'form.WriteToLog(DWSIM.App.GetLocalString("Arquivo") & DWSIM.App.GetLocalString("carregadocomsucesso"), Color.Blue, MessageType.Information)
         End If
 
         form.UpdateFormText()
@@ -4610,6 +4629,10 @@ Label_00CC:
     End Sub
 
     Private Sub NovoEstudoDoCriadorDeComponentesToolStripMenuItem_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles NovoEstudoDoCriadorDeComponentesToolStripMenuItem.Click
+
+        Me.WelcomePanel.Visible = False
+        PainelDeBoasvindasToolStripMenuItem.Checked = False
+
         Dim NewMDIChild As New FormCompoundCreator()
 
         RaiseEvent ToolOpened("New Compound Creator", New EventArgs())
@@ -4621,9 +4644,14 @@ Label_00CC:
         Me.ActivateMdiChild(NewMDIChild)
         NewMDIChild.Show()
         m_childcount += 1
+
     End Sub
 
     Private Sub NovoEstudoDeRegressaoDeDadosToolStripMenuItem_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles NovoEstudoDeRegressaoDeDadosToolStripMenuItem.Click
+
+        Me.WelcomePanel.Visible = False
+        PainelDeBoasvindasToolStripMenuItem.Checked = False
+
         Dim NewMDIChild As New FormDataRegression()
 
         RaiseEvent ToolOpened("New Regression Study", New EventArgs())
@@ -4638,6 +4666,10 @@ Label_00CC:
     End Sub
 
     Private Sub NovoRegressaoUNIFACIPs_Click(sender As Object, e As EventArgs) Handles NovoRegressaoUNIFACIPs.Click
+
+        Me.WelcomePanel.Visible = False
+        PainelDeBoasvindasToolStripMenuItem.Checked = False
+
         Dim NewMDIChild As New FormUNIFACRegression()
 
         RaiseEvent ToolOpened("New UNIFAC IP Regression", New EventArgs())
@@ -4776,7 +4808,7 @@ Label_00CC:
     End Sub
 
     Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles tsmiFreeProTrial.Click
-        Process.Start("https://simulate365.com/registration-dwsim-pro/")
+        Process.Start("https://simulate365.com/registration/")
     End Sub
 
     Private Sub AbrirDoDashboardToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AbrirDoDashboardToolStripMenuItem.Click
@@ -4803,11 +4835,11 @@ Label_00CC:
         Process.Start("https://discord.com/channels/974049809176608818/974049809176608821")
     End Sub
 
-    Private Sub ToolStripDropDownButton2_Click(sender As Object, e As EventArgs) Handles ToolStripDropDownButton2.Click
+    Private Sub ToolStripDropDownButton2_Click(sender As Object, e As EventArgs) Handles tsbdonate1.Click
         Process.Start("https://www.buymeacoffee.com/dwsim")
     End Sub
 
-    Private Sub ToolStripDropDownButton1_Click(sender As Object, e As EventArgs) Handles ToolStripDropDownButton1.Click
+    Private Sub ToolStripDropDownButton1_Click(sender As Object, e As EventArgs) Handles tsbdonate2.Click
         Process.Start("https://www.patreon.com/dwsim")
     End Sub
 
@@ -4815,6 +4847,11 @@ Label_00CC:
 
         LoadFileDialog()
 
+    End Sub
+
+    Private Sub WhatsNewToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles WhatsNewToolStripMenuItem.Click
+        Dim frm As New FormWhatsNew()
+        frm.Show()
     End Sub
 
     Private Sub tsbInspector_CheckedChanged(sender As Object, e As EventArgs) Handles tsbInspector.CheckedChanged

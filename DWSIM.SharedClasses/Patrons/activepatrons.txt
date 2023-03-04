@@ -17,6 +17,7 @@ Christian Hornhofer
 Christian Jordan
 Christian Pedersen
 CollectiveObjective
+Daniel Bajolet
 Daniel Dornellas Athayde
 David Miller
 David Whitlock
@@ -40,22 +41,24 @@ John Kossik
 Jonathan
 Joseph Attia
 Juan Moreno
+Kenneth Troldal
 Kiran Pashikanti
 Lauterbach Verfahrenstechnik GmbH
 Leonard Seed
 Les Waymont
 Lewis Estall
 Luca Finardi
-Marcelo Accorsi Miranda
 Marcos AF Silva
-Marko Likon
 Martin Heiser
 Masahiro Sakai
 Michael Papantoniou
+Mohan Vaze
+MYSim Corp.
 Nicolas Spogis
 Odnei Macalossi
 Okechukwu Nwadigo
 Pablo Jimenez
+Paulo Bernardo
 Pedro Sabóia
 Petroconsulting LLC
 Protherm Systems
@@ -69,7 +72,6 @@ Rupert Easter
 Ryszard Sadowski
 Shailesh Paranjpe
 Shankar Ananth
-Shijin Roh
 Steven Sandoval
 Tetsuo Fuchino
 Tibor Lányi

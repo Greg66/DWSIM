@@ -54,7 +54,10 @@ Namespace Streams
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public f As MaterialStreamEditor
 
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public _pp As PropertyPackages.PropertyPackage
+
         Public _ppid As String = ""
+
+        Private _ppwasset As Boolean = False
 
         Protected m_Phases As New Dictionary(Of Integer, IPhase)
 
@@ -79,6 +82,8 @@ Namespace Streams
         Public Property ForcePhase As ForcedPhase = ForcedPhase.GlobalDef Implements IMaterialStream.ForcePhase
 
         Public Property TotalEnergyFlow As Double = 0.0
+
+        Public Property LastSolutionInputData As MaterialStreamInputData
 
 #Region "    XML serialization"
 
@@ -161,6 +166,38 @@ Namespace Streams
 
         End Function
 
+        Public Overrides Sub CheckDirtyStatus()
+
+            Dim dirty As Boolean = False
+            Dim epsilon As Double = 0.000001
+
+            If LastSolutionInputData IsNot Nothing Then
+
+                If Math.Abs(GetTemperature() - LastSolutionInputData.Temperature) > epsilon Then dirty = True
+                If Math.Abs(GetPressure() - LastSolutionInputData.Pressure) > epsilon Then dirty = True
+                If Math.Abs(GetMassFlow() - LastSolutionInputData.MassFlow) > epsilon Then dirty = True
+                If Math.Abs(GetMolarFlow() - LastSolutionInputData.MolarFlow) > epsilon Then dirty = True
+                If Math.Abs(GetVolumetricFlow() - LastSolutionInputData.VolumetricFlow) > epsilon Then dirty = True
+                If Math.Abs(GetMassEnthalpy() - LastSolutionInputData.Enthalpy) > epsilon Then dirty = True
+                If Math.Abs(GetMassEntropy() - LastSolutionInputData.Entropy) > epsilon Then dirty = True
+                If Math.Abs(Phases(2).Properties.molarfraction.GetValueOrDefault() - LastSolutionInputData.VaporFraction) > epsilon Then dirty = True
+
+                If Phases(0).Compounds.Count <> LastSolutionInputData.MolarComposition.Count Then dirty = True
+
+                Dim comp = GetOverallComposition()
+
+                For i = 0 To LastSolutionInputData.MolarComposition.Count - 1
+
+                    If Math.Abs(comp(i) - LastSolutionInputData.MolarComposition(i)) > epsilon Then dirty = True
+
+                Next
+
+                SetDirtyStatus(dirty)
+
+            End If
+
+        End Sub
+
         Public Overrides Sub Validate()
 
             Dim mytag As String = ""
@@ -191,7 +228,7 @@ Namespace Streams
         End Function
 
         Public Function GetPropertyPackageObjectCopy() As Object Implements IMaterialStream.GetPropertyPackageObjectCopy
-            Return PropertyPackage.Clone
+            Return PropertyPackage.Clone()
         End Function
 
         Sub SetPropertyPackage(pp As Object) Implements IMaterialStream.SetPropertyPackageObject
@@ -202,6 +239,24 @@ Namespace Streams
             PropertyPackage.CurrentMaterialStream = ms
         End Sub
 
+        Public Overrides Sub SetPropertyPackageInstance(PP As IPropertyPackage)
+
+            _ppwasset = True
+            _pp = PP
+
+        End Sub
+
+        Public Overrides Function ClearPropertyPackageInstance() As Boolean
+
+            Dim hadvalue As Boolean = _pp IsNot Nothing
+
+            _pp = Nothing
+            _ppwasset = False
+
+            Return hadvalue
+
+        End Function
+
         ''' <summary>
         ''' Gets or sets the associated Property Package for this stream.
         ''' </summary>
@@ -210,28 +265,35 @@ Namespace Streams
         ''' <remarks></remarks>
         <Xml.Serialization.XmlIgnore()> Public Shadows Property PropertyPackage() As PropertyPackage
             Get
-                If Not _pp Is Nothing Then Return _pp
                 If _ppid Is Nothing Then _ppid = ""
-                If Not FlowSheet Is Nothing Then
+                If _pp IsNot Nothing And _ppwasset Then
+                    Return _pp
+                ElseIf _pp IsNot Nothing AndAlso FlowSheet.PropertyPackages.ContainsKey(_pp.UniqueID) Then
+                    Return FlowSheet.PropertyPackages(_pp.UniqueID)
+                Else
                     If FlowSheet.PropertyPackages.ContainsKey(_ppid) Then
                         Return FlowSheet.PropertyPackages(_ppid)
                     Else
-                        For Each pp As PropertyPackages.PropertyPackage In FlowSheet.PropertyPackages.Values
-                            _ppid = pp.UniqueID
-                            Return pp
-                            Exit For
-                        Next
+                        Dim firstpp = FlowSheet.PropertyPackages.Values.First()
+                        _ppid = firstpp.UniqueID
+                        Return firstpp
                     End If
-                Else
-                    _ppid = _pp?.UniqueID
-                    Return _pp
                 End If
-                Return Nothing
             End Get
             Set(ByVal value As PropertyPackage)
                 If value IsNot Nothing Then
-                    _ppid = value.UniqueID
-                    _pp = value
+                    If FlowSheet Is Nothing Then
+                        _ppwasset = True
+                        _pp = value
+                    Else
+                        If FlowSheet.PropertyPackages.ContainsKey(value.UniqueID) Then
+                            _ppid = value.UniqueID
+                        Else
+                            _ppwasset = True
+                            _pp = value
+                        End If
+                    End If
+                    SetDirtyStatus(True)
                 Else
                     _pp = Nothing
                 End If
@@ -391,6 +453,8 @@ Namespace Streams
         ''' <remarks></remarks>
         Public Overloads Sub Calculate(equilibrium As Boolean, properties As Boolean)
 
+            LastSolutionInputData = Nothing
+
             Dim IObj As Inspector.InspectorItem = Inspector.Host.GetNewInspectorItem()
 
             Inspector.Host.CheckAndAdd(IObj, "", "Calculate", If(GraphicObject IsNot Nothing, GraphicObject.Tag, "Temporary Object") & " (" & GetDisplayName() & ")", "Material Stream Calculation Routine", True)
@@ -488,6 +552,12 @@ Namespace Streams
                 IObj?.Paragraphs.Add(String.Format("Flash Algorithm: {0}", Me.PropertyPackage.FlashBase.GetType.Name))
 
                 If equilibrium And comp > 0.0# Then
+
+                    If ForcePhase <> ForcedPhase.GlobalDef And
+                        FlowSheet IsNot Nothing And
+                        GraphicObject IsNot Nothing Then
+                        FlowSheet.ShowMessage(String.Format("{0}: stream phase is defined/overriden to '{1}'", GraphicObject.Tag, ForcePhase), IFlowsheet.MessageType.Warning)
+                    End If
 
                     IObj?.Paragraphs.Add("Phase Equilibria will be calculated using the currently selected Property Package and Flash Algorithm.")
 
@@ -774,6 +844,18 @@ Namespace Streams
                 .CurrentMaterialStream = Nothing
 
             End With
+
+            LastSolutionInputData = New MaterialStreamInputData()
+
+            LastSolutionInputData.Temperature = GetTemperature()
+            LastSolutionInputData.Pressure = GetPressure()
+            LastSolutionInputData.MassFlow = GetMassFlow()
+            LastSolutionInputData.MolarFlow = GetMolarFlow()
+            LastSolutionInputData.VolumetricFlow = GetVolumetricFlow()
+            LastSolutionInputData.Enthalpy = GetMassEnthalpy()
+            LastSolutionInputData.Entropy = GetMassEntropy()
+            LastSolutionInputData.VaporFraction = Phases(2).Properties.molarfraction.GetValueOrDefault()
+            LastSolutionInputData.MolarComposition = GetOverallComposition().ToList()
 
             IObj?.Close()
 
@@ -6255,18 +6337,14 @@ Namespace Streams
         Public Function ShallowClone() As Streams.MaterialStream
 
             Dim ms As New MaterialStream("", "", FlowSheet, PropertyPackage)
-            If Not FlowSheet Is Nothing Then
-                FlowSheet.AddCompoundsToMaterialStream(ms)
-            Else
-                For Each phase As IPhase In ms.Phases.Values
-                    For Each comp In Me.Phases(0).Compounds.Values
-                        With phase
-                            .Compounds.Add(comp.Name, New Compound(comp.Name, ""))
-                            .Compounds(comp.Name).ConstantProperties = comp.ConstantProperties
-                        End With
-                    Next
+            For Each phase As IPhase In ms.Phases.Values
+                For Each comp In Me.Phases(0).Compounds.Values
+                    With phase
+                        .Compounds.Add(comp.Name, New Compound(comp.Name, ""))
+                        .Compounds(comp.Name).ConstantProperties = comp.ConstantProperties
+                    End With
                 Next
-            End If
+            Next
             ms.Assign(Me)
             ms.AssignProps(Me)
             ms.TotalEnergyFlow = TotalEnergyFlow
@@ -8689,6 +8767,10 @@ Namespace Streams
             Return Phases(0).Compounds(name).MassFlow.GetValueOrDefault()
         End Function
 
+        Public Function GetCompoundMolarFlow(name As String) As Double Implements IMaterialStream.GetCompoundMolarFlow
+            Return Phases(0).Compounds(name).MolarFlow.GetValueOrDefault()
+        End Function
+
         Public Function GetCompoundMassConcentration(name As String) As Double Implements IMaterialStream.GetCompoundMassConcentration
             Return Phases(0).Compounds(name).MassFlow.GetValueOrDefault() / Phases(0).Properties.volumetric_flow.GetValueOrDefault()
         End Function
@@ -8714,6 +8796,13 @@ Namespace Streams
 
     End Class
 
+    Public Class MaterialStreamInputData
+
+        Public Temperature, Pressure, MassFlow, MolarFlow, VolumetricFlow, Enthalpy, Entropy, VaporFraction As Double
+
+        Public MolarComposition As New List(Of Double)
+
+    End Class
 
 End Namespace
 
@@ -8730,6 +8819,7 @@ Namespace Streams.Editors
         Public Property CompoundsPropertySelectedTab As Integer = 0
         Public Property PhasePropsSelectedTab As Integer = 0
         Public Property MainSelectedTab0 As Integer = 0
+        Public Property ShowAsPercentage As Integer = 0
 
     End Class
 

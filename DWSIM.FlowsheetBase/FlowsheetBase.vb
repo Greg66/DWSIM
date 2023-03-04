@@ -361,6 +361,12 @@ Imports System.Text.RegularExpressions
 
     Public Property RedirectMessages As Boolean Implements IFlowsheet.RedirectMessages
 
+    Public Sub Solve()
+
+        RequestCalculation()
+
+    End Sub
+
     Public Sub RequestCalculation(Optional sender As ISimulationObject = Nothing, Optional ChangeCalculationOrder As Boolean = False) Implements IFlowsheet.RequestCalculation
 
         If Not sender Is Nothing Then
@@ -3072,14 +3078,6 @@ Label_00CC:
 
                                 End Sub)
 
-        Dim t5 = TaskHelper.Run(Sub()
-
-                                    Dim PRLKPP As PengRobinsonLKPropertyPackage = New PengRobinsonLKPropertyPackage()
-                                    PRLKPP.ComponentName = "Peng-Robinson / Lee-Kesler (PR/LK)"
-                                    plist.Add(PRLKPP)
-
-                                End Sub)
-
         Dim t6 = TaskHelper.Run(Sub()
 
                                     Dim UPP As UNIFACPropertyPackage = New UNIFACPropertyPackage()
@@ -3197,7 +3195,7 @@ Label_00CC:
 
                                  End Sub)
 
-        Task.WaitAll(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
+        Task.WaitAll(t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14)
 
         For Each pp In plist
             AvailablePropPacks.Add(DirectCast(pp, CapeOpen.ICapeIdentification).ComponentName, pp)
@@ -3376,6 +3374,14 @@ Label_00CC:
         Dim opts As New Dictionary(Of String, Object)()
         opts("Frames") = Microsoft.Scripting.Runtime.ScriptingRuntimeHelpers.True
         engine = IronPython.Hosting.Python.CreateEngine(opts)
+
+        Dim paths0 = engine.GetSearchPaths().ToList()
+        paths0.Add(Path.Combine(My.Application.Info.DirectoryPath, "Lib"))
+        Try
+            engine.SetSearchPaths(paths0)
+        Catch ex As Exception
+        End Try
+
         engine.Runtime.LoadAssembly(GetType(System.String).Assembly)
         engine.Runtime.LoadAssembly(GetType(Thermodynamics.BaseClasses.ConstantProperties).Assembly)
         engine.Runtime.LoadAssembly(GetType(Drawing.SkiaSharp.GraphicsSurface).Assembly)
@@ -3950,6 +3956,14 @@ Label_00CC:
 
         rc.StoichBalance = bp - br
         rc.Equation = eq
+
+    End Sub
+
+    Public Sub SetDirtyStatus() Implements IFlowsheet.SetDirtyStatus
+
+        For Each obj In SimulationObjects.Values
+            obj.SetDirtyStatus(True)
+        Next
 
     End Sub
 
