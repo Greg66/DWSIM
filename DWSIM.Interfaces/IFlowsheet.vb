@@ -106,6 +106,8 @@
 
     Sub AutoLayout()
 
+    Sub NaturalLayout()
+
     Sub DisplayForm(form As Object)
 
     Sub UpdateOpenEditForms()
@@ -357,6 +359,18 @@
     Function AddCompound(compname As String) As ICompoundConstantProperties
 
     Sub SetDirtyStatus()
+
+    Function GetAvailableFlowsheetObjectTypeNames() As Array
+
+    Function AddFlowsheetObject(typename As String, objname As String) As ISimulationObject
+
+    Sub DisplayBrowserWindow(url As String)
+
+    Sub DisplayDockableBrowserWindow(url As String)
+
+    Sub RequestCalculation2(Wait As Boolean)
+
+    Sub RequestCalculation3(obj As ISimulationObject, Wait As Boolean)
 
 End Interface
 

@@ -27,6 +27,7 @@ Imports DWSIM.Simulate365.FormFactories
 Imports DWSIM.Simulate365.Models
 Imports DWSIM.Interfaces
 Imports DWSIM.SharedClassesCSharp.FilePicker
+Imports AeroWizard
 
 Public Class FormSimulSettings
 
@@ -51,30 +52,18 @@ Public Class FormSimulSettings
 
     Dim SetHeights As Boolean = False
 
-    Private Sub FormSimulSettings_DockStateChanged(sender As Object, e As EventArgs) Handles Me.DockStateChanged
-
-        If Not Me.DockHandler Is Nothing OrElse Not Me.DockHandler.FloatPane Is Nothing Then
-
-            ' set the bounds of this form's FloatWindow to our desired position and size
-
-            If Me.DockState = WeifenLuo.WinFormsUI.Docking.DockState.Float Then
-                Dim floatWin = Me.DockHandler.FloatPane.FloatWindow
-                If Not floatWin Is Nothing Then
-                    floatWin.SetBounds(floatWin.Location.X, floatWin.Location.Y,
-                                       900 * GlobalSettings.Settings.DpiScale, 600 * GlobalSettings.Settings.DpiScale)
-                End If
-            End If
-
-            Try
-                Init()
-            Catch ex As Exception
-
-            End Try
-
-        End If
-    End Sub
+    Public Shared AddMoreTabs As Action(Of TabControl, IFlowsheet)
 
     Private Sub FormStSim_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Me.Load
+
+        Dim sw As Integer = Screen.PrimaryScreen.Bounds.Width
+        Dim sh As Integer = Screen.PrimaryScreen.Bounds.Height
+        Dim w = 900 * GlobalSettings.Settings.DpiScale
+        Dim h = 600 * GlobalSettings.Settings.DpiScale
+
+        If Me.Pane IsNot Nothing Then
+            Me.Pane.FloatWindow.SetBounds((sw - w) / 2, (sh - h) / 2, w, h)
+        End If
 
         Me.TabText = Me.Text
 
@@ -94,24 +83,21 @@ Public Class FormSimulSettings
 
         Init()
 
+        AddMoreTabs?.Invoke(TabControl1, CurrentFlowsheet)
+
     End Sub
 
     Private Sub FormStSim_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
 
-        FormMain.AnalyticsProvider?.RegisterEvent("Number of Reactions", CurrentFlowsheet.Reactions.Count, Nothing)
-
-        If Me.CurrentFlowsheet.Options.SelectedComponents.Count = 0 And Me.CurrentFlowsheet.Options.PropertyPackages.Count = 0 Then
-            MessageBox.Show(DWSIM.App.GetLocalString("Adicionesubstnciassi"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
-            MessageBox.Show(DWSIM.App.GetLocalString("NoexistemPacotesdePr"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
-            'e.Cancel = True
-        ElseIf Me.CurrentFlowsheet.Options.SelectedComponents.Count = 0 Then
-            MessageBox.Show(DWSIM.App.GetLocalString("Adicionesubstnciassi"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
-            'e.Cancel = True
-        ElseIf Me.CurrentFlowsheet.Options.PropertyPackages.Count = 0 Then
-            MessageBox.Show(DWSIM.App.GetLocalString("NoexistemPacotesdePr"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
-            'e.Cancel = True
-        Else
-
+        If CurrentFlowsheet IsNot Nothing Then
+            If Me.CurrentFlowsheet.Options.SelectedComponents.Count = 0 And Me.CurrentFlowsheet.Options.PropertyPackages.Count = 0 Then
+                MessageBox.Show(DWSIM.App.GetLocalString("Adicionesubstnciassi"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show(DWSIM.App.GetLocalString("NoexistemPacotesdePr"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
+            ElseIf Me.CurrentFlowsheet.Options.SelectedComponents.Count = 0 Then
+                MessageBox.Show(DWSIM.App.GetLocalString("Adicionesubstnciassi"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
+            ElseIf Me.CurrentFlowsheet.Options.PropertyPackages.Count = 0 Then
+                MessageBox.Show(DWSIM.App.GetLocalString("NoexistemPacotesdePr"), DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
         End If
 
     End Sub
@@ -231,6 +217,7 @@ Public Class FormSimulSettings
                     availableproperties.Add(obj.GetDisplayName, obj.GetProperties(PropertyType.ALL))
                     aTypeRefs.Add(obj.GetDisplayName, item.Name)
                     If add Then CurrentFlowsheet.FlowsheetOptions.VisibleProperties.Add(item.Name, obj.GetDefaultProperties.ToList)
+                    obj.SetFlowsheet(Nothing)
                     obj = Nothing
                 End If
             Next
@@ -1327,6 +1314,8 @@ Public Class FormSimulSettings
         CurrentFlowsheet.Options.PropertyPackages.Add(pp.UniqueID, pp)
         Me.dgvpp.Rows.Add(New Object() {pp.UniqueID, pp.Tag, pp.ComponentName})
 
+        FormMain.AnalyticsProvider?.RegisterEvent("Property Package Added", pp.ComponentName, Nothing)
+
         CurrentFlowsheet.UpdateOpenEditForms()
 
         CurrentFlowsheet.AddUndoRedoAction(New UndoRedoAction() With {.AType = UndoRedoActionType.PropertyPackageAdded,
@@ -1882,12 +1871,119 @@ Public Class FormSimulSettings
     Private Sub chkForceObjectCalculation_CheckedChanged(sender As Object, e As EventArgs) Handles chkForceObjectCalculation.CheckedChanged
 
         CurrentFlowsheet.Options.ForceObjectSolving = chkForceObjectCalculation.Checked
+        FormMain.AnalyticsProvider?.RegisterEvent("Smart Object Solver Enabled", Not CurrentFlowsheet.Options.ForceObjectSolving, Nothing)
 
     End Sub
 
     Private Sub chkIncludeFlowsheetMessagesInFile_CheckedChanged(sender As Object, e As EventArgs) Handles chkIncludeFlowsheetMessagesInFile.CheckedChanged
 
         CurrentFlowsheet.Options.SaveFlowsheetMessagesInFile = chkIncludeFlowsheetMessagesInFile.Checked
+
+    End Sub
+
+    Private Sub tsmiViewComp_Click(sender As Object, e As EventArgs) Handles tsmiViewComp.Click
+        btnInfoLeft_Click(sender, e)
+    End Sub
+
+    Private Sub tsmiExportJSON_Click(sender As Object, e As EventArgs) Handles tsmiExportJSON.Click
+
+        FormMain.AnalyticsProvider?.RegisterEvent("Exporting Compound to JSON", "", Nothing)
+
+        Dim compound As Interfaces.ICompoundConstantProperties
+        Dim compID As String
+        If DWSIM.App.IsRunningOnMono Then
+            compID = ogc1.Rows(ogc1.SelectedCells(0).RowIndex).Cells(0).Value
+        Else
+            compID = ogc1.SelectedRows(0).Cells(0).Value
+        End If
+        If CurrentFlowsheet.AvailableCompounds.ContainsKey(compID) Then
+            compound = Me.CurrentFlowsheet.AvailableCompounds(compID)
+        ElseIf CurrentFlowsheet.Options.SelectedComponents.ContainsKey(compID) Then
+            compound = Me.CurrentFlowsheet.Options.SelectedComponents(compID)
+        ElseIf CurrentFlowsheet.Options.NotSelectedComponents.ContainsKey(compID) Then
+            compound = Me.CurrentFlowsheet.Options.NotSelectedComponents(compID)
+        Else
+            compound = Nothing
+        End If
+
+        If compound IsNot Nothing Then
+
+            Dim filePickerForm As IFilePicker = FilePickerService.GetInstance().GetFilePicker()
+
+        Dim handler As IVirtualFile = filePickerForm.ShowSaveDialog(
+            New List(Of FilePickerAllowedType) From {New FilePickerAllowedType("JSON File", "*.json")})
+
+        If handler IsNot Nothing Then
+            Using stream As New IO.MemoryStream()
+                Using writer As New StreamWriter(stream) With {.AutoFlush = True}
+                    Try
+                            Dim jsondata = Newtonsoft.Json.JsonConvert.SerializeObject(compound, Newtonsoft.Json.Formatting.Indented)
+                            writer.Write(jsondata)
+                        handler.Write(stream)
+                        MessageBox.Show(DWSIM.App.GetLocalString("FileSaved"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    Catch ex As Exception
+                        MessageBox.Show(DWSIM.App.GetLocalString("Erroaosalvararquivo") + ex.Message.ToString, "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End Try
+                End Using
+            End Using
+        End If
+
+        End If
+
+    End Sub
+
+    Private Sub tsmiReplace_Click(sender As Object, e As EventArgs) Handles tsmiReplace.Click
+
+
+        Dim compound As Interfaces.ICompoundConstantProperties
+        Dim compID As String
+        If DWSIM.App.IsRunningOnMono Then
+            compID = ogc1.Rows(ogc1.SelectedCells(0).RowIndex).Cells(0).Value
+        Else
+            compID = ogc1.SelectedRows(0).Cells(0).Value
+        End If
+        If CurrentFlowsheet.Options.SelectedComponents.ContainsKey(compID) Then
+            compound = Me.CurrentFlowsheet.Options.SelectedComponents(compID)
+        Else
+            compound = Nothing
+        End If
+
+        If compound IsNot Nothing Then
+
+            Dim fsc As New FormCompoundList With {.Compounds = CurrentFlowsheet.AvailableCompounds.Keys.ToList()}
+            fsc.ShowDialog()
+
+            If fsc.SelectedCompound IsNot Nothing Then
+
+                Dim replacewith = Me.CurrentFlowsheet.AvailableCompounds(fsc.SelectedCompound)
+
+                Dim oldc = compound.Name
+                Dim newc = replacewith.Name
+
+                AddCompToSimulation(newc)
+
+                For Each mstr As Streams.MaterialStream In CurrentFlowsheet.Collections.FlowsheetObjectCollection.Values.Where(Function(x) TypeOf x Is Streams.MaterialStream)
+                    For Each phase In mstr.Phases.Values
+                        phase.Compounds(newc).MoleFraction = phase.Compounds(oldc).MoleFraction
+                        phase.Compounds(newc).MassFraction = phase.Compounds(oldc).MassFraction
+                    Next
+                Next
+
+                RemoveCompFromSimulation(oldc)
+
+                For Each obj In CurrentFlowsheet.SimulationObjects.Values
+                    obj.Calculated = False
+                    obj.GraphicObject.Calculated = False
+                Next
+
+                CurrentFlowsheet.UpdateOpenEditForms()
+
+                Init(True)
+
+            End If
+
+        End If
+
 
     End Sub
 

@@ -59,7 +59,6 @@ Public Class FormMain
 
     Public CancelClosing As Boolean = False
 
-    Private tmpform2 As FormFlowsheet
     Public WithEvents timer1 As New Timer
 
     Public calculatorassembly, unitopassembly As Assembly
@@ -94,7 +93,7 @@ Public Class FormMain
 
     Public Property MostRecentFiles As Specialized.StringCollection
 
-    Public Shared AnalyticsProvider As IAnalyticsProvider
+    Public Property AnalyticsProvider As IAnalyticsProvider
 
     Public Shared ExternalSolvers As New Dictionary(Of String, Interfaces.IExternalSolverIdentification)
 
@@ -112,9 +111,16 @@ Public Class FormMain
 
     Public SavingSimulation As Func(Of IFlowsheet, Boolean)
 
+    Public Shared WebView2Environment As Microsoft.Web.WebView2.Core.CoreWebView2Environment
+
     Public Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
 
         ExtensionMethods.ChangeDefaultFont(Me)
+
+#If LINUX = False Then
+        InitializeWebView2Environment()
+#End If
+
 
         Using g1 = Me.CreateGraphics()
 
@@ -136,6 +142,8 @@ Public Class FormMain
             Me.StatusStrip1.Invalidate()
 
         End Using
+
+        unvell.ReoGrid.Editor.Common.Shared.DpiScale = Settings.DpiScale
 
         MostRecentFiles = My.Settings.MostRecentFiles
 
@@ -186,7 +194,14 @@ Public Class FormMain
             tsmiPrivateSupport.Visible = Not IsPro
 
 #If LINUX = False Then
-            If IsPro Then StatusStrip1.Visible = False
+            If IsPro Then
+                DownloadSupplementarySoftwareToolStripMenuItem.Visible = False
+                StatusStrip1.Visible = False
+                tsbRegCO.Visible = False
+                RegistroCAPEOPENToolStripMenuItem.Enabled = False
+                DashboardToolStripMenuItem.Visible = False
+                tsmiProUG.Visible = False
+            End If
 #End If
 
             'Search and populate CAPE-OPEN Flowsheet Monitoring Object collection
@@ -204,6 +219,34 @@ Public Class FormMain
             SetupWelcomeScreen()
 
         End If
+
+#If Not DEBUG Then
+        If AnalyticsProvider IsNot Nothing Then
+#End If
+        Task.Delay(30 * 1000).ContinueWith(
+            Sub(t)
+                UIThread(Sub()
+#If DEBUG Then
+                             tsbQuickQuestion.Visible = True
+#Else
+                             If Not My.Settings.UserTypeSent Then tsbQuickQuestion.Visible = True
+#End If
+                         End Sub)
+            End Sub)
+#If Not DEBUG Then
+        End If
+#End If
+
+    End Sub
+
+    Private Sub InitializeWebView2Environment()
+
+        Try
+            Dim newUserFolder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DWSIM", "BrowserData")
+            WebView2Environment = Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateAsync(Nothing, newUserFolder, Nothing).Result
+        Catch ex As Exception
+            AnalyticsProvider?.RegisterError("Failed to Initialize WebView2 Environment", ex.Message, ex, Nothing)
+        End Try
 
     End Sub
 
@@ -225,6 +268,7 @@ Public Class FormMain
         ' On user details loaded
         AddHandler UserService.GetInstance().UserDetailsLoaded, AddressOf UserService_UserDetailsLoaded
         AddHandler UserService.GetInstance().UserLoggedOut, AddressOf UserService_UserLoggedOut
+        AddHandler UserService.GetInstance().ShowLoginForm, AddressOf UserService_ShowLoginForm
 
 #If Not WINE32 Then
 
@@ -269,6 +313,7 @@ Public Class FormMain
                                 Case ExtenderCategory.File
                                     If item.InsertAtPosition >= 0 Then
                                         exttsmi.MergeAction = MergeAction.Insert
+                                        exttsmi.MergeIndex = item.InsertAtPosition
                                         FileTSMI.DropDownItems.Insert(item.InsertAtPosition, exttsmi)
                                     Else
                                         FileTSMI.DropDownItems.Add(exttsmi)
@@ -276,6 +321,7 @@ Public Class FormMain
                                 Case ExtenderCategory.Edit
                                     If item.InsertAtPosition >= 0 Then
                                         exttsmi.MergeAction = MergeAction.Insert
+                                        exttsmi.MergeIndex = item.InsertAtPosition
                                         EditTSMI.DropDownItems.Insert(item.InsertAtPosition, exttsmi)
                                     Else
                                         EditTSMI.DropDownItems.Add(exttsmi)
@@ -283,6 +329,7 @@ Public Class FormMain
                                 Case ExtenderCategory.Tools
                                     If item.InsertAtPosition >= 0 Then
                                         exttsmi.MergeAction = MergeAction.Insert
+                                        exttsmi.MergeIndex = item.InsertAtPosition
                                         ToolsTSMI.DropDownItems.Insert(item.InsertAtPosition, exttsmi)
                                     Else
                                         ToolsTSMI.DropDownItems.Add(exttsmi)
@@ -290,6 +337,7 @@ Public Class FormMain
                                 Case ExtenderCategory.Help
                                     If item.InsertAtPosition >= 0 Then
                                         exttsmi.MergeAction = MergeAction.Insert
+                                        exttsmi.MergeIndex = item.InsertAtPosition
                                         HelpTSMI.DropDownItems.Insert(item.InsertAtPosition, exttsmi)
                                     Else
                                         HelpTSMI.DropDownItems.Add(exttsmi)
@@ -336,6 +384,13 @@ Public Class FormMain
                         Me.LogoutDropdown.Visible = False
                         Me.LoginButton.Visible = True
                     End Sub)
+    End Sub
+
+    Private Sub UserService_ShowLoginForm(sender As Object, e As EventArgs)
+
+        Dim loginForm = New LoginForm
+        loginForm.ShowDialog()
+
     End Sub
 
 
@@ -602,7 +657,7 @@ Public Class FormMain
 
             Dim dinfo As New DirectoryInfo(Utility.GetExtendersRootDirectory())
 
-            Dim files() As FileInfo = dinfo.GetFiles("*.dll")
+            Dim files() As FileInfo = dinfo.GetFiles("*Extensions*.dll")
 
             If Not files Is Nothing Then
                 For Each fi As FileInfo In files
@@ -796,11 +851,10 @@ Public Class FormMain
         SRKPP.ComponentDescription = DWSIM.App.GetLocalString("DescSoaveRedlichKwongSRK")
         PropertyPackages.Add(SRKPP.ComponentName.ToString, SRKPP)
 
-        'Dim PRLKPP As PengRobinsonLKPropertyPackage = New PengRobinsonLKPropertyPackage()
-        'PRLKPP.ComponentName = "Peng-Robinson / Lee-Kesler (PR/LK)"
-        'PRLKPP.ComponentDescription = DWSIM.App.GetLocalString("DescPRLK")
-
-        'PropertyPackages.Add(PRLKPP.ComponentName.ToString, PRLKPP)
+        Dim PRLKPP As PengRobinsonLKPropertyPackage = New PengRobinsonLKPropertyPackage()
+        PRLKPP.ComponentName = "Peng-Robinson / Lee-Kesler (PR/LK)"
+        PRLKPP.ComponentDescription = DWSIM.App.GetLocalString("DescPRLK")
+        PropertyPackages.Add(PRLKPP.ComponentName.ToString, PRLKPP)
 
         Dim UPP As UNIFACPropertyPackage = New UNIFACPropertyPackage()
         UPP.ComponentName = "UNIFAC"
@@ -912,23 +966,27 @@ Public Class FormMain
 
         PropertyPackages.Add(PR78PP.ComponentName.ToString, PR78PP)
 
-        'Dim PR78Adv As PengRobinson1978AdvancedPropertyPackage = New PengRobinson1978AdvancedPropertyPackage()
+        Dim PR78Adv As PengRobinson1978AdvancedPropertyPackage = New PengRobinson1978AdvancedPropertyPackage()
 
-        'PropertyPackages.Add(PR78Adv.ComponentName.ToString, PR78Adv)
+        PropertyPackages.Add(PR78Adv.ComponentName.ToString, PR78Adv)
 
-        'Dim SRKAdv As SoaveRedlichKwongAdvancedPropertyPackage = New SoaveRedlichKwongAdvancedPropertyPackage()
+        Dim SRKAdv As SoaveRedlichKwongAdvancedPropertyPackage = New SoaveRedlichKwongAdvancedPropertyPackage()
 
-        'PropertyPackages.Add(SRKAdv.ComponentName.ToString, SRKAdv)
+        PropertyPackages.Add(SRKAdv.ComponentName.ToString, SRKAdv)
 
-        Dim otherpps = SharedClasses.Utility.LoadAdditionalPropertyPackages()
+        If My.Settings.LoadExtensionsAndPlugins Or FormMain.IsPro Then
 
-        For Each pp In otherpps
-            If Not PropertyPackages.ContainsKey(DirectCast(pp, CapeOpen.ICapeIdentification).ComponentName) Then
-                PropertyPackages.Add(DirectCast(pp, CapeOpen.ICapeIdentification).ComponentName, pp)
-            Else
-                Console.WriteLine(String.Format("Error adding External Property Package '{0}'. Check the 'ppacks' and 'extenders' folders for duplicate items.", pp.ComponentName))
-            End If
-        Next
+            Dim otherpps = SharedClasses.Utility.LoadAdditionalPropertyPackages()
+
+            For Each pp In otherpps
+                If Not PropertyPackages.ContainsKey(DirectCast(pp, CapeOpen.ICapeIdentification).ComponentName) Then
+                    PropertyPackages.Add(DirectCast(pp, CapeOpen.ICapeIdentification).ComponentName, pp)
+                Else
+                    Console.WriteLine(String.Format("Error adding External Property Package '{0}'. Check the 'ppacks' and 'extenders' folders for duplicate items.", pp.ComponentName))
+                End If
+            Next
+
+        End If
 
         'Check if DWSIM is running in Portable/Mono mode, if not then load the CAPE-OPEN Wrapper Property Package.
         If Not DWSIM.App.IsRunningOnMono Then
@@ -1038,6 +1096,7 @@ Public Class FormMain
 
         End If
 
+#If LINUX = False Then
         Dim currver = Assembly.GetExecutingAssembly().GetName().Version.ToString()
         If (Settings.CurrentVersion <> currver) Then
             Settings.CurrentVersion = currver
@@ -1045,6 +1104,10 @@ Public Class FormMain
             Dim frmwn As New FormWhatsNew()
             frmwn.Show()
         End If
+#Else
+        MessageBox.Show("The Classic UI version of DWSIM is not supported on Linux. Use it at your own risk.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+#End If
+
 
         AnalyticsProvider?.SetMainForm(Me)
 
@@ -1365,24 +1428,6 @@ Public Class FormMain
 #End Region
 
 #Region "    Open/Save Files"
-
-    Function ReturnForm(ByVal str As String) As IDockContent
-        Select Case str
-            Case "DWSIM.LogPanel", "DWSIM.frmLog"
-                Return Me.tmpform2.FormLog
-            Case "DWSIM.MaterialStreamPanel", "DWSIM.frmMatList"
-                Return Me.tmpform2.FormMatList
-            Case "DWSIM.FlowsheetSurface", "DWSIM.frmSurface"
-                Return Me.tmpform2.FormSurface
-            Case "DWSIM.SpreadsheetForm"
-                Return Me.tmpform2.FormSpreadsheet
-            Case "DWSIM.WatchPanel", "DWSIM.frmWatch"
-                Return Me.tmpform2.FormWatch
-            Case "DWSIM.frmProps"
-                Return Me.tmpform2.FormProps
-        End Select
-        Return Nothing
-    End Function
 
     Private Function RandomString(ByVal size As Integer, ByVal lowerCase As Boolean) As String
 
@@ -1799,7 +1844,6 @@ Public Class FormMain
         form.dckPanel.ActiveAutoHideContent = Nothing
         form.dckPanel.Parent = form
 
-        Me.tmpform2 = form
         form.FormLog.DockPanel = Nothing
         form.FormMatList.DockPanel = Nothing
         form.FormSpreadsheet.DockPanel = Nothing
@@ -2107,7 +2151,6 @@ Public Class FormMain
 
         Dim filename As String
 
-        If simulationfilename <> "" Then filename = simulationfilename Else filename = handler.FullPath
 
         form.FilePath = handler.FullPath
         form.Options.FilePath = handler.FullPath
@@ -2145,7 +2188,6 @@ Public Class FormMain
         form.dckPanel.ActiveAutoHideContent = Nothing
         form.dckPanel.Parent = form
 
-        Me.tmpform2 = form
         'form.dckPanel.SuspendLayout(True)
         form.FormLog.DockPanel = Nothing
         form.FormMatList.DockPanel = Nothing
@@ -2154,7 +2196,6 @@ Public Class FormMain
         form.FormWatch.DockPanel = Nothing
         form.FormSurface.DockPanel = Nothing
         form.FormDynamics.DockPanel = Nothing
-        form.FormProps.DockPanel = Nothing
         form.FormCharts.DockPanel = Nothing
         form.FormFilesExplorer.DockPanel = Nothing
 #If LINUX = False Then
@@ -2169,7 +2210,6 @@ Public Class FormMain
             form.FormSurface?.Show(form.dckPanel)
             form.FormDynamics?.Show(form.dckPanel)
             form.FormFilesExplorer?.Show(form.dckPanel)
-            form.FormProps?.Show(form.dckPanel)
 #If LINUX = False Then
             'form.FormIPyConsole?.Show(form.dckPanel)
 #End If
@@ -2179,12 +2219,10 @@ Public Class FormMain
             'excs.Add(New Exception("Error Restoring Window Layout", ex))
         End Try
 
-        If form.FormProps.Width > form.Width / 3 Then
-            form.dckPanel.DockLeftPortion = form.Width / 3
-        End If
-
         Me.Invalidate()
         Application.DoEvents()
+
+        If simulationfilename <> "" Then filename = simulationfilename Else filename = handler.FullPath
 
         If TypeOf handler Is SharedClassesCSharp.FilePicker.Windows.WindowsFile Then
             Dim mypath As String = simulationfilename
@@ -2714,6 +2752,8 @@ Public Class FormMain
 
             form.m_IsLoadedFromFile = True
 
+            form.FormScript1.fc = form
+
             form.FormCharts.Flowsheet = form
 
             form.FormDynamics.Flowsheet = form
@@ -2728,7 +2768,6 @@ Public Class FormMain
             form.dckPanel.ActiveAutoHideContent = Nothing
             form.dckPanel.Parent = form
 
-            Me.tmpform2 = form
             'form.dckPanel.SuspendLayout(True)
             form.FormLog.DockPanel = Nothing
             form.FormMatList.DockPanel = Nothing
@@ -2737,9 +2776,9 @@ Public Class FormMain
             form.FormWatch.DockPanel = Nothing
             form.FormSurface.DockPanel = Nothing
             form.FormDynamics.DockPanel = Nothing
-            form.FormProps.DockPanel = Nothing
             form.FormCharts.DockPanel = Nothing
             form.FormFilesExplorer.DockPanel = Nothing
+            form.FormScript1.DockPanel = Nothing
 #If LINUX = False Then
             form.FormIPyConsole.DockPanel = Nothing
 #End If
@@ -2751,14 +2790,14 @@ Public Class FormMain
                         Try
                             Dim pnl As String = xdoc.Element("DWSIM_Simulation_Data").Element("PanelLayout").Value
                             File.WriteAllText(myfile, pnl)
-                            form.dckPanel.LoadFromXml(myfile, New DeserializeDockContent(AddressOf Me.ReturnForm))
+                            form.dckPanel.LoadFromXml(myfile, New DeserializeDockContent(AddressOf form.ReturnForm))
                         Catch ex As Exception
                         Finally
                             File.Delete(myfile)
                         End Try
                     Else
                         Dim myfile As String = IO.Path.Combine(My.Application.Info.DirectoryPath, "layout.xml")
-                        form.dckPanel.LoadFromXml(myfile, New DeserializeDockContent(AddressOf ReturnForm))
+                        form.dckPanel.LoadFromXml(myfile, New DeserializeDockContent(AddressOf form.ReturnForm))
                     End If
                 End If
             End If
@@ -2773,7 +2812,7 @@ Public Class FormMain
                 form.FormSurface?.Show(form.dckPanel)
                 form.FormDynamics?.Show(form.dckPanel)
                 form.FormFilesExplorer?.Show(form.dckPanel)
-                form.FormProps?.Show(form.dckPanel)
+                form.FormScript1?.Show(form.dckPanel)
 #If LINUX = False Then
                 'form.FormIPyConsole?.Show(form.dckPanel)
 #End If
@@ -2782,10 +2821,6 @@ Public Class FormMain
             Catch ex As Exception
                 'excs.Add(New Exception("Error Restoring Window Layout", ex))
             End Try
-
-            If form.FormProps.Width > form.Width / 3 Then
-                form.dckPanel.DockLeftPortion = form.Width / 3
-            End If
 
             Me.Invalidate()
             Application.DoEvents()
@@ -3282,6 +3317,8 @@ Public Class FormMain
 
             form.m_IsLoadedFromFile = True
 
+            form.FormScript1.fc = form
+
             form.FormCharts.Flowsheet = form
 
             form.FormDynamics.Flowsheet = form
@@ -3294,7 +3331,6 @@ Public Class FormMain
             form.dckPanel.ActiveAutoHideContent = Nothing
             form.dckPanel.Parent = form
 
-            Me.tmpform2 = form
             'form.dckPanel.SuspendLayout(True)
             form.FormLog.DockPanel = Nothing
             form.FormMatList.DockPanel = Nothing
@@ -3306,13 +3342,14 @@ Public Class FormMain
             form.FormDynamics.DockPanel = Nothing
             form.FormFilesExplorer.DockPanel = Nothing
             form.FormIPyConsole.DockPanel = Nothing
+            form.FormScript1.DockPanel = Nothing
 
             If Not My.Computer.Keyboard.ShiftKeyDown Then
                 Dim myfile As String = SharedClasses.Utility.GetTempFileName()
                 Try
                     Dim pnl As String = xdoc.Element("DWSIM_Simulation_Data").Element("PanelLayout").Value
                     File.WriteAllText(myfile, pnl)
-                    form.dckPanel.LoadFromXml(myfile, New DeserializeDockContent(AddressOf Me.ReturnForm))
+                    form.dckPanel.LoadFromXml(myfile, New DeserializeDockContent(AddressOf form.ReturnForm))
                 Catch ex As Exception
                     'excs.Add(New Exception("Error Restoring Window Layout", ex))
                 Finally
@@ -3331,6 +3368,7 @@ Public Class FormMain
                 form.FormDynamics.Show(form.dckPanel)
                 form.FormFilesExplorer.Show(form.dckPanel)
                 'form.FormIPyConsole.Show(form.dckPanel)
+                form.FormScript1.Show(form.dckPanel)
                 form.dckPanel.BringToFront()
                 form.dckPanel.UpdateDockWindowZOrder(DockStyle.Fill, True)
             Catch ex As Exception
@@ -3582,8 +3620,6 @@ Public Class FormMain
 
         RaiseEvent FlowsheetSavingToXML(form, New EventArgs())
 
-        If simulationfilename = "" Then simulationfilename = handler.FullPath
-
         Dim xdoc As New XDocument()
         Dim xel As XElement
 
@@ -3765,6 +3801,7 @@ Public Class FormMain
             handler.Write(stream)
         End Using
 
+        If simulationfilename = "" Then simulationfilename = handler.FullPath
         Dim fileExtension As String = IO.Path.GetExtension(simulationfilename).ToLower
 
         If (fileExtension.Contains("dwxml") Or fileExtension.Contains("dwxmz")) Then
@@ -4140,6 +4177,7 @@ Label_00CC:
                 Try
                     Dim fname = Path.GetFileNameWithoutExtension(form2.Options.FilePath)
                     filePickerForm.SuggestedFilename = fname
+                    filePickerForm.SuggestedDirectory = form2.Options.VirtualFile.ParentUniqueIdentifier
                 Catch ex As Exception
                 End Try
             Else
@@ -4149,6 +4187,9 @@ Label_00CC:
                     Dim fpath = Path.GetDirectoryName(form2.Options.FilePath)
                     filePickerForm.SuggestedFilename = fname
                     filePickerForm.SuggestedDirectory = fpath
+                    If TypeOf filePickerForm Is Simulate365.FormFactories.S365FilePickerForm Then
+                        filePickerForm.SuggestedDirectory = form2.Options.VirtualFile.ParentUniqueIdentifier
+                    End If
                 Catch ex As Exception
                 End Try
             End If
@@ -4551,33 +4592,34 @@ Label_00CC:
         End If
     End Sub
 
-    Private Sub GuiaDoUsuarioToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles GuiaDoUsuarioToolStripMenuItem.Click
-
-        RaiseEvent ToolOpened("View User Guide", New EventArgs())
-
-        If DWSIM.App.IsRunningOnMono Then
-            Dim p As New Process()
-            With p
-                .StartInfo.FileName = "xdg-open"
-                .StartInfo.Arguments = My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "User_Guide.pdf"
-                .StartInfo.UseShellExecute = False
-                .Start()
-            End With
+    Private Sub WikiToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles WikiToolStripMenuItem.Click
+        If IsPro Then
+            Dim fb As New FormBrowser()
+            fb.Show()
+            fb.DisplayURL("https://dwsim.org", "DWSIM")
         Else
-            Process.Start(My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "user_guide.pdf")
+            System.Diagnostics.Process.Start("https://dwsim.org")
         End If
     End Sub
 
-    Private Sub WikiToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles WikiToolStripMenuItem.Click
-        System.Diagnostics.Process.Start("http://dwsim.org")
-    End Sub
-
     Private Sub ForumToolStripMenuItem_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles ForumToolStripMenuItem.Click
-        System.Diagnostics.Process.Start("https://dwsim.org/wiki/index.php?title=Support")
+        If IsPro Then
+            Dim fb As New FormBrowser()
+            fb.Show()
+            fb.DisplayURL("https://dwsim.org/wiki/index.php?title=Support", "DWSIM Support (Open-Source)")
+        Else
+            System.Diagnostics.Process.Start("https://dwsim.org/wiki/index.php?title=Support")
+        End If
     End Sub
 
     Private Sub RastreamentoDeBugsToolStripMenuItem_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles RastreamentoDeBugsToolStripMenuItem.Click
-        System.Diagnostics.Process.Start("https://github.com/DanWBR/dwsim/issues")
+        If IsPro Then
+            Dim fb As New FormBrowser()
+            fb.Show()
+            fb.DisplayURL("https://github.com/DanWBR/dwsim/issues", "DWSIM Issues (Open-Source)")
+        Else
+            System.Diagnostics.Process.Start("https://github.com/DanWBR/dwsim/issues")
+        End If
     End Sub
 
     Private Sub MostrarBarraDeFerramentasToolStripMenuItem_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MostrarBarraDeFerramentasToolStripMenuItem.Click
@@ -4604,11 +4646,11 @@ Label_00CC:
         Me.TileHorizontalToolStripMenuItem_Click(sender, e)
     End Sub
 
-    Private Sub ToolStripButton7_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles ToolStripButton7.Click
+    Private Sub ToolStripButton7_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
         System.Diagnostics.Process.Start("https://www.paypal.com/cgi-bin/webscr?item_name=Donation+to+DWSIM+-+Open+Source+Process+Simulator&cmd=_donations&business=danielwag%40gmail.com&lc=US")
     End Sub
 
-    Private Sub ToolStripButton8_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles ToolStripButton8.Click
+    Private Sub ToolStripButton8_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
         Me.AboutToolStripMenuItem_Click(sender, e)
     End Sub
 
@@ -4808,16 +4850,24 @@ Label_00CC:
         UserService.Logout()
     End Sub
 
-    Private Sub LoggedInDwsimProBtn_Click(sender As Object, e As EventArgs)
-        Process.Start("https://simulate365.com/downloads/dwsim-pro/")
-    End Sub
-
     Private Sub LoggedInS365Button_Click(sender As Object, e As EventArgs) Handles LoggedInS365Button.Click
-        Process.Start("https://simulate365.com")
+        If IsPro Then
+            Dim fb As New FormBrowser()
+            fb.Show()
+            fb.DisplayURL("https://simulate365.com", "Simulate365")
+        Else
+            Process.Start("https://simulate365.com")
+        End If
     End Sub
 
     Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles tsmiFreeProTrial.Click
-        Process.Start("https://simulate365.com/registration/")
+        If IsPro Then
+            Dim fb As New FormBrowser()
+            fb.Show()
+            fb.DisplayURL("https://simulate365.com/registration/", "Simulate365 Registration")
+        Else
+            Process.Start("https://simulate365.com/registration/")
+        End If
     End Sub
 
     Private Sub AbrirDoDashboardToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AbrirDoDashboardToolStripMenuItem.Click
@@ -4837,11 +4887,23 @@ Label_00CC:
     End Sub
 
     Private Sub DashboardToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DashboardToolStripMenuItem.Click
-        Process.Start("https://dashboard.simulate365.com")
+        If IsPro Then
+            Dim fb As New FormBrowser()
+            fb.Show()
+            fb.DisplayURL("https://dashboard.simulate365.com", "Simulate365 Dashboard")
+        Else
+            Process.Start("https://dashboard.simulate365.com")
+        End If
     End Sub
 
     Private Sub DIscordChannelToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DIscordChannelToolStripMenuItem.Click
-        Process.Start("https://discord.com/channels/974049809176608818/974049809176608821")
+        If IsPro Then
+            Dim fb As New FormBrowser()
+            fb.Show()
+            fb.DisplayURL("https://discord.com/channels/974049809176608818/974049809176608821", "DWSIM Discord Server (Open-Source)")
+        Else
+            Process.Start("https://discord.com/channels/974049809176608818/974049809176608821")
+        End If
     End Sub
 
     Private Sub ToolStripDropDownButton2_Click(sender As Object, e As EventArgs) Handles tsbdonate1.Click
@@ -4865,6 +4927,55 @@ Label_00CC:
 
     Private Sub tsmiPrivateSupport_Click(sender As Object, e As EventArgs) Handles tsmiPrivateSupport.Click
         Process.Start("https://simulate365.com/private-support/")
+    End Sub
+
+    Private Sub ToolStripDropDownButton1_Click_1(sender As Object, e As EventArgs) Handles tsbQuickQuestion.Click
+
+        Dim fq As New FormOccupancyQuestion()
+        fq.ShowDialog(Me)
+
+    End Sub
+
+    Private Sub UsersGuideToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles UsersGuideToolStripMenuItem.Click
+
+        RaiseEvent ToolOpened("View User Guide", New EventArgs())
+
+        If DWSIM.App.IsRunningOnMono Then
+            Dim p As New Process()
+            With p
+                .StartInfo.FileName = "xdg-open"
+                .StartInfo.Arguments = My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "User_Guide.pdf"
+                .StartInfo.UseShellExecute = False
+                .Start()
+            End With
+        Else
+            If IsPro Then
+                Dim fb As New FormBrowser()
+                fb.Show()
+                fb.DisplayURL(My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "user_guide.pdf")
+            Else
+                Process.Start(My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "user_guide.pdf")
+            End If
+        End If
+
+    End Sub
+
+    Private Sub tsmiProUG_Click(sender As Object, e As EventArgs) Handles tsmiProUG.Click
+
+        RaiseEvent ToolOpened("View DWSIM Pro User Guide", New EventArgs())
+
+        If DWSIM.App.IsRunningOnMono Then
+            Dim p As New Process()
+            With p
+                .StartInfo.FileName = "xdg-open"
+                .StartInfo.Arguments = My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "Pro_User_Guide.pdf"
+                .StartInfo.UseShellExecute = False
+                .Start()
+            End With
+        Else
+            Process.Start(My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "Pro_User_Guide.pdf")
+        End If
+
     End Sub
 
     Private Sub tsbInspector_CheckedChanged(sender As Object, e As EventArgs) Handles tsbInspector.CheckedChanged

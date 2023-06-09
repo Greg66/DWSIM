@@ -22,6 +22,7 @@ Imports DWSIM.Thermodynamics.PropertyPackages
 Imports DWSIM.Interfaces
 Imports DWSIM.SharedClassesCSharp.FilePicker
 Imports System.ComponentModel
+Imports AeroWizard
 
 Public Class FormSimulWizard
 
@@ -36,7 +37,15 @@ Public Class FormSimulWizard
     Private CompoundList As List(Of String)
     Private Indexes As Dictionary(Of String, Integer)
 
+    Public Shared AddMorePages As Action(Of StepWizardControl, IFlowsheet)
+
+    Public Shared WizardFinished As Action(Of StepWizardControl, IFlowsheet)
+    Public Shared WizardFinished2 As Action(Of StepWizardControl, IFlowsheet)
+    Public Shared WizardFinished3 As Action(Of StepWizardControl, IFlowsheet)
+
     Private Sub FormConfigWizard_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+
+        AddMorePages?.Invoke(StepWizardControl1, CurrentFlowsheet)
 
         ExtensionMethods.ChangeDefaultFont(Me)
 
@@ -1531,7 +1540,20 @@ Public Class FormSimulWizard
 
     Private Sub WizardPage2_Commit(sender As Object, e As AeroWizard.WizardPageConfirmEventArgs) Handles WizardPage2.Commit
 
-        SetupPPRecommendations()
+        If CurrentFlowsheet.SelectedCompounds.Count = 0 Then
+
+            Dim t1 = CurrentFlowsheet.GetTranslatedString1("Please add at least one compound to proceed.")
+            Dim t2 = CurrentFlowsheet.GetTranslatedString1("Error")
+
+            MessageBox.Show(t1, t2, MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+            e.Cancel = True
+
+        Else
+
+            SetupPPRecommendations()
+
+        End If
 
     End Sub
 
@@ -1560,7 +1582,7 @@ Public Class FormSimulWizard
                 MessageBox.Show("This Property Package is available on DWSIM Pro.", "DWSIM Pro", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Else
                 Dim pp = FormMain.PropertyPackages(Me.DataGridViewPP.SelectedRows(0).Cells(0).Value)
-                Dim fppi As New FormPropertyPackageInfo With {.pp = pp}
+                Dim fppi As New FormPropertyPackageInfo With {.PP = pp}
                 fppi.ShowDialog()
             End If
         End If
@@ -1660,7 +1682,10 @@ Public Class FormSimulWizard
 
     Private Sub CheckBox2_CheckedChanged(sender As Object, e As EventArgs) Handles chkActivateSmartObjectSolving.CheckedChanged
 
-        If loaded Then CurrentFlowsheet.Options.ForceObjectSolving = Not chkActivateSmartObjectSolving.Checked
+        If loaded Then
+            CurrentFlowsheet.Options.ForceObjectSolving = Not chkActivateSmartObjectSolving.Checked
+            FormMain.AnalyticsProvider?.RegisterEvent("Smart Object Solver Enabled", Not CurrentFlowsheet.Options.ForceObjectSolving, Nothing)
+        End If
 
     End Sub
 
@@ -1687,6 +1712,8 @@ Public Class FormSimulWizard
 
             GlobalSettings.Settings.EditOnSelect = Not My.Settings.DoubleClickToEdit
 
+            FormMain.AnalyticsProvider?.RegisterEvent("Double-Click Editing Enabled", My.Settings.DoubleClickToEdit, Nothing)
+
         End If
 
     End Sub
@@ -1699,6 +1726,29 @@ Public Class FormSimulWizard
 
             txtSearch.Focus()
             ActiveControl = txtSearch
+
+        End If
+
+    End Sub
+
+    Private Sub FormSimulWizard_FormClosed(sender As Object, e As FormClosedEventArgs) Handles Me.FormClosed
+
+        WizardFinished?.Invoke(StepWizardControl1, CurrentFlowsheet)
+        WizardFinished2?.Invoke(StepWizardControl1, CurrentFlowsheet)
+        WizardFinished3?.Invoke(StepWizardControl1, CurrentFlowsheet)
+
+    End Sub
+
+    Private Sub WizardPage3_Commit(sender As Object, e As WizardPageConfirmEventArgs) Handles WizardPage3.Commit
+
+        If CurrentFlowsheet.PropertyPackages.Count = 0 Then
+
+            Dim t1 = CurrentFlowsheet.GetTranslatedString1("Please add at least one property package to proceed.")
+            Dim t2 = CurrentFlowsheet.GetTranslatedString1("Error")
+
+            MessageBox.Show(t1, t2, MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+            e.Cancel = True
 
         End If
 

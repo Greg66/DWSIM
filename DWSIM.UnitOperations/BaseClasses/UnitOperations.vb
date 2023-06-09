@@ -289,9 +289,13 @@ Namespace UnitOperations
                     If FlowSheet.PropertyPackages.ContainsKey(_ppid) Then
                         Return FlowSheet.PropertyPackages(_ppid)
                     Else
-                        Dim firstpp = FlowSheet.PropertyPackages.Values.First()
-                        _ppid = firstpp.UniqueID
-                        Return firstpp
+                        Dim firstpp = FlowSheet.PropertyPackages.Values.FirstOrDefault()
+                        If firstpp Is Nothing Then
+                            Return Nothing
+                        Else
+                            _ppid = firstpp.UniqueID
+                            Return firstpp
+                        End If
                     End If
                 End If
             End Get

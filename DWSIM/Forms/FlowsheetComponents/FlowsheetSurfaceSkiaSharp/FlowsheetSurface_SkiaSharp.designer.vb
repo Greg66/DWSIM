@@ -124,6 +124,7 @@ Partial Class FlowsheetSurface_SkiaSharp
         Me.ExportarParaPDFToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ExportarParaSVGToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripSeparator18 = New System.Windows.Forms.ToolStripSeparator()
+        Me.tsmiNaturalLayout = New System.Windows.Forms.ToolStripMenuItem()
         Me.LayoutAutomaticoToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.RestaurarLayoutToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.tssepPro2 = New System.Windows.Forms.ToolStripSeparator()
@@ -279,6 +280,7 @@ Partial Class FlowsheetSurface_SkiaSharp
         'SplitContainerHorizontal.Panel2
         '
         resources.ApplyResources(Me.SplitContainerHorizontal.Panel2, "SplitContainerHorizontal.Panel2")
+        Me.SplitContainerHorizontal.Panel2.BackColor = System.Drawing.Color.White
         Me.ToolTip1.SetToolTip(Me.SplitContainerHorizontal.Panel2, resources.GetString("SplitContainerHorizontal.Panel2.ToolTip"))
         Me.ToolTip1.SetToolTip(Me.SplitContainerHorizontal, resources.GetString("SplitContainerHorizontal.ToolTip"))
         '
@@ -885,7 +887,7 @@ Partial Class FlowsheetSurface_SkiaSharp
         'CMS_NoSel
         '
         resources.ApplyResources(Me.CMS_NoSel, "CMS_NoSel")
-        Me.CMS_NoSel.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripMenuItem3, Me.ToolStripSeparator1, Me.ExibirTudoToolStripMenuItem, Me.ZoomPadrao100ToolStripMenuItem, Me.CentralizarToolStripMenuItem, Me.CopyAsImageToolStripMenuItem, Me.CopiarComoImagem200ToolStripMenuItem, Me.CopiarComoImagem300ToolStripMenuItem, Me.ExportarParaPDFToolStripMenuItem, Me.ExportarParaSVGToolStripMenuItem, Me.ToolStripSeparator18, Me.LayoutAutomaticoToolStripMenuItem, Me.RestaurarLayoutToolStripMenuItem, Me.tssepPro2, Me.FindTearStreamsAutomaticallyToolStripMenuItem})
+        Me.CMS_NoSel.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripMenuItem3, Me.ToolStripSeparator1, Me.ExibirTudoToolStripMenuItem, Me.ZoomPadrao100ToolStripMenuItem, Me.CentralizarToolStripMenuItem, Me.CopyAsImageToolStripMenuItem, Me.CopiarComoImagem200ToolStripMenuItem, Me.CopiarComoImagem300ToolStripMenuItem, Me.ExportarParaPDFToolStripMenuItem, Me.ExportarParaSVGToolStripMenuItem, Me.ToolStripSeparator18, Me.tsmiNaturalLayout, Me.LayoutAutomaticoToolStripMenuItem, Me.RestaurarLayoutToolStripMenuItem, Me.tssepPro2, Me.FindTearStreamsAutomaticallyToolStripMenuItem})
         Me.CMS_NoSel.Name = "ContextMenuStrip1"
         Me.ToolTip1.SetToolTip(Me.CMS_NoSel, resources.GetString("CMS_NoSel.ToolTip"))
         '
@@ -951,6 +953,12 @@ Partial Class FlowsheetSurface_SkiaSharp
         '
         resources.ApplyResources(Me.ToolStripSeparator18, "ToolStripSeparator18")
         Me.ToolStripSeparator18.Name = "ToolStripSeparator18"
+        '
+        'tsmiNaturalLayout
+        '
+        resources.ApplyResources(Me.tsmiNaturalLayout, "tsmiNaturalLayout")
+        Me.tsmiNaturalLayout.Image = Global.DWSIM.My.Resources.Resources.arrows_4_way
+        Me.tsmiNaturalLayout.Name = "tsmiNaturalLayout"
         '
         'LayoutAutomaticoToolStripMenuItem
         '
@@ -1433,12 +1441,9 @@ Partial Class FlowsheetSurface_SkiaSharp
     Friend WithEvents tsbAlignHorizontal As System.Windows.Forms.ToolStripButton
     Friend WithEvents SplitContainerHorizontal As SplitContainer
     Friend WithEvents EditAppearanceToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents CopyAsImageToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents tsbDisplayGrid As ToolStripButton
     Friend WithEvents tsbMultiSelectMode As ToolStripButton
     Public WithEvents ToolStripSeparator9 As ToolStripSeparator
-    Friend WithEvents CopiarComoImagem200ToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents CopiarComoImagem300ToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents SplitAndInsertRecycleMenuItem As ToolStripMenuItem
     Friend WithEvents ToolStripLabel1 As ToolStripLabel
     Friend WithEvents tstbSearch As ToolStripTextBox
@@ -1504,4 +1509,8 @@ Partial Class FlowsheetSurface_SkiaSharp
     Public WithEvents PanelWeather As Panel
     Friend WithEvents Panel1 As Panel
     Friend WithEvents Button1 As Button
+    Friend WithEvents tsmiNaturalLayout As ToolStripMenuItem
+    Public WithEvents CopyAsImageToolStripMenuItem As ToolStripMenuItem
+    Public WithEvents CopiarComoImagem200ToolStripMenuItem As ToolStripMenuItem
+    Public WithEvents CopiarComoImagem300ToolStripMenuItem As ToolStripMenuItem
 End Class

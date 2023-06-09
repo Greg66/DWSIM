@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class FormSimulWizard
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class FormSimulWizard
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FormSimulWizard))
@@ -731,8 +731,6 @@ Partial Class FormSimulWizard
         'chkActivateSmartObjectSolving
         '
         resources.ApplyResources(Me.chkActivateSmartObjectSolving, "chkActivateSmartObjectSolving")
-        Me.chkActivateSmartObjectSolving.Checked = True
-        Me.chkActivateSmartObjectSolving.CheckState = System.Windows.Forms.CheckState.Checked
         Me.chkActivateSmartObjectSolving.Image = Global.DWSIM.My.Resources.Resources.icons8_check_mark
         Me.chkActivateSmartObjectSolving.Name = "chkActivateSmartObjectSolving"
         Me.ToolTip1.SetToolTip(Me.chkActivateSmartObjectSolving, resources.GetString("chkActivateSmartObjectSolving.ToolTip"))
@@ -831,7 +829,6 @@ Partial Class FormSimulWizard
         Me.ResumeLayout(False)
 
     End Sub
-    Friend WithEvents StepWizardControl1 As AeroWizard.StepWizardControl
     Friend WithEvents WizardPage1 As AeroWizard.WizardPage
     Friend WithEvents Label1 As System.Windows.Forms.Label
     Friend WithEvents WizardPage2 As AeroWizard.WizardPage
@@ -912,4 +909,5 @@ Partial Class FormSimulWizard
     Friend WithEvents chkActivateSmartObjectSolving As CheckBox
     Friend WithEvents chkDoubleClickToOpenEditors As CheckBox
     Friend WithEvents Label12 As Label
+    Public WithEvents StepWizardControl1 As AeroWizard.StepWizardControl
 End Class

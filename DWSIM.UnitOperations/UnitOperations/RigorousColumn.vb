@@ -720,6 +720,7 @@ Namespace UnitOperations.Auxiliary.SepOps
             Component_Recovery = 6
             Stream_Ratio = 7
             Temperature = 8
+            Feed_Recovery = 9
         End Enum
 
         Private m_stagenumber As Integer = 0
@@ -2958,6 +2959,27 @@ Namespace UnitOperations
                             vaprate = 0.0
                         End If
                     End If
+                Case ColumnSpec.SpecType.Feed_Recovery
+                    Dim cvalue = Specs("R").SpecValue / 100.0
+                    Dim pval = sumF * cvalue
+                    If TypeOf Me Is DistillationColumn AndAlso DirectCast(Me, DistillationColumn).ReboiledAbsorber Then
+                        vaprate = sumF - pval - sum0_
+                        distrate = 0.0
+                    Else
+                        If Me.CondenserType = condtype.Full_Reflux Then
+                            vaprate = sumF - pval - sum0_
+                            distrate = 0.0
+                        ElseIf Me.CondenserType = condtype.Partial_Condenser Then
+                            If Me.Specs("C").SType = ColumnSpec.SpecType.Product_Molar_Flow_Rate Then
+                                distrate = SystemsOfUnits.Converter.ConvertToSI(Me.Specs("C").SpecUnit, Me.Specs("C").SpecValue)
+                            Else
+                                distrate = sumF - pval - sum0_ - vaprate
+                            End If
+                        Else
+                            distrate = sumF - pval - sum0_
+                            vaprate = 0.0
+                        End If
+                    End If
                 Case Else
                     If DirectCast(Me, DistillationColumn).ReboiledAbsorber Then
                         vaprate = (sumF - sum0_) / 2
@@ -3962,8 +3984,14 @@ Namespace UnitOperations
                                 subst.MassFraction = pp.AUX_CONVERT_MOL_TO_MASS(yf(0))(i)
                                 i += 1
                             Next
-                            .CopyCompositions(PhaseLabel.Mixture, PhaseLabel.Vapor)
-                            .Phases(2).Properties.molarfraction = 1.0
+                            If llextractor Then
+                                .CopyCompositions(PhaseLabel.Mixture, PhaseLabel.Liquid1)
+                                .Phases(3).Properties.molarfraction = 1.0
+                                .Phases(1).Properties.molarfraction = 1.0
+                            Else
+                                .CopyCompositions(PhaseLabel.Mixture, PhaseLabel.Vapor)
+                                .Phases(2).Properties.molarfraction = 1.0
+                            End If
                             .AtEquilibrium = True
                         End With
                     Case StreamInformation.Behavior.BottomsLiquid

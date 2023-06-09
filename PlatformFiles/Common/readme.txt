@@ -1,6 +1,6 @@
 ﻿==================================================
 DWSIM - Open Source Process Simulator
-Version 8.4.0
+Version 8.4.7
 Copyright (c) 2017-2023 Daniel Medeiros and contributors
 Copyright (c) 2008-2016 Daniel Medeiros, Gregor Reichert, Gustavo Leon
 ==================================================
@@ -61,6 +61,84 @@ VERSION HISTORY / CHANGELOG
 ==================================================
 
 The full changelog including souce code changes can be viewed at https://github.com/DanWBR/dwsim/commits/windows
+
+Version 8.4.7
+
+- Added Feed Recovery as specification for Distillation Columns
+- Added context menu in compound selection panel for viewing, exporting and replacing (Classic UI)
+- Exposed Tray Spacing for user definition in Rigorous Column
+- Implemented Stop button for Cross-Platform UI (feature request #481)
+- Fixed loading of additional compounds for Property Packages in CAPE-OPEN/Excel mode
+- Improved initialization time
+- Other bug fixes
+
+Version 8.4.6
+
+- Fixed memory leaks in Classic UI
+- Overall performance and memory consumption improvements
+
+Version 8.4.5
+
+- New Henry's Constants database from https://henrys-law.org/
+- Added MaterialStream.SetOverallMolarComposition() function
+- Clear log when converging recycles (Classic UI)
+- Fixed issue with kinetic and hetcat reaction editors (Classic UI)
+- Removed OpenGL renderer (Classic UI)
+- Fixed Classic UI freezing during calculations
+- Fixed Compressor/Expander curve extrapolation
+- Other minor fixes and enhancements
+
+Version 8.4.4
+
+- Implemented Natural Layout feature for PFD
+- Display phase total amount in Material Stream editor (Classic UI)
+- Implemented #461: warning messages when detecting unexpected phases for Pump, Compressor and Expander
+- Fixed and updated Excel Add-In sample
+- Fixed issue with macOS/Linux freezing when estimating missing NRTL/UNIQUAC parameters
+- Fixed SVLLE flash algorithm error with forced solids
+- Fixed #457: SetOverallMassComposition not working
+- Fixed SetPropertyVal for Cape-Open UO
+- Fixed deadlock on UIThread
+- Fixed PFR pressure drop calculation
+- Fixed issue with Liquid-Liquid Extraction column
+- Fixed missing BIP message for UNIFAC models
+- Fixed some property display units for heat exchanger
+- Other minor bug fixes and UI adjustments
+
+Version 8.4.3
+
+- Updates to Simulate 365 Login and File Picker
+- Nested Loops Flash optimizations
+- Exposing Valve's Actual Kv
+- Added "Invert Selection" to Edit menu (Classic UI)
+- Zoom+Center on mouse double-click
+- Fixed object cloning
+- Fixed an issue with Air Cooler model (#421)
+- Flowsheet zooming/centering fixes
+- Fixed issue with Liquid Cp calculation
+- Fixed a bug with Valve's Kv/Cv calculation mode
+- Other minor fixes
+
+Version 8.4.2
+
+- Updated Cheméo parser to get data from new API endpoint
+- Smart Object Solver disabled by default
+- Added button to view all log messages
+- Japanese translation review
+- Fixed Dashboard window size for high-dpi displays
+- Fixed System.ValueTuple version mismatch
+- Fixed bug with OpenGL renderer (Classic UI)
+- Fixed Excel Add-In not working
+- Fixed PFR pressure drop calculation when Ntubes > 1 (discussion #445)
+- Fixed bug #422: Error in CoolProp PH flash
+- Fixed bug #444: Incorrect refrigerant outlet temperature
+- Fixed bug #446: Large temperature drop across splitter
+
+Version 8.4.1
+
+- Steam Tables PP now checks for Water exclusivity on Material Streams
+- Classic UI layout adjustments
+- Fixed an issue with System.Tuple.dll
 
 Version 8.4.0
 

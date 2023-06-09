@@ -1448,6 +1448,8 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                                                           avgerr *= 100
                                                           avgerr /= rcount
 
+                                                          fgui.ClearLog()
+
                                                           fgui.ShowMessage("Recycle loop #" & (icount + 1) & ", average recycle error: " & Format(avgerr, "N") & "%", IFlowsheet.MessageType.Information)
 
                                                           fgui.UpdateInterface()
@@ -1668,7 +1670,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                     IObj?.Paragraphs.Add(baseexception.Message)
                 Next
 
-                fgui.ShowMessage(fgui.GetTranslatedString("If Anonymous Analytics Sharing is enabled, the developers will be notified shortly about the errors. Thank you for your contribution!"), IFlowsheet.MessageType.GeneralError)
+                'fgui.ShowMessage(fgui.GetTranslatedString("If Anonymous Analytics Sharing is enabled, the developers will be notified shortly about the errors. Thank you for your contribution!"), IFlowsheet.MessageType.GeneralError)
 
                 fs.Solved = False
                 If baseexception IsNot Nothing Then fs.ErrorMessage = baseexception.ToString
@@ -1744,6 +1746,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
 
             fqueue.CalculationQueue.Enqueue(objargs)
 
+            'Return SolveFlowsheet(fobj, Settings.SolverMode, Nothing, False, False, Nothing, Nothing, Nothing)
             Return SolveFlowsheet(fobj, Settings.SolverMode, Nothing, True)
 
         Else
