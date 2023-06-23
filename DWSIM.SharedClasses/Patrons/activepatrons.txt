@@ -33,11 +33,9 @@
 🌟 Roland Berger
 🌟 Ronald J. Dunbar
 🌟 Ronald Visness
-🌟 Steven Sandoval
 🌟 Tino Josef Ritter
 Alberto Baumeister
 Alex Platon
-Alexander Semenyak
 Andras Nady
 Anders Andreasen
 Andrew Dickson
@@ -53,9 +51,11 @@ Daniel Bajolet
 Daniel Dornellas Athayde
 David Miller
 David Whitlock
+Denislav Zdravkov
 Dorivaldo Junior
 Doug Palfreyman
 Emanuel Cardoso
+Fernando Almeida
 Gokhan Candan 
 Guenther Holzer
 Henar Portero

@@ -120,9 +120,24 @@ Public Class FlowsheetSurface_SkiaSharp
 
         SimObjPanel = New SimulationObjectsPanel() With {.Dock = DockStyle.Fill, .Flowsheet = Flowsheet}
 
-        SimObjPanel.ContextMenuStrip = CMS_Palette
+        AddHandler SimObjPanel.Button1.Click,
+            Sub(s2, e2)
+                If SimObjPanel.Button1.Tag = "Expanded" Then
+                    SimObjPanel.Button1.Tag = "Collapsed"
+                    SimObjPanel.Button1.BackgroundImage = My.Resources.double_left_32px
+                    SplitContainerVertical.SplitterDistance = SplitContainerVertical.Width - 40 * Settings.DpiScale
+                    SimObjPanel.TableLayoutPanel1.Visible = False
+                    SimObjPanel.Label1.Visible = False
+                Else
+                    SimObjPanel.Button1.Tag = "Expanded"
+                    SimObjPanel.Button1.BackgroundImage = My.Resources.double_right_32px
+                    SplitContainerVertical.SplitterDistance = SplitContainerVertical.Width - 420 * Settings.DpiScale
+                    SimObjPanel.TableLayoutPanel1.Visible = True
+                    SimObjPanel.Label1.Visible = True
+                End If
+            End Sub
 
-        SplitContainerHorizontal.Panel2.Controls.Add(SimObjPanel)
+        SplitContainerVertical.Panel2.Controls.Add(SimObjPanel)
 
         If GlobalSettings.Settings.DpiScale > 1.0 Then
 
@@ -185,7 +200,6 @@ Public Class FlowsheetSurface_SkiaSharp
 
         If FormMain.IsPro Then
             FindTearStreamsAutomaticallyToolStripMenuItem.Visible = False
-            UpgradeDistillationColumnToProToolStripMenuItem.Visible = False
             tsmiHeatMap.Visible = False
             tsmiLiveFlow.Visible = False
             tss1.Visible = False
@@ -282,8 +296,6 @@ Public Class FlowsheetSurface_SkiaSharp
         Me.SplitToolStripMenuItem.Visible = False
         Me.MergeStreamsToolStripMenuItem.Visible = False
         Me.SplitAndInsertRecycleMenuItem.Visible = False
-
-        UpgradeDistillationColumnToProToolStripMenuItem.Visible = False
 
         Me.SplitAndInsertValveTSMI.Visible = False
 
@@ -474,8 +486,6 @@ Public Class FlowsheetSurface_SkiaSharp
             Else
                 Me.HorizontalmenteToolStripMenuItem.Checked = False
             End If
-
-            UpgradeDistillationColumnToProToolStripMenuItem.Visible = True
 
         Else
 
@@ -3402,6 +3412,7 @@ Public Class FlowsheetSurface_SkiaSharp
     End Sub
 
     Private Sub FlowsheetSurface_SkiaSharp_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+
         Try
             FlowsheetSurface.ZoomAll(SplitContainerHorizontal.Panel1.Width, SplitContainerHorizontal.Panel1.Height)
             FlowsheetSurface.ShowGrid = Flowsheet.Options.FlowsheetDisplayGrid
@@ -3412,8 +3423,13 @@ Public Class FlowsheetSurface_SkiaSharp
             tsbMultiSelectMode.Checked = Flowsheet.Options.FlowsheetSnapToGrid
         Catch ex As Exception
         End Try
+
         TSTBZoom.Text = Format(Flowsheet.FormSurface.FlowsheetSurface.Zoom, "#%")
+
+        SplitContainerVertical.SplitterDistance = SplitContainerVertical.Width - 350 * Settings.DpiScale
+
         FormMain.TranslateFormFunction?.Invoke(Me)
+
     End Sub
 
     Public Sub FlowsheetDesignSurface_SelectionChanged_New(ByVal sender As Object, ByVal e As EventArgs)
@@ -3872,19 +3888,14 @@ Public Class FlowsheetSurface_SkiaSharp
 
     End Sub
 
-    Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem1.Click
+    Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs)
         If SplitContainerVertical.Panel2Collapsed Then
-            SimObjPanel.TabControl1.Alignment = TabAlignment.Right
-            SimObjPanel.TabControl1.Multiline = True
             SplitContainerHorizontal.Panel2.Controls.Remove(SimObjPanel)
             SplitContainerVertical.Panel2.Controls.Add(SimObjPanel)
             SplitContainerVertical.SplitterDistance = (SplitContainerVertical.Width - 160) * GlobalSettings.Settings.DpiScale
             SplitContainerVertical.Panel2Collapsed = False
             SplitContainerHorizontal.Panel2Collapsed = True
         Else
-            SimObjPanel.TabControl1.Alignment = TabAlignment.Top
-            SimObjPanel.TabControl1.Multiline = False
-            SimObjPanel.TabControl1.Width = SplitContainerHorizontal.Panel2.Width
             SplitContainerVertical.Panel2.Controls.Remove(SimObjPanel)
             SplitContainerHorizontal.Panel2.Controls.Add(SimObjPanel)
             SplitContainerHorizontal.SplitterDistance = (SplitContainerVertical.Height - 100) * GlobalSettings.Settings.DpiScale
@@ -4142,6 +4153,18 @@ Public Class FlowsheetSurface_SkiaSharp
 
         HandleKeyDown(e)
 
+    End Sub
+
+    Private Sub PasteObjectTSMI_Click(sender As Object, e As EventArgs) Handles PasteObjectTSMI.Click
+        Flowsheet.PasteObjects()
+    End Sub
+
+    Private Sub CutTSMI_Click(sender As Object, e As EventArgs) Handles CutTSMI.Click
+        Flowsheet.CutObjects()
+    End Sub
+
+    Private Sub CopyTSMI_Click(sender As Object, e As EventArgs) Handles CopyTSMI.Click
+        Flowsheet.CopyObjects()
     End Sub
 
     Public Sub ReleaseResources()

@@ -478,6 +478,10 @@
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
     <Reference Include="System.Security" />
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
@@ -1309,6 +1313,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FlowsheetComponents\FlowsheetSurfaceSkiaSharp\FlowsheetSurface_SkiaSharp.en.resx">
       <DependentUpon>FlowsheetSurface_SkiaSharp.vb</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FlowsheetComponents\FlowsheetSurfaceSkiaSharp\FlowsheetSurface_SkiaSharp.resx">
       <DependentUpon>FlowsheetSurface_SkiaSharp.vb</DependentUpon>
@@ -1838,6 +1843,10 @@
       <Project>{fea05ae3-5ee2-4a7b-88b3-1a4f9000ea08}</Project>
       <Name>DWSIM.Thermodynamics.Databases.KDBLink</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DWSIM.Thermodynamics.ReaktoroPropertyPackage\DWSIM.Thermodynamics.ReaktoroPropertyPackage.vbproj">
+      <Project>{d670c3b0-1ee1-47d4-99c6-8820cfb072f7}</Project>
+      <Name>DWSIM.Thermodynamics.ReaktoroPropertyPackage</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DWSIM.Thermodynamics\DWSIM.Thermodynamics.vbproj">
       <Project>{369bc7af-836b-4de1-93e3-b051bc148b23}</Project>
       <Name>DWSIM.Thermodynamics</Name>
@@ -2363,6 +2372,7 @@
     <None Include="Resources\disk1.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\thick_arrow_pointing_down_32px.png" />
     <None Include="Resources\user_manual_80px.png" />
     <None Include="Resources\undo_96px.png" />
     <None Include="Resources\settings_80px.png" />
@@ -3008,6 +3018,7 @@
     <Content Include="Lib\_weakrefset.py" />
     <Content Include="Lib\__future__.py" />
     <Content Include="Lib\__phello__.foo.py" />
+    <None Include="Resources\arrow_32px.png" />
     <Content Include="Resources\ch.png" />
     <None Include="Resources\clock_red.png" />
     <None Include="Resources\comp_separator.png" />
@@ -3029,6 +3040,7 @@
     <None Include="Resources\chemeo.png" />
     <None Include="Resources\color_wheel.png" />
     <None Include="Resources\close_96px.png" />
+    <None Include="Resources\collaboration_female_male_48px.png" />
     <Content Include="Resources\control_equalizer_blue.png" />
     <None Include="Resources\cut.png" />
     <None Include="Resources\ddbsearch.jpg" />
@@ -3062,6 +3074,8 @@
     <None Include="Resources\DWSIM Icon Vector 2.png" />
     <None Include="Resources\DWSIM_Icon_4.png" />
     <None Include="Resources\DWSIM_Icon_4.ico" />
+    <None Include="Resources\double_left_32px.png" />
+    <None Include="Resources\double_right_32px.png" />
     <Content Include="Resources\es.png" />
     <None Include="Resources\Excel.png" />
     <None Include="Resources\Excel_copy1.jpg" />
@@ -3373,12 +3387,6 @@
     <EmbeddedResource Include="Forms\FlowsheetAnalysis\FormSensAnalysis.resx">
       <DependentUpon>FormSensAnalysis.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FormUnhandledException.de.resx">
-      <DependentUpon>FormUnhandledException.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FormUnhandledException.es.resx">
-      <DependentUpon>FormUnhandledException.vb</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Forms\FormScript.resx">
       <DependentUpon>FormScript.vb</DependentUpon>
     </EmbeddedResource>
@@ -3649,7 +3657,9 @@ xcopy "$(SolutionDir)\PlatformFiles\Common" "$(TargetDir)"  /E /Y /F /D
 xcopy "$(SolutionDir)\PlatformFiles\Windows" "$(TargetDir)"  /E /Y /F /D
 
 erase /S /Q "$(SolutionDir)DistPackages\Windows\dwsim-web-ui" 2&gt;nul 1&gt;nul 4&gt;nul
-xcopy "$(SolutionDir)\DWSIM.UI.Web\dwsim-web-ui" "$(TargetDir)"  /E /Y /F /D
+
+xcopy "$(SolutionDir)DWSIM.UI.Web\dwsim-web-ui\*" "$(TargetDir)dwsim-web-ui\*" /E /Y /F /D
+xcopy "$(TargetDir)dwsim-web-ui\*" "$(SolutionDir)DistPackages\Windows\dwsim-web-ui\*" /E /Y /F /D
 
 erase /S /Q "$(SolutionDir)DistPackages\Windows\DWSIM.vshost.*" 2&gt;nul 1&gt;nul 4&gt;nul
 erase /S /Q "$(SolutionDir)DistPackages\Windows\*.tmp" 2&gt;nul 1&gt;nul 4&gt;nul
@@ -3672,8 +3682,6 @@ erase /S  /Q "$(SolutionDir)DistPackages\Windows_32\*.tmp" 2&gt;nul 1&gt;nul 4&g
 erase /S  /Q "$(SolutionDir)DistPackages\Windows_32\*.dylib" 2&gt;nul 1&gt;nul 4&gt;nul
 
 )
-
-if exist "$(SolutionDir)DWSIM.UI.Web\dwsim-web-ui\" xcopy "$(SolutionDir)DWSIM.UI.Web\dwsim-web-ui\" "$(TargetDir)dwsim-web-ui\" /E /Y /F /D
 </PostBuildEvent>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

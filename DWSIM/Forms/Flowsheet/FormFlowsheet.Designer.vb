@@ -21,9 +21,9 @@ Partial Class FormFlowsheet
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FormFlowsheet))
-        Dim DataGridViewCellStyle4 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
-        Dim DataGridViewCellStyle5 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
-        Dim DataGridViewCellStyle6 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
+        Dim DataGridViewCellStyle1 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
+        Dim DataGridViewCellStyle2 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
+        Dim DataGridViewCellStyle3 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Me.MenuStrip1 = New System.Windows.Forms.MenuStrip()
         Me.FileTSMI = New System.Windows.Forms.ToolStripMenuItem()
         Me.CloseToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -81,7 +81,6 @@ Partial Class FormFlowsheet
         Me.varpaneltsmi = New System.Windows.Forms.ToolStripMenuItem()
         Me.COObjTSMI = New System.Windows.Forms.ToolStripMenuItem()
         Me.ConsoleOutputTSMI = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ConsoleInterativoIronPtyhonToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToggleWeatherPanelVisibilityToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripSeparator10 = New System.Windows.Forms.ToolStripSeparator()
         Me.RestoreLayoutTSMI = New System.Windows.Forms.ToolStripMenuItem()
@@ -126,7 +125,8 @@ Partial Class FormFlowsheet
         Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.lblLastMessage = New System.Windows.Forms.LinkLabel()
-        Me.Button1 = New System.Windows.Forms.Button()
+        Me.btnOpenLogPanel = New System.Windows.Forms.Button()
+        Me.btnViewFullLog = New System.Windows.Forms.Button()
         Me.MenuStrip1.SuspendLayout()
         Me.ToolStrip1.SuspendLayout()
         CType(Me.DataGridView1, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -520,7 +520,7 @@ Partial Class FormFlowsheet
         '
         'ShowTSMI
         '
-        Me.ShowTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.varpaneltsmi, Me.COObjTSMI, Me.ConsoleOutputTSMI, Me.ConsoleInterativoIronPtyhonToolStripMenuItem, Me.ToggleWeatherPanelVisibilityToolStripMenuItem, Me.ToolStripSeparator10, Me.RestoreLayoutTSMI, Me.tsmiCloseOpenedEditors})
+        Me.ShowTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.varpaneltsmi, Me.COObjTSMI, Me.ConsoleOutputTSMI, Me.ToggleWeatherPanelVisibilityToolStripMenuItem, Me.ToolStripSeparator10, Me.RestoreLayoutTSMI, Me.tsmiCloseOpenedEditors})
         Me.ShowTSMI.MergeAction = System.Windows.Forms.MergeAction.MatchOnly
         Me.ShowTSMI.MergeIndex = 9
         Me.ShowTSMI.Name = "ShowTSMI"
@@ -542,11 +542,6 @@ Partial Class FormFlowsheet
         '
         Me.ConsoleOutputTSMI.Name = "ConsoleOutputTSMI"
         resources.ApplyResources(Me.ConsoleOutputTSMI, "ConsoleOutputTSMI")
-        '
-        'ConsoleInterativoIronPtyhonToolStripMenuItem
-        '
-        Me.ConsoleInterativoIronPtyhonToolStripMenuItem.Name = "ConsoleInterativoIronPtyhonToolStripMenuItem"
-        resources.ApplyResources(Me.ConsoleInterativoIronPtyhonToolStripMenuItem, "ConsoleInterativoIronPtyhonToolStripMenuItem")
         '
         'ToggleWeatherPanelVisibilityToolStripMenuItem
         '
@@ -767,33 +762,33 @@ Partial Class FormFlowsheet
         '
         'DataGridView1
         '
-        DataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft
-        DataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control
-        DataGridViewCellStyle4.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        DataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText
-        DataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight
-        DataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText
-        DataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.[True]
-        Me.DataGridView1.ColumnHeadersDefaultCellStyle = DataGridViewCellStyle4
+        DataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft
+        DataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control
+        DataGridViewCellStyle1.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        DataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText
+        DataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight
+        DataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText
+        DataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.[True]
+        Me.DataGridView1.ColumnHeadersDefaultCellStyle = DataGridViewCellStyle1
         Me.DataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        DataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft
-        DataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window
-        DataGridViewCellStyle5.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        DataGridViewCellStyle5.ForeColor = System.Drawing.SystemColors.ControlText
-        DataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight
-        DataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText
-        DataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.[False]
-        Me.DataGridView1.DefaultCellStyle = DataGridViewCellStyle5
+        DataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft
+        DataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window
+        DataGridViewCellStyle2.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        DataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText
+        DataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight
+        DataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText
+        DataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.[False]
+        Me.DataGridView1.DefaultCellStyle = DataGridViewCellStyle2
         resources.ApplyResources(Me.DataGridView1, "DataGridView1")
         Me.DataGridView1.Name = "DataGridView1"
-        DataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft
-        DataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Control
-        DataGridViewCellStyle6.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        DataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText
-        DataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight
-        DataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText
-        DataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.[True]
-        Me.DataGridView1.RowHeadersDefaultCellStyle = DataGridViewCellStyle6
+        DataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft
+        DataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Control
+        DataGridViewCellStyle3.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        DataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText
+        DataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight
+        DataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText
+        DataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.[True]
+        Me.DataGridView1.RowHeadersDefaultCellStyle = DataGridViewCellStyle3
         '
         'TSTable
         '
@@ -807,7 +802,8 @@ Partial Class FormFlowsheet
         '
         Me.Panel1.BackColor = System.Drawing.Color.White
         Me.Panel1.Controls.Add(Me.FlowLayoutPanel1)
-        Me.Panel1.Controls.Add(Me.Button1)
+        Me.Panel1.Controls.Add(Me.btnOpenLogPanel)
+        Me.Panel1.Controls.Add(Me.btnViewFullLog)
         resources.ApplyResources(Me.Panel1, "Panel1")
         Me.Panel1.Name = "Panel1"
         '
@@ -838,11 +834,17 @@ Partial Class FormFlowsheet
         Me.lblLastMessage.Name = "lblLastMessage"
         Me.lblLastMessage.TabStop = True
         '
-        'Button1
+        'btnOpenLogPanel
         '
-        resources.ApplyResources(Me.Button1, "Button1")
-        Me.Button1.Name = "Button1"
-        Me.Button1.UseVisualStyleBackColor = True
+        resources.ApplyResources(Me.btnOpenLogPanel, "btnOpenLogPanel")
+        Me.btnOpenLogPanel.Name = "btnOpenLogPanel"
+        Me.btnOpenLogPanel.UseVisualStyleBackColor = True
+        '
+        'btnViewFullLog
+        '
+        resources.ApplyResources(Me.btnViewFullLog, "btnViewFullLog")
+        Me.btnViewFullLog.Name = "btnViewFullLog"
+        Me.btnViewFullLog.UseVisualStyleBackColor = True
         '
         'FormFlowsheet
         '
@@ -965,13 +967,13 @@ Partial Class FormFlowsheet
     Friend WithEvents CriadorDeComponentesSolidosToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ToggleWeatherPanelVisibilityToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents CriarPseudocomponentesEmBateladaToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents ConsoleInterativoIronPtyhonToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents Panel1 As Panel
     Friend WithEvents FlowLayoutPanel1 As FlowLayoutPanel
     Friend WithEvents PictureBox1 As PictureBox
     Friend WithEvents Label1 As Label
     Friend WithEvents lblLastMessage As LinkLabel
-    Friend WithEvents Button1 As Button
+    Friend WithEvents btnOpenLogPanel As Button
     Public WithEvents tsbAtivar As ToolStripButton
     Friend WithEvents InvertSelectionToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents btnViewFullLog As Button
 End Class

@@ -121,7 +121,6 @@ Public Class FormMain
         InitializeWebView2Environment()
 #End If
 
-
         Using g1 = Me.CreateGraphics()
 
             Settings.DpiScale = g1.DpiX / 96.0
@@ -219,23 +218,6 @@ Public Class FormMain
             SetupWelcomeScreen()
 
         End If
-
-#If Not DEBUG Then
-        If AnalyticsProvider IsNot Nothing Then
-#End If
-        Task.Delay(30 * 1000).ContinueWith(
-            Sub(t)
-                UIThread(Sub()
-#If DEBUG Then
-                             tsbQuickQuestion.Visible = True
-#Else
-                             If Not My.Settings.UserTypeSent Then tsbQuickQuestion.Visible = True
-#End If
-                         End Sub)
-            End Sub)
-#If Not DEBUG Then
-        End If
-#End If
 
     End Sub
 
@@ -922,6 +904,9 @@ Public Class FormMain
 
         PropertyPackages.Add(LKPPP.ComponentName.ToString, LKPPP)
 
+        Dim RKPP As ReaktoroPropertyPackage.ReaktoroPropertyPackage = New ReaktoroPropertyPackage.ReaktoroPropertyPackage()
+        PropertyPackages.Add(RKPP.ComponentName.ToString, RKPP)
+
         'Dim EUQPP As ExUNIQUACPropertyPackage = New ExUNIQUACPropertyPackage()
         'EUQPP.ComponentName = "Extended UNIQUAC (Aqueous Electrolytes)"
         'EUQPP.ComponentDescription = DWSIM.App.GetLocalString("DescEUPP")
@@ -1113,7 +1098,20 @@ Public Class FormMain
 
         AnalyticsProvider?.Initialize()
 
-        FormMain.TranslateFormFunction?.Invoke(Me)
+        TranslateFormFunction?.Invoke(Me)
+
+        If AnalyticsProvider IsNot Nothing Then
+            AddHandler Me.ToolOpened,
+                Sub(sender2, e2)
+                    AnalyticsProvider.RegisterEvent(sender2.ToString(), "", Nothing)
+                End Sub
+            Task.Delay(30 * 1000).ContinueWith(
+            Sub(t)
+                UIThread(Sub()
+                             If Not My.Settings.UserTypeSent Then tsbQuickQuestion.Visible = True
+                         End Sub)
+            End Sub)
+        End If
 
     End Sub
 
@@ -2180,10 +2178,6 @@ Public Class FormMain
 
         form.FormFilesExplorer.Flowsheet = form
 
-#If LINUX = False Then
-        form.FormIPyConsole.Flowsheet = form
-#End If
-
         ' Set DockPanel properties
         form.dckPanel.ActiveAutoHideContent = Nothing
         form.dckPanel.Parent = form
@@ -2198,9 +2192,6 @@ Public Class FormMain
         form.FormDynamics.DockPanel = Nothing
         form.FormCharts.DockPanel = Nothing
         form.FormFilesExplorer.DockPanel = Nothing
-#If LINUX = False Then
-        form.FormIPyConsole.DockPanel = Nothing
-#End If
 
         Try
             form.FormLog.DockPanel = form.dckPanel
@@ -2210,9 +2201,6 @@ Public Class FormMain
             form.FormSurface?.Show(form.dckPanel)
             form.FormDynamics?.Show(form.dckPanel)
             form.FormFilesExplorer?.Show(form.dckPanel)
-#If LINUX = False Then
-            'form.FormIPyConsole?.Show(form.dckPanel)
-#End If
             form.dckPanel.BringToFront()
             form.dckPanel.UpdateDockWindowZOrder(DockStyle.Fill, True)
         Catch ex As Exception
@@ -2687,6 +2675,16 @@ Public Class FormMain
 
         End If
 
+        If xdoc.Element("DWSIM_Simulation_Data").Element("MessagesLog") IsNot Nothing Then
+            Try
+                data = xdoc.Element("DWSIM_Simulation_Data").Element("MessagesLog").Elements.ToList
+                For Each xel As XElement In data
+                    form.MessagesLog.Add(xel.Value)
+                Next
+            Catch ex As Exception
+            End Try
+        End If
+
         If Not ProgressFeedBack Is Nothing Then ProgressFeedBack.Invoke(90)
 
         Try
@@ -2760,10 +2758,6 @@ Public Class FormMain
 
             form.FormFilesExplorer.Flowsheet = form
 
-#If LINUX = False Then
-            form.FormIPyConsole.Flowsheet = form
-#End If
-
             ' Set DockPanel properties
             form.dckPanel.ActiveAutoHideContent = Nothing
             form.dckPanel.Parent = form
@@ -2779,9 +2773,6 @@ Public Class FormMain
             form.FormCharts.DockPanel = Nothing
             form.FormFilesExplorer.DockPanel = Nothing
             form.FormScript1.DockPanel = Nothing
-#If LINUX = False Then
-            form.FormIPyConsole.DockPanel = Nothing
-#End If
 
             If Not DWSIM.App.IsRunningOnMono Then
                 If Not My.Computer.Keyboard.ShiftKeyDown Then
@@ -3325,8 +3316,6 @@ Public Class FormMain
 
             form.FormFilesExplorer.Flowsheet = form
 
-            form.FormIPyConsole.Flowsheet = form
-
             ' Set DockPanel properties
             form.dckPanel.ActiveAutoHideContent = Nothing
             form.dckPanel.Parent = form
@@ -3341,7 +3330,6 @@ Public Class FormMain
             form.FormSurface.DockPanel = Nothing
             form.FormDynamics.DockPanel = Nothing
             form.FormFilesExplorer.DockPanel = Nothing
-            form.FormIPyConsole.DockPanel = Nothing
             form.FormScript1.DockPanel = Nothing
 
             If Not My.Computer.Keyboard.ShiftKeyDown Then
@@ -3788,6 +3776,7 @@ Public Class FormMain
             File.Delete(tmpfile)
         Next
         xdoc.Element("DWSIM_Simulation_Data").Element("Spreadsheet").Element("RGFData").Value = Newtonsoft.Json.JsonConvert.SerializeObject(sdict)
+
         xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("PanelLayout"))
         xel = xdoc.Element("DWSIM_Simulation_Data").Element("PanelLayout")
 
@@ -3795,6 +3784,17 @@ Public Class FormMain
         form.dckPanel.SaveAsXml(myfile, Encoding.UTF8)
         xel.Add(File.ReadAllText(myfile).ToString)
         File.Delete(myfile)
+
+        xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("MessagesLog"))
+        xel = xdoc.Element("DWSIM_Simulation_Data").Element("MessagesLog")
+
+        If form.Options.SaveFlowsheetMessagesInFile Then
+            Dim inner_elements As New List(Of XElement)
+            For Each item In form.MessagesLog
+                inner_elements.Add(New XElement("Message", item))
+            Next
+            xel.Add(inner_elements)
+        End If
 
         Using stream As New IO.MemoryStream()
             xdoc.Save(stream)
