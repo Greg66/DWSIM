@@ -118,6 +118,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="TextBoxName.Size" type="System.Drawing.Size, System.Drawing">
+    <value>782, 20</value>
+  </data>
+  <data name="TextBoxComments.Location" type="System.Drawing.Point, System.Drawing">
+    <value>88, 353</value>
+  </data>
+  <data name="Label94.Location" type="System.Drawing.Point, System.Drawing">
+    <value>9, 353</value>
+  </data>
   <data name="Label94.Size" type="System.Drawing.Size, System.Drawing">
     <value>56, 13</value>
   </data>
@@ -158,6 +167,9 @@
   <data name="TextBoxFormula.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
   </data>
+  <data name="pbRender.Size" type="System.Drawing.Size, System.Drawing">
+    <value>960, 218</value>
+  </data>
   <data name="Label22.Size" type="System.Drawing.Size, System.Drawing">
     <value>90, 13</value>
   </data>
@@ -176,6 +188,12 @@
   <data name="CheckBoxMW.Location" type="System.Drawing.Point, System.Drawing">
     <value>235, 43</value>
   </data>
+  <data name="TBUnifac.Location" type="System.Drawing.Point, System.Drawing">
+    <value>708, 198</value>
+  </data>
+  <data name="PicUNIFAC.Size" type="System.Drawing.Size, System.Drawing">
+    <value>256, 160</value>
+  </data>
   <data name="Label60.Size" type="System.Drawing.Size, System.Drawing">
     <value>384, 13</value>
   </data>
@@ -185,14 +203,35 @@
   <data name="Column4.HeaderText" xml:space="preserve">
     <value>Amount</value>
   </data>
+  <data name="GridUNIFAC.Size" type="System.Drawing.Size, System.Drawing">
+    <value>690, 423</value>
+  </data>
+  <data name="TBModfac.Location" type="System.Drawing.Point, System.Drawing">
+    <value>705, 200</value>
+  </data>
+  <data name="PicMODFAC.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 160</value>
+  </data>
   <data name="DataGridViewTextBoxColumn13.HeaderText" xml:space="preserve">
     <value>Amount</value>
+  </data>
+  <data name="GridMODFAC.Size" type="System.Drawing.Size, System.Drawing">
+    <value>690, 420</value>
   </data>
   <data name="Label85.Size" type="System.Drawing.Size, System.Drawing">
     <value>390, 13</value>
   </data>
   <data name="Label85.Text" xml:space="preserve">
     <value>Enter the amount of each MODFAC group in the compound structure, if available.</value>
+  </data>
+  <data name="TbNISTMODFAC.Location" type="System.Drawing.Point, System.Drawing">
+    <value>706, 188</value>
+  </data>
+  <data name="PicNISTMODFAC.Size" type="System.Drawing.Size, System.Drawing">
+    <value>260, 147</value>
+  </data>
+  <data name="GridNISTMODFAC.Size" type="System.Drawing.Size, System.Drawing">
+    <value>690, 417</value>
   </data>
   <data name="Label58.Size" type="System.Drawing.Size, System.Drawing">
     <value>109, 13</value>
@@ -205,6 +244,9 @@
   </data>
   <data name="Count.HeaderText" xml:space="preserve">
     <value>Count</value>
+  </data>
+  <data name="AddAtomDataGrid.Size" type="System.Drawing.Size, System.Drawing">
+    <value>137, 384</value>
   </data>
   <data name="TextBox1.Text" xml:space="preserve">
     <value>Attention! Definition of additional Joback groups will prevent usage of UNIFAC/MODFAC Property Packages!</value>
@@ -220,6 +262,9 @@
   </data>
   <data name="ColCount.HeaderText" xml:space="preserve">
     <value>Count</value>
+  </data>
+  <data name="AtomDataGrid.Size" type="System.Drawing.Size, System.Drawing">
+    <value>131, 384</value>
   </data>
   <data name="Label57.Size" type="System.Drawing.Size, System.Drawing">
     <value>428, 13</value>
@@ -244,6 +289,9 @@
   </data>
   <data name="ColumnCountJoback.HeaderText" xml:space="preserve">
     <value>Count Joback</value>
+  </data>
+  <data name="GridJoback.Size" type="System.Drawing.Size, System.Drawing">
+    <value>493, 384</value>
   </data>
   <data name="TextBoxUNIQUAC_R.TabIndex" type="System.Int32, mscorlib">
     <value>21</value>
@@ -849,6 +897,9 @@
   <data name="EstruturaUNIFACMODFACDDBToolStripMenuItem.Text" xml:space="preserve">
     <value>DDB UNIFAC/MODFAC Structure Database </value>
   </data>
+  <data name="EstruturaUNIFACMODFACDDBToolStripMenuItem.Visible" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
   <data name="ImportarDadosToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>248, 22</value>
   </data>
@@ -885,11 +936,35 @@
   <data name="OptionsToolStripMenuItem.Text" xml:space="preserve">
     <value>Options</value>
   </data>
+  <data name="TabPageID.Size" type="System.Drawing.Size, System.Drawing">
+    <value>993, 500</value>
+  </data>
+  <data name="TabPage1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>979, 468</value>
+  </data>
+  <data name="TabPage2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>979, 468</value>
+  </data>
   <data name="Label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>418, 13</value>
   </data>
   <data name="Label1.Text" xml:space="preserve">
     <value>Enter the amount of each NIST-MODFAC group in the compound structure, if available.</value>
+  </data>
+  <data name="TabPage3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>979, 468</value>
+  </data>
+  <data name="TabPage4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>979, 468</value>
+  </data>
+  <data name="TabControl2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>987, 494</value>
+  </data>
+  <data name="TabPageStructure.Size" type="System.Drawing.Size, System.Drawing">
+    <value>993, 500</value>
+  </data>
+  <data name="TabPageConstantProperties.Size" type="System.Drawing.Size, System.Drawing">
+    <value>993, 500</value>
   </data>
   <data name="TableLayoutPanel1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Bottom, Left, Right</value>
@@ -1223,6 +1298,39 @@
   </data>
   <data name="TabControl3.Size" type="System.Drawing.Size, System.Drawing">
     <value>987, 427</value>
+  </data>
+  <data name="TabPageTDepProperties.Size" type="System.Drawing.Size, System.Drawing">
+    <value>993, 500</value>
+  </data>
+  <data name="TabControl1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>2, 64</value>
+  </data>
+  <data name="TabControl1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>1001, 526</value>
+  </data>
+  <data name="Label15.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Left</value>
+  </data>
+  <data name="Label15.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 40</value>
+  </data>
+  <data name="tbStatus.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Left, Right</value>
+  </data>
+  <data name="tbStatus.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="tbStatus.Location" type="System.Drawing.Point, System.Drawing">
+    <value>102, 38</value>
+  </data>
+  <data name="Button1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
+  <data name="Button1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>867, 36</value>
+  </data>
+  <data name="Button1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>132, 23</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>

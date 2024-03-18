@@ -105,3 +105,16 @@ TCPServer/bin/Debug/*
 /DistPackages
 /.vs/DWSIM5/v15/Server/sqlite3
 /.vs
+/DWSIM/.vs
+/DWSIM.Controls.DockPanel/WinFormsUI/.vs
+/DWSIM.Inspector/.vs
+/DWSIM.SharedClasses/.vs
+/DWSIM.Thermodynamics.ReaktoroPropertyPackage/.vs
+/DWSIM.DrawingTools.Point/.vs
+/DWSIM.DrawingTools.SkiaSharp.Tests/.vs
+/DWSIM.ExtensionMethods/.vs
+/DWSIM.FlowsheetBase/.vs
+/DWSIM.Math.SwarmOps/.vs
+/DWSIM.Plugins.HeatOfCombustion/.vs
+/DWSIM.ProFeatures/.vs
+/DWSIM.Thermodynamics/.vs

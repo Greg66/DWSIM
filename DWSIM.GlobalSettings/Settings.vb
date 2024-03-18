@@ -58,7 +58,17 @@ Public Class Settings
             _tcks = value
         End Set
     End Property
-    Public Shared Property CAPEOPENMode As Boolean = False
+
+    Private Shared _comode As Boolean = False
+
+    Public Shared Property CAPEOPENMode As Boolean
+        Get
+            Return _comode
+        End Get
+        Set(value As Boolean)
+            _comode = value
+        End Set
+    End Property
     Public Shared Property ExcelMode As Boolean = False
 
     Public Shared Property MaxDegreeOfParallelism As Integer
@@ -194,7 +204,7 @@ Public Class Settings
                 End If
 
                 If Not Directory.Exists(pythonpath) Then
-                    Throw New Exception("Please define the path to a valid Python 3.x distribution in General Settings and try again.")
+                    Throw New Exception("Please define the path to a valid Python 3.7-3.9 distribution in General Settings and try again.")
                 End If
 
                 Try
@@ -216,7 +226,7 @@ Public Class Settings
                 End If
 
                 If Not File.Exists(pythonpath) Then
-                    Throw New Exception("Please define the path to a valid Python 3.x distribution in General Settings and try again.")
+                    Throw New Exception("Please define the path to a valid Python 3.7-3.9 distribution in General Settings and try again.")
                 End If
 
                 Try

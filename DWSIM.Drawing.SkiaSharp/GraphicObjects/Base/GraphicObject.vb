@@ -357,8 +357,11 @@ Namespace GraphicObjects
 #End Region
 
         Public Overridable Function GetPosition() As SKPoint
-            Dim myPosition As New SKPoint(X, Y)
-            Return myPosition
+            Return New SKPoint(X, Y)
+        End Function
+
+        Public Overridable Function GetCenterPosition() As SKPoint
+            Return New SKPoint(X + Width / 2, Y + Height / 2)
         End Function
 
         Public Overridable Sub SetPosition(ByVal Value As SKPoint)
@@ -523,6 +526,8 @@ Namespace GraphicObjects
 
         <Xml.Serialization.XmlIgnore>
         Public Property Flowsheet As IFlowsheet Implements IGraphicObject.Flowsheet
+
+        Public Property DrawLabel As Boolean = True Implements IGraphicObject.DrawLabel
 
         Public Function GetForeColor() As SKColor
 

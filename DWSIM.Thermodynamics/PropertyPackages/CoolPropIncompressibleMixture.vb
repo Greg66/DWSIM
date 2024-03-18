@@ -111,7 +111,7 @@ Namespace PropertyPackages
         End Sub
 
         Function GetCoolPropName(massfraction As Double) As String
-            Return "INCOMP::" & SoluteName & "[" & massfraction.ToString(Globalization.CultureInfo.InvariantCulture) & "]"
+            Return "INCOMP::" & SoluteName & "[" & massfraction.ToString("N4", Globalization.CultureInfo.InvariantCulture) & "]"
         End Function
 
         Function GetXmax() As Double
@@ -230,7 +230,7 @@ Namespace PropertyPackages
             Dim x = CurrentMaterialStream.Phases(phaseid).Compounds(SoluteCompound).MassFraction.GetValueOrDefault
 
             Try
-                Return CoolProp.PropsSI("L", "T", T, "P", P * 1.001, GetCoolPropName(x))
+                Return CoolProp.PropsSI("L", "T", T, "P", P, GetCoolPropName(x))
             Catch ex As Exception
                 Return 0.0
             End Try
@@ -242,7 +242,7 @@ Namespace PropertyPackages
             Dim x = CurrentMaterialStream.Phases(3).Compounds(SoluteCompound).MassFraction.GetValueOrDefault
 
             Try
-                Return CoolProp.PropsSI("D", "T", T, "P", P * 1.001, GetCoolPropName(x))
+                Return CoolProp.PropsSI("D", "T", T, "P", P, GetCoolPropName(x))
             Catch ex As Exception
                 Return 0.0
             End Try
@@ -293,7 +293,7 @@ Namespace PropertyPackages
             Dim x = CurrentMaterialStream.Phases(phaseid).Compounds(SoluteCompound).MassFraction.GetValueOrDefault
 
             Try
-                Return CoolProp.PropsSI("V", "T", T, "P", P * 1.001, GetCoolPropName(x))
+                Return CoolProp.PropsSI("V", "T", T, "P", P, GetCoolPropName(x))
             Catch ex As Exception
                 Return 0.0
             End Try
@@ -561,12 +561,6 @@ Namespace PropertyPackages
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.molarflow = result
                 result = result * Me.AUX_MMM(Phase) / 1000
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.massflow = result
-                If Me.CurrentMaterialStream.Phases(0).Properties.massflow.GetValueOrDefault > 0 Then
-                    result = phasemolarfrac * overallmolarflow * Me.AUX_MMM(Phase) / 1000 / Me.CurrentMaterialStream.Phases(0).Properties.massflow.GetValueOrDefault
-                Else
-                    result = 0
-                End If
-                Me.CurrentMaterialStream.Phases(phaseID).Properties.massfraction = result
                 IObj?.SetCurrent
                 Me.DW_CalcCompVolFlow(phaseID)
                 IObj?.SetCurrent
@@ -577,7 +571,7 @@ Namespace PropertyPackages
 
 
                 IObj?.SetCurrent
-                Me.CurrentMaterialStream.Phases(phaseID).Properties.density = AUX_LIQDENS(T, P, 0.0#, phaseID)
+                Me.CurrentMaterialStream.Phases(phaseID).Properties.density = AUX_LIQDENS2(T, P)
 
                 IObj?.SetCurrent
                 result = Me.DW_CalcEnthalpy(RET_VMOL(dwpl), T, P, State.Liquid)
@@ -588,7 +582,7 @@ Namespace PropertyPackages
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.entropy = result
 
                 IObj?.SetCurrent
-                result = P / (Me.AUX_LIQDENS(T, P, 0, phaseID) * 8.314 * T) / 1000 * AUX_MMM(Phase)
+                result = P / (Me.AUX_LIQDENS2(T, P) * 8.314 * T) / 1000 * AUX_MMM(Phase)
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.compressibilityFactor = result
 
                 IObj?.SetCurrent
@@ -790,7 +784,7 @@ Namespace PropertyPackages
                     Me.DW_CalcCompFugCoeff(phase)
                 Case "volume", "density"
                     If state = "L" Then
-                        result = Me.AUX_LIQDENS(T, P, 0.0#, phaseID, False)
+                        result = Me.AUX_LIQDENS2(T, P)
                     Else
                         result = Me.AUX_VAPDENS(T, P)
                     End If

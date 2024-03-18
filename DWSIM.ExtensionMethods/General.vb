@@ -39,6 +39,20 @@ Public Module General
 
     End Function
 
+    <System.Runtime.CompilerServices.Extension()>
+    Public Function Chunk(Of T)(ByVal locations As List(Of T), ByVal Optional nSize As Integer = 30) As List(Of List(Of T))
+
+        Dim list = New List(Of List(Of T))()
+        Dim i As Integer = 0
+        While i < locations.Count
+            list.Add(locations.GetRange(i, Math.Min(nSize, locations.Count - i)))
+            i += nSize
+        End While
+
+        Return list
+
+    End Function
+
 
     <System.Runtime.CompilerServices.Extension()>
     Public Sub RemoveVariable(exobj As System.Dynamic.ExpandoObject, varname As String)
@@ -661,7 +675,9 @@ Public Module General
                     Try
                         cc = GetNextVisibleCol(dgv, cc)
                         If cc > dgv.ColumnCount - 1 Then Exit For
-                        dgv.Item(cc, r).Value = arT(ii).TrimStart
+                        If Not dgv.Item(cc, r).ReadOnly Then
+                            dgv.Item(cc, r).Value = arT(ii).TrimStart
+                        End If
                         cc = cc + 1
                     Catch ex As Exception
                     End Try

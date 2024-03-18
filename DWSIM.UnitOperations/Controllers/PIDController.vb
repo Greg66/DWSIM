@@ -28,11 +28,13 @@ Namespace SpecialOps
 
         Inherits UnitOperations.SpecialOpBaseClass
 
-        Implements Interfaces.IAdjust
+        Implements Interfaces.IAdjust, IControllableObject
 
         Public Overrides Property ObjectClass As SimulationObjectClass = SimulationObjectClass.Controllers
 
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public f As EditingForm_PIDController
+
+        <Xml.Serialization.XmlIgnore> Public Property ControlPanel As Object Implements IControllableObject.ControlPanel
 
         Protected m_ManipulatedObject As SharedClasses.UnitOperations.BaseClass
         Protected m_ControlledObject As SharedClasses.UnitOperations.BaseClass
@@ -568,6 +570,24 @@ Namespace SpecialOps
             End If
         End Sub
 
+        Public Overrides Function GetEditingForm() As Form
+            If f Is Nothing Then
+                f = New EditingForm_PIDController With {.SimObject = Me}
+                f.ShowHint = GlobalSettings.Settings.DefaultEditFormLocation
+                f.Tag = "ObjectEditor"
+                Return f
+            Else
+                If f.IsDisposed Then
+                    f = New EditingForm_PIDController With {.SimObject = Me}
+                    f.ShowHint = GlobalSettings.Settings.DefaultEditFormLocation
+                    f.Tag = "ObjectEditor"
+                    Return f
+                Else
+                    Return Nothing
+                End If
+            End If
+        End Function
+
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.control_panel1
         End Function
@@ -615,6 +635,66 @@ Namespace SpecialOps
 
         End Sub
 
+        Public Sub EstimateParameters()
+
+            Dim integratorID = FlowSheet.DynamicsManager.ScheduleList(FlowSheet.DynamicsManager.CurrentSchedule).CurrentIntegrator
+            Dim integrator = FlowSheet.DynamicsManager.IntegratorList(integratorID)
+
+            Dim timestep = integrator.IntegrationStep.TotalSeconds
+
+            Dim ControlledObject = GetFlowsheet.SimulationObjects.Values.Where(Function(x) x.Name = ControlledObjectData.ID).SingleOrDefault
+
+            Dim ManipulatedObject = GetFlowsheet.SimulationObjects.Values.Where(Function(x) x.Name = ManipulatedObjectData.ID).SingleOrDefault
+
+            Dim CurrentValue = SharedClasses.SystemsOfUnits.Converter.ConvertFromSI(ControlledObjectData.Units, ControlledObject.GetPropertyValue(ControlledObjectData.PropertyName))
+
+            Dim CurrentManipulatedValue = SharedClasses.SystemsOfUnits.Converter.ConvertFromSI(ManipulatedObjectData.Units, ManipulatedObject.GetPropertyValue(ManipulatedObjectData.PropertyName))
+
+            Dim BaseSP = Math.Abs(AdjustValue)
+
+            Dim CurrentError = (CurrentValue - AdjustValue) / BaseSP
+
+            Dim delta_error = 0.01 * CurrentError
+
+            Dim newout As Double
+
+            newout = (OutputMin + OutputMax) / 2
+
+            Dim pidout, dterm As Double
+
+            If Not ReverseActing Then
+                pidout = 1.0 - newout / BaseSP
+            Else
+                pidout = newout / BaseSP - 1.0
+            End If
+
+            If Math.Abs(CurrentError) > 0.0 Then dterm = delta_error / timestep
+
+            Ki = 0.0
+
+            If Math.Abs(CurrentError) > 0.0 Then
+
+                Kp = (newout - Offset / BaseSP) * 0.9 / Math.Abs(CurrentError)
+
+            Else
+
+                Kp = 0.0
+
+            End If
+
+            If Math.Abs(dterm) > 0.0 Then
+
+                Kd = (newout - Offset / BaseSP) * 0.1 / Math.Abs(dterm)
+
+            Else
+
+                Kd = 0.0
+
+            End If
+
+        End Sub
+
+
         Public Overrides Sub Calculate(Optional args As Object = Nothing)
 
             ' Calculates PID value for given reference feedback
@@ -645,7 +725,7 @@ Namespace SpecialOps
 
             LastError = CurrentError
 
-            CurrentError = (AdjustValue - CurrentValue) / BaseSP
+            CurrentError = (CurrentValue - AdjustValue) / BaseSP
 
             CumulativeError += Math.Abs(CurrentError)
 

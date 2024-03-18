@@ -109,6 +109,8 @@ namespace DWSIM.UI.Desktop.GTK
 
         void FlowsheetSurface_GTK_ScrollEvent(object o, Gtk.ScrollEventArgs args)
         {
+            fbase?.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
+
             var oldzoom = fsurface.Zoom;
 
             if (args.Event.Direction == Gdk.ScrollDirection.Down)
@@ -123,6 +125,8 @@ namespace DWSIM.UI.Desktop.GTK
 
             int x = (int)args.Event.X;
             int y = (int)args.Event.Y;
+
+            fbase?.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
 
             fsurface.CenterTo(oldzoom, x, y, this.WidthRequest, this.HeightRequest);
 
@@ -147,6 +151,7 @@ namespace DWSIM.UI.Desktop.GTK
 
         void FlowsheetSurface_GTK_ButtonPressEvent(object o, Gtk.ButtonPressEventArgs args)
         {
+            fbase?.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
             if (args.Event.Type == Gdk.EventType.TwoButtonPress)
             {
                 //if (args.Event.State == Gdk.ModifierType.ShiftMask)

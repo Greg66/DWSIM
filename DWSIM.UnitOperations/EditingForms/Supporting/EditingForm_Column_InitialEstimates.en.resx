@@ -128,13 +128,13 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="TextBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>431, 20</value>
+    <value>425, 20</value>
   </data>
   <data name="Button1.ToolTip" xml:space="preserve">
     <value>Open file with initial estimates</value>
   </data>
   <data name="GroupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>566, 51</value>
+    <value>560, 51</value>
   </data>
   <data name="GroupBox1.Text" xml:space="preserve">
     <value>File</value>
@@ -162,7 +162,7 @@
     <value>28, 0</value>
   </data>
   <data name="dgvv.Size" type="System.Drawing.Size, System.Drawing">
-    <value>530, 381</value>
+    <value>524, 369</value>
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="ToolStrip1.AutoSize" type="System.Boolean, mscorlib">
@@ -229,10 +229,10 @@
     <value>Update Automatically</value>
   </data>
   <data name="ToolStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>28, 381</value>
+    <value>28, 369</value>
   </data>
   <data name="FaTabStripItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>558, 381</value>
+    <value>552, 369</value>
   </data>
   <data name="FaTabStripItem1.Title" xml:space="preserve">
     <value>Variables</value>
@@ -250,7 +250,7 @@
     <value>28, 0</value>
   </data>
   <data name="dgvcl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>530, 381</value>
+    <value>524, 369</value>
   </data>
   <data name="ToolStrip2.AutoSize" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -286,10 +286,10 @@
     <value>Unlock</value>
   </data>
   <data name="ToolStrip2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>28, 381</value>
+    <value>28, 369</value>
   </data>
   <data name="FaTabStripItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>558, 381</value>
+    <value>552, 369</value>
   </data>
   <data name="FaTabStripItem2.Title" xml:space="preserve">
     <value>Mole Fractions (L)</value>
@@ -307,7 +307,7 @@
     <value>28, 0</value>
   </data>
   <data name="dgvcv.Size" type="System.Drawing.Size, System.Drawing">
-    <value>530, 381</value>
+    <value>524, 369</value>
   </data>
   <data name="ToolStrip5.AutoSize" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -343,19 +343,19 @@
     <value>Unlock</value>
   </data>
   <data name="ToolStrip5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>28, 381</value>
+    <value>28, 369</value>
   </data>
   <data name="FaTabStripItem5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>558, 381</value>
+    <value>552, 369</value>
   </data>
   <data name="FaTabStripItem5.Title" xml:space="preserve">
     <value>Mole Fractions (V)</value>
   </data>
   <data name="FaTabStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>560, 407</value>
+    <value>554, 395</value>
   </data>
   <data name="GroupBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>566, 426</value>
+    <value>560, 414</value>
   </data>
   <data name="GroupBox2.Text" xml:space="preserve">
     <value>Estimates</value>

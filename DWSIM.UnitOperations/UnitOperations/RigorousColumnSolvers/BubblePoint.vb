@@ -68,7 +68,12 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
             Dim flashalgs As New List(Of FlashAlgorithm)
 
             For ia As Integer = 0 To ns
-                flashalgs.Add(New NestedLoops With {.FlashSettings = pp.FlashSettings})
+                Dim flashcopy = pp.FlashBase.GetNewInstance()
+                If flashcopy Is Nothing Then
+                    flashalgs.Add(New NestedLoops With {.FlashSettings = pp.FlashBase.FlashSettings})
+                Else
+                    flashalgs.Add(flashcopy)
+                End If
             Next
 
             Dim spval1, spval2 As Double
@@ -852,7 +857,7 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
             Dim doparallel As Boolean = Settings.EnableParallelProcessing
 
             Dim ic As Integer
-            Dim t_error, t_error_ant, xcerror(ns) As Double
+            Dim t_error, t_error_ant, vf_error, xcerror(ns) As Double
             Dim Tj(ns), Tj_ant(ns), dTj(ns) As Double
             Dim Fj(ns), Lj(ns), Vj(ns), Vj_ant(ns), dVj(ns), xc(ns)(), xc0(ns)(), fcj(ns)(), yc(ns)(), lc(ns)(), vc(ns)(), zc(ns)(), K(ns)(), Kant(ns)() As Double
             Dim Hfj(ns), Hv(ns), Hl(ns) As Double
@@ -1088,6 +1093,7 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
             Dim fx(ns), xtj(ns), dfdx(ns, ns), fxb(ns), xtjb(ns), dxtj(ns) As Double
 
             Dim t_error_hist As New List(Of Double)
+            Dim vf_error_hist As New List(Of Double)
             Dim dt_error_hist As New List(Of Double)
 
             'internal loop
@@ -1226,17 +1232,6 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                     Next
                 End If
 
-                'For i = 0 To ns
-                '    Lj(i) = 0
-                '    For j = 0 To nc - 1
-                '        lc(i)(j) = xt(j)(i)
-                '        Lj(i) += lc(i)(j)
-                '    Next
-                '    If Lj(i) < 0.0# Then
-                '        Lj(i) = -Lj(i)
-                '    End If
-                'Next
-
                 IObj2?.Paragraphs.Add(String.Format("l: {0}", lc.ToMathArrayString))
 
                 IObj2?.Paragraphs.Add(String.Format("L: {0}", Lj.ToMathArrayString))
@@ -1283,21 +1278,13 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                             IObj2?.SetCurrent
                             pp.CurrentMaterialStream.Flowsheet.CheckStatus()
                             Try
-                                If pp.ShouldUseKvalueMethod2 Then
-                                    tmp = pp.FlashBase.Flash_PV(xc(i), P(i), 0.0, Tj(i), pp, True, K(i))
-                                Else
-                                    tmp = flashalgs(i).Flash_PV(xc(i), P(i), 0.0, Tj(i), pp, True, K(i))
-                                End If
+                                tmp = flashalgs(i).Flash_PV(xc(i), P(i), 0.0, Tj(i), pp, True, K(i))
                             Catch ex As Exception
                                 Throw New Exception(String.Format(pp.Flowsheet.GetTranslatedString("Error calculating bubble point temperature for stage {0} with P = {1} Pa and molar composition {2}"), i, P(i), xc(i).ToArrayString()), ex)
                             End Try
                             Tj(i) = tmp(4)
                             Kant(i) = K(i)
-                            If pp.ShouldUseKvalueMethod2 Then
-                                K(i) = pp.DW_CalcKvalue(xc(i).MultiplyConstY(Lj(i)).AddY(yc(i).MultiplyConstY(Vj(i))).MultiplyConstY(1 / (Lj(i) + Vj(i))), Tj(i), P(i))
-                            Else
-                                K(i) = tmp(6)
-                            End If
+                            K(i) = tmp(6)
                             If Tj(i) < 0.0 Or Double.IsNaN(Tj(i)) Then
                                 Tj(i) = Tj_ant(i)
                                 K(i) = Kant(i)
@@ -1312,7 +1299,7 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                     'check Kvalues
 
                     For i = 0 To ns
-                        Kfac(i) = K(i).Max / K(i).Min
+                        Kfac(i) = K(i).MaxY_NonZero(xc(i)) / K(i).MinY_NonZero(xc(i))
                     Next
 
                     If Kfac.Max > 10000 Then
@@ -1409,13 +1396,17 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                         For i = 0 To ns
                             Kant(i) = K(i)
                             If i = 0 Then
-                                If pp.ShouldUseKvalueMethod2 Then
+                                If pp.ShouldUseKvalueMethod3 Then
+                                    K(i) = pp.DW_CalcKvalue3(xc(i).MultiplyConstY(Lj(i)), (yc(i).MultiplyConstY(Vj(i))).MultiplyConstY(1 / (Lj(i) + Vj(i))), Tj(i) - _subcoolingdeltat, P(i))
+                                ElseIf pp.ShouldUseKvalueMethod2 Then
                                     K(i) = pp.DW_CalcKvalue(xc(i).MultiplyConstY(Lj(i)).AddY(yc(i).MultiplyConstY(Vj(i))).MultiplyConstY(1 / (Lj(i) + Vj(i))), Tj(i) - _subcoolingdeltat, P(i))
                                 Else
                                     K(i) = pp.DW_CalcKvalue(xc(i), yc(i), Tj(i) - _subcoolingdeltat, P(i))
                                 End If
                             Else
-                                If pp.ShouldUseKvalueMethod2 Then
+                                If pp.ShouldUseKvalueMethod3 Then
+                                    K(i) = pp.DW_CalcKvalue3(xc(i).MultiplyConstY(Lj(i)), (yc(i).MultiplyConstY(Vj(i))).MultiplyConstY(1 / (Lj(i) + Vj(i))), Tj(i), P(i))
+                                ElseIf pp.ShouldUseKvalueMethod2 Then
                                     K(i) = pp.DW_CalcKvalue(xc(i).MultiplyConstY(Lj(i)).AddY(yc(i).MultiplyConstY(Vj(i))).MultiplyConstY(1 / (Lj(i) + Vj(i))), Tj(i), P(i))
                                 Else
                                     K(i) = pp.DW_CalcKvalue(xc(i), yc(i), Tj(i), P(i))
@@ -1431,7 +1422,9 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                         Tj(i) = Tj_ant(i)
                     End If
                     For j = 0 To nc - 1
-                        If Double.IsNaN(K(i)(j)) Then K(i)(j) = pp.AUX_PVAPi(j, Tj(i)) / P(i)
+                        If Double.IsNaN(K(i)(j)) Then
+                            K(i)(j) = pp.AUX_PVAPi(j, Tj(i)) / P(i)
+                        End If
                     Next
                 Next
 
@@ -1609,6 +1602,9 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                     Vj(i) = eff(i) * Vj(i) + (1 - eff(i)) * Vj(i + 1)
                 Next
 
+                vf_error = Vj.SubtractY(Vj_ant).DivideY(Vj_ant.AddConstY(0.0000000001)).AbsSqrSumY
+                vf_error_hist.Add(vf_error)
+
                 'Ljs
                 For i = 0 To ns
                     If i < ns Then
@@ -1688,9 +1684,9 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                         reporter?.AppendLine("========================================================")
                         reporter?.AppendLine()
 
-                        reporter?.AppendLine(String.Format("{0,-16}{1,26}", "Iteration", "Temperature Error"))
+                        reporter?.AppendLine(String.Format("{0,-16}{1,26}", "Iteration", "Temperature Error", "Vapor Flow Error"))
                         For i = 0 To t_error_hist.Count - 1
-                            reporter?.AppendLine(String.Format("{0,-16}{1,26:G6}", i + 1, t_error_hist(i)))
+                            reporter?.AppendLine(String.Format("{0,-16}{1,26:G6}{2,26:G6}", i + 1, t_error_hist(i), vf_error_hist(i)))
                         Next
 
                         reporter?.AppendLine("========================================================")
@@ -1713,9 +1709,9 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                     reporter?.AppendLine("========================================================")
                     reporter?.AppendLine()
 
-                    reporter?.AppendLine(String.Format("{0,-16}{1,26}", "Iteration", "Temperature Error"))
+                    reporter?.AppendLine(String.Format("{0,-16}{1,26}", "Iteration", "Temperature Error", "Vapor Flow Error"))
                     For i = 0 To t_error_hist.Count - 1
-                        reporter?.AppendLine(String.Format("{0,-16}{1,26:G6}", i + 1, t_error_hist(i)))
+                        reporter?.AppendLine(String.Format("{0,-16}{1,26:G6}{2,26:G6}", i + 1, t_error_hist(i), vf_error_hist(i)))
                     Next
 
                     reporter?.AppendLine("========================================================")
@@ -1786,20 +1782,39 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
                 reporter?.AppendLine()
                 reporter?.AppendLine()
                 reporter?.AppendLine(String.Format("Temperature Error: {0} [tol: {1}]", t_error, tolerance * ns / 100))
+                reporter?.AppendLine(String.Format("Vapor Flow Error: {0} [tol: {1}]", vf_error, tolerance * ns / 100))
                 reporter?.AppendLine()
                 reporter?.AppendLine()
 
-            Loop Until t_error < tolerance * ns / 100 And ic > 1
+            Loop Until (t_error + vf_error) < tolerance * ns / 100 And ic > 1
 
             'check mass balance
             For i = 0 To ns
+                Dim haderror = False
                 If Math.Abs(yc(i).SumY - 1.0) > 0.001 Then
-                    Throw New Exception("Could not converge to a valid solution")
+                    haderror = True
                 End If
                 If Math.Abs(xc(i).SumY - 1.0) > 0.001 Then
-                    Throw New Exception("Could not converge to a valid solution")
+                    haderror = True
                 End If
                 If Lj(i) < 0.0 Or Vj(i) < 0.0 Or LSSj(i) < 0.0 Then
+                    haderror = True
+                End If
+                If haderror Then
+                    reporter?.AppendLine("========================================================")
+                    reporter?.AppendLine("Error Function Progression")
+                    reporter?.AppendLine("========================================================")
+                    reporter?.AppendLine()
+                    reporter?.AppendLine(String.Format("{0,-16}{1,26}", "Iteration", "Temperature Error", "Vapor Flow Error"))
+                    For j = 0 To t_error_hist.Count - 1
+                        reporter?.AppendLine(String.Format("{0,-16}{1,26:G6}{2,26:G6}", i + 1, t_error_hist(j), vf_error_hist(j)))
+                    Next
+                    reporter?.AppendLine("========================================================")
+                    reporter?.AppendLine("Convergence Error!")
+                    reporter?.AppendLine("========================================================")
+                    reporter?.AppendLine()
+                    reporter?.AppendLine("Could not converge to a valid solution. Please check the column specs")
+                    If rc.CreateSolverConvergengeReport Then rc.ColumnSolverConvergenceReport = reporter.ToString()
                     Throw New Exception("Could not converge to a valid solution. Please check the column specs")
                 End If
             Next
@@ -1825,10 +1840,13 @@ Namespace UnitOperations.Auxiliary.SepOps.SolvingMethods
             reporter?.AppendLine("========================================================")
             reporter?.AppendLine()
 
-            reporter?.AppendLine(String.Format("{0,-16}{1,26}", "Iteration", "Temperature Error"))
+            reporter?.AppendLine(String.Format("{0,-16}{1,26}{2,26}", "Iteration", "Temperature Error", "Vapor Flow Error"))
             For i = 0 To t_error_hist.Count - 1
-                reporter?.AppendLine(String.Format("{0,-16}{1,26:G6}", i + 1, t_error_hist(i)))
+                reporter?.AppendLine(String.Format("{0,-16}{1,26:G6}{2,26:G6}", i + 1, t_error_hist(i), vf_error_hist(i)))
             Next
+
+            reporter?.AppendLine()
+            reporter?.AppendLine("Last Updated on " + Date.Now.ToString())
 
             If rc.CreateSolverConvergengeReport Then rc.ColumnSolverConvergenceReport = reporter.ToString()
 

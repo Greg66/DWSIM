@@ -6,6 +6,7 @@ Imports DWSIM.UnitOperations.UnitOperations
 Imports System.Drawing
 Imports DWSIM.UnitOperations.UnitOperations.Column
 Imports DWSIM.UnitOperations.UnitOperations.Auxiliary.SepOps
+Imports DWSIM.SharedClasses
 
 Public Class EditingForm_Column
 
@@ -14,6 +15,9 @@ Public Class EditingForm_Column
     Public Property SimObject As UnitOperations.Column
 
     Public Loaded As Boolean = False
+
+    Dim reditor As EditingForm_Column_Results
+    Dim fr, fr2 As ReportViewer
 
     Dim units As SharedClasses.SystemsOfUnits.Units
     Dim nf As String
@@ -25,6 +29,8 @@ Public Class EditingForm_Column
         Me.ShowHint = GlobalSettings.Settings.DefaultEditFormLocation
 
         UpdateInfo()
+
+        ChangeDefaultFont()
 
     End Sub
 
@@ -98,6 +104,7 @@ Public Class EditingForm_Column
             If TypeOf SimObject Is DistillationColumn Then
                 cbSolvingMethod.Items.Add("Wang-Henke (Bubble Point)")
                 cbSolvingMethod.Items.Add("Napthali-Sandholm (Simultaneous Correction)")
+                cbSolvingMethod.Items.Add("Modified Wang-Henke (Bubble Point)")
             ElseIf TypeOf SimObject Is AbsorptionColumn Then
                 cbSolvingMethod.Items.Add("Burningham-Otto (Sum Rates)")
                 cbSolvingMethod.Items.Add("Napthali-Sandholm (Simultaneous Correction)")
@@ -105,25 +112,28 @@ Public Class EditingForm_Column
                     .SolvingMethodName = "Burningham-Otto (Sum Rates)"
                 End If
             End If
+            Dim extrasolvers = Column.ExternalColumnSolvers.Keys.ToArray()
+            cbSolvingMethod.Items.AddRange(extrasolvers)
 
-            cbSolvingMethod.SelectedItem = .SolvingMethodName
+            Try
+                cbSolvingMethod.SelectedItem = .SolvingMethodName
+            Catch ex As Exception
+                .SolvingMethodName = "Wang-Henke (Bubble Point)"
+                cbSolvingMethod.SelectedIndex = 0
+            End Try
 
-            'external solvers
+            Dim ieproviders = Column.ExternalInitialEstimatesProviders.Keys.ToArray()
+            cbInitialEstimatesProvider.Items.Clear()
+            cbInitialEstimatesProvider.Items.Add("Internal (Default)")
+            cbInitialEstimatesProvider.Items.Add("Internal 2 (Experimental)")
+            cbInitialEstimatesProvider.Items.AddRange(ieproviders)
 
-            cbExternalSolver.Items.Clear()
-            cbExternalSolver.Items.Add("")
-            For Each sv In .FlowSheet.ExternalSolvers.Values
-                If sv.Category = Enums.ExternalSolverCategory.NonLinearSystem Then
-                    cbExternalSolver.Items.Add(sv.DisplayText)
-                End If
-            Next
-
-            Dim selectedsolver = .FlowSheet.ExternalSolvers.Values.Where(Function(s) s.ID = .ExternalSolverID).FirstOrDefault()
-            If selectedsolver IsNot Nothing Then
-                cbExternalSolver.SelectedItem = selectedsolver.DisplayText
-            Else
-                cbExternalSolver.SelectedIndex = 0
-            End If
+            Try
+                cbInitialEstimatesProvider.SelectedItem = .InitialEstimatesProvider
+            Catch ex As Exception
+                .InitialEstimatesProvider = "Internal (Default)"
+                cbInitialEstimatesProvider.SelectedIndex = 0
+            End Try
 
             If TypeOf SimObject Is DistillationColumn Then
                 chkNoCondenser.Checked = DirectCast(SimObject, DistillationColumn).ReboiledAbsorber
@@ -350,23 +360,33 @@ Public Class EditingForm_Column
 
         End With
 
-        cbExternalSolver.SetDropDownMaxWidth()
+        Loaded = True
 
-        Dim ssolver = SimObject.FlowSheet.ExternalSolvers.Values.Where(Function(s) s.ID = SimObject.ExternalSolverID).FirstOrDefault()
-        If ssolver IsNot Nothing Then
-            If TryCast(ssolver, IExternalSolverConfiguration) IsNot Nothing Then
-                btnConfigExtSolver.Enabled = True
-            Else
-                btnConfigExtSolver.Enabled = False
-            End If
+        If reditor IsNot Nothing Then
+            reditor.Text = SimObject.GetDisplayName() & ": " & SimObject.GraphicObject.Tag
+            reditor.TabText = reditor.Text
+            reditor.FillGraphs()
+            reditor.FillTables()
         End If
 
-        Loaded = True
+        If fr IsNot Nothing Then
+            fr.TextBox1.Text = SimObject.ColumnPropertiesProfile
+            fr.Text = SimObject.GraphicObject.Tag + ": Properties Profile"
+            fr.TabText = SimObject.GraphicObject.Tag + ": Properties Profile"
+            fr.TextBox1.DeselectAll()
+        End If
+
+        If fr2 IsNot Nothing Then
+            fr2.TextBox1.Text = SimObject.ColumnSolverConvergenceReport
+            fr2.Text = SimObject.GraphicObject.Tag + ": Convergence Report"
+            fr2.TabText = SimObject.GraphicObject.Tag + ": Convergence Report"
+            fr2.TextBox1.DeselectAll()
+        End If
 
     End Sub
 
     Private Sub btnConfigurePP_Click(sender As Object, e As EventArgs) Handles btnConfigurePP.Click
-        SimObject.FlowSheet.PropertyPackages.Values.Where(Function(x) x.Tag = cbPropPack.SelectedItem.ToString).SingleOrDefault.DisplayGroupedEditingForm()
+        SimObject.FlowSheet.PropertyPackages.Values.Where(Function(x) x.Tag = cbPropPack.SelectedItem.ToString).FirstOrDefault()?.DisplayGroupedEditingForm()
     End Sub
 
     Private Sub lblTag_TextChanged(sender As Object, e As EventArgs) Handles lblTag.TextChanged
@@ -382,6 +402,7 @@ Public Class EditingForm_Column
 
     Private Sub cbPropPack_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbPropPack.SelectedIndexChanged
         If Loaded Then
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
             SimObject.PropertyPackage = SimObject.FlowSheet.PropertyPackages.Values.Where(Function(x) x.Tag = cbPropPack.SelectedItem.ToString).SingleOrDefault
             RequestCalc()
         End If
@@ -415,7 +436,7 @@ Public Class EditingForm_Column
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles btnResults.Click
 
-        Dim reditor As New EditingForm_Column_Results With {.dc = Me.SimObject}
+        If reditor Is Nothing Then reditor = New EditingForm_Column_Results With {.dc = Me.SimObject}
         reditor.Text = SimObject.GetDisplayName() & ": " & SimObject.GraphicObject.Tag
         reditor.TabText = reditor.Text
         reditor.ShowHint = WeifenLuo.WinFormsUI.Docking.DockState.Document
@@ -427,64 +448,13 @@ Public Class EditingForm_Column
 
         If Loaded And e.KeyCode = Keys.Enter Then
 
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
+
             SimObject.NumberOfStages = tbNStages.Text
 
             Dim ne As Integer = SimObject.NumberOfStages
 
-            Dim nep As Integer = SimObject.Stages.Count
-
-            Dim dif As Integer = ne - nep
-
-            If dif < 0 Then
-                SimObject.Stages.RemoveRange(nep + dif - 1, -dif)
-                With SimObject.InitialEstimates
-                    .LiqCompositions.RemoveRange(nep + dif - 1, -dif)
-                    .VapCompositions.RemoveRange(nep + dif - 1, -dif)
-                    .LiqMolarFlows.RemoveRange(nep + dif - 1, -dif)
-                    .VapMolarFlows.RemoveRange(nep + dif - 1, -dif)
-                    .StageTemps.RemoveRange(nep + dif - 1, -dif)
-                End With
-            ElseIf dif > 0 Then
-                Dim i As Integer
-                Dim P0 = SimObject.Stages(SimObject.Stages.Count - 2).P
-                Dim E0 = SimObject.Stages(SimObject.Stages.Count - 2).Efficiency
-                Dim P1 = SimObject.Stages.Last.P
-                Dim E1 = SimObject.Stages.Last.Efficiency
-                For i = 1 To dif
-                    Dim stage = New Stage(Guid.NewGuid().ToString)
-                    SimObject.Stages.Insert(SimObject.Stages.Count - 1, stage)
-                    stage.Name = SimObject.FlowSheet.GetTranslatedString("DCStage") & "_" & SimObject.Stages.Count - 2
-                    stage.P = P0 + Convert.ToDouble(i) / Convert.ToDouble(dif) * (P1 - P0)
-                    stage.Efficiency = E0 + Convert.ToDouble(i) / Convert.ToDouble(dif) * (E1 - E0)
-                    With SimObject.InitialEstimates
-                        Dim dl As New Dictionary(Of String, Parameter)
-                        Dim dv As New Dictionary(Of String, Parameter)
-                        For Each cp In SimObject.FlowSheet.SelectedCompounds.Values
-                            Dim pl = New Parameter()
-                            pl.LoadData(.LiqCompositions(.LiqCompositions.Count - 1)(cp.Name).SaveData())
-                            dl.Add(cp.Name, pl)
-                            Dim pv = New Parameter()
-                            pv.LoadData(.VapCompositions(.VapCompositions.Count - 1)(cp.Name).SaveData())
-                            dv.Add(cp.Name, pv)
-                        Next
-                        .LiqCompositions.Insert(.LiqCompositions.Count - 1, dl)
-                        .VapCompositions.Insert(.VapCompositions.Count - 1, dv)
-                        Dim L0 = .LiqMolarFlows(.LiqMolarFlows.Count - 2).Value
-                        Dim V0 = .VapMolarFlows(.VapMolarFlows.Count - 2).Value
-                        Dim T0 = .StageTemps(.StageTemps.Count - 1).Value
-                        Dim T1 = .StageTemps(.StageTemps.Count - 1).Value
-                        Dim plt = New Parameter
-                        Dim pvt = New Parameter
-                        Dim pt = New Parameter
-                        plt.Value = L0
-                        pvt.Value = V0
-                        pt.Value = T0 + Convert.ToDouble(i) / Convert.ToDouble(dif) * (T1 - T0)
-                        .LiqMolarFlows.Insert(.LiqMolarFlows.Count - 1, plt)
-                        .VapMolarFlows.Insert(.VapMolarFlows.Count - 1, pvt)
-                        .StageTemps.Insert(.StageTemps.Count - 1, pt)
-                    End With
-                Next
-            End If
+            SimObject.SetNumberOfStages(ne)
 
             UpdateInfo()
 
@@ -496,6 +466,8 @@ Public Class EditingForm_Column
 
         If Loaded And e.KeyCode = Keys.Enter Then
 
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
+
             SimObject.MaxIterations = Convert.ToInt32(Double.Parse(tbMaxIt.Text))
 
         End If
@@ -505,6 +477,8 @@ Public Class EditingForm_Column
     Private Sub tbConvTol_TextChanged(sender As Object, e As KeyEventArgs) Handles tbConvTol.KeyDown
 
         If Loaded And e.KeyCode = Keys.Enter Then
+
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
 
             SimObject.ExternalLoopTolerance = Double.Parse(tbConvTol.Text)
             SimObject.InternalLoopTolerance = Double.Parse(tbConvTol.Text)
@@ -517,6 +491,8 @@ Public Class EditingForm_Column
 
         If Loaded Then
 
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
+
             DirectCast(SimObject, AbsorptionColumn).OperationMode = cbAbsorberMode.SelectedIndex
 
         End If
@@ -524,6 +500,8 @@ Public Class EditingForm_Column
     End Sub
 
     Private Sub cbCondType_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbCondType.SelectedIndexChanged
+
+        If Loaded Then SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
 
         SimObject.CondenserType = cbCondType.SelectedIndex
 
@@ -592,6 +570,8 @@ Public Class EditingForm_Column
 
         If Loaded And e.KeyCode = Keys.Enter Then
 
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
+
             SimObject.Stages(0).P = su.Converter.ConvertToSI(units.pressure, tbCondPressure.Text)
 
             UpdateInfo()
@@ -604,6 +584,8 @@ Public Class EditingForm_Column
     Private Sub tbCondPDrop_TextChanged(sender As Object, e As KeyEventArgs) Handles tbCondPDrop.KeyDown
 
         If Loaded And e.KeyCode = Keys.Enter Then
+
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
 
             SimObject.CondenserDeltaP = su.Converter.ConvertToSI(units.deltaP, tbCondPDrop.Text)
 
@@ -769,6 +751,7 @@ Public Class EditingForm_Column
     End Sub
 
     Private Sub chkNoCondenser_CheckedChanged(sender As Object, e As EventArgs) Handles chkNoCondenser.CheckedChanged
+        SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
         PanelCondenser.Enabled = Not chkNoCondenser.Checked
         If TypeOf SimObject Is DistillationColumn Then
             DirectCast(SimObject, DistillationColumn).ReboiledAbsorber = chkNoCondenser.Checked
@@ -776,52 +759,18 @@ Public Class EditingForm_Column
     End Sub
 
     Private Sub chkNoReboiler_CheckedChanged(sender As Object, e As EventArgs) Handles chkNoReboiler.CheckedChanged
+        SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
         PanelReboiler.Enabled = Not chkNoReboiler.Checked
         If TypeOf SimObject Is DistillationColumn Then
             DirectCast(SimObject, DistillationColumn).RefluxedAbsorber = chkNoReboiler.Checked
         End If
     End Sub
 
-    Private Sub cbExternalSolver_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbExternalSolver.SelectedIndexChanged
-        If Loaded Then
-            Dim selectedsolver = SimObject.FlowSheet.ExternalSolvers.Values.Where(
-                Function(s) s.DisplayText = cbExternalSolver.SelectedItem.ToString()).FirstOrDefault()
-            If selectedsolver IsNot Nothing Then
-                SimObject.ExternalSolverID = selectedsolver.ID
-                If TryCast(selectedsolver, IExternalSolverConfiguration) IsNot Nothing Then
-                    btnConfigExtSolver.Enabled = True
-                Else
-                    btnConfigExtSolver.Enabled = False
-                End If
-            Else
-                SimObject.ExternalSolverID = ""
-                btnConfigExtSolver.Enabled = False
-            End If
-        End If
-    End Sub
-
-    Private Sub btnConfigExtSolver_Click(sender As Object, e As EventArgs) Handles btnConfigExtSolver.Click
-        Dim selectedsolver = SimObject.FlowSheet.ExternalSolvers.Values.Where(
-                Function(s) s.DisplayText = cbExternalSolver.SelectedItem.ToString()).FirstOrDefault()
-        If TryCast(selectedsolver, IExternalSolverConfiguration) IsNot Nothing Then
-            SimObject.ExternalSolverConfigData = DirectCast(selectedsolver, IExternalSolverConfiguration).Edit(SimObject.ExternalSolverConfigData)
-        End If
-    End Sub
-
-    Private Sub cbSolvingMethod_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbSolvingMethod.SelectedIndexChanged
-        SimObject.SolvingMethodName = cbSolvingMethod.SelectedItem.ToString()
-        If cbSolvingMethod.SelectedIndex = 1 Then
-            cbExternalSolver.Enabled = True
-            LabelES.Enabled = True
-        Else
-            cbExternalSolver.Enabled = False
-            LabelES.Enabled = False
-        End If
-    End Sub
-
     Private Sub cbSubcooling_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbSubcooling.SelectedIndexChanged
 
         If Loaded Then
+
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
 
             tbSubcooling.Text = su.Converter.Convert(cbSubcooling.SelectedItem.ToString(),
                                                  units.deltaT, tbSubcooling.Text.ParseExpressionToDouble)
@@ -837,6 +786,8 @@ Public Class EditingForm_Column
 
         If Loaded And e.KeyCode = Keys.Enter Then
 
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
+
             DirectCast(SimObject, DistillationColumn).TotalCondenserSubcoolingDeltaT =
                 su.Converter.ConvertToSI(units.deltaT, tbSubcooling.Text.ParseExpressionToDouble)
 
@@ -847,6 +798,8 @@ Public Class EditingForm_Column
     Private Sub tbColPDrop_KeyDown(sender As Object, e As KeyEventArgs) Handles tbColPDrop.KeyDown
 
         If Loaded And e.KeyCode = Keys.Enter Then
+
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
 
             SimObject.ColumnPressureDrop = su.Converter.ConvertToSI(units.deltaP, tbColPDrop.Text)
 
@@ -859,12 +812,15 @@ Public Class EditingForm_Column
 
     Private Sub Button1_Click_1(sender As Object, e As EventArgs) Handles btnViewReport.Click
 
-        Dim fr As New ReportViewer()
-        fr.TextBox1.Text = SimObject.ColumnSolverConvergenceReport
-        fr.Text = SimObject.GraphicObject.Tag + ": Convergence Report"
-        fr.TabText = SimObject.GraphicObject.Tag + ": Convergence Report"
-        fr.TextBox1.DeselectAll()
-        SimObject.FlowSheet.DisplayForm(fr)
+        If fr2 Is Nothing Then
+            fr2 = New ReportViewer()
+            fr2.HideOnClose = True
+        End If
+        fr2.TextBox1.Text = SimObject.ColumnSolverConvergenceReport
+        fr2.Text = SimObject.GraphicObject.Tag + ": Convergence Report"
+        fr2.TabText = SimObject.GraphicObject.Tag + ": Convergence Report"
+        fr2.TextBox1.DeselectAll()
+        SimObject.FlowSheet.DisplayForm(fr2)
 
     End Sub
 
@@ -874,7 +830,10 @@ Public Class EditingForm_Column
 
     Private Sub btnViewPropertiesReport_Click(sender As Object, e As EventArgs) Handles btnViewPropertiesReport.Click
 
-        Dim fr As New ReportViewer()
+        If fr Is Nothing Then
+            fr = New ReportViewer()
+            fr.HideOnClose = True
+        End If
         fr.TextBox1.Text = SimObject.ColumnPropertiesProfile
         fr.Text = SimObject.GraphicObject.Tag + ": Properties Profile"
         fr.TabText = SimObject.GraphicObject.Tag + ": Properties Profile"
@@ -887,6 +846,8 @@ Public Class EditingForm_Column
 
         If Loaded And e.KeyCode = Keys.Enter Then
 
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectData, SimObject)
+
             SimObject.TraySpacing = su.Converter.ConvertToSI(units.distance, tbTS.Text)
 
             UpdateInfo()
@@ -895,9 +856,67 @@ Public Class EditingForm_Column
 
     End Sub
 
+    Private Sub cbSolvingMethod_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbSolvingMethod.SelectedIndexChanged
+
+        If Loaded Then
+            Try
+                SimObject.SolvingMethodName = cbSolvingMethod.SelectedItem.ToString()
+            Catch ex As Exception
+            End Try
+        End If
+
+    End Sub
+
+    Private Sub btnTestConvergence_Click(sender As Object, e As EventArgs) Handles btnTestConvergence.Click
+
+        GlobalSettings.Settings.TaskCancellationTokenSource = New Threading.CancellationTokenSource()
+
+        Dim fw As New WaitForm()
+
+        AddHandler fw.btnCancel.Click, Sub()
+                                           GlobalSettings.Settings.TaskCancellationTokenSource.Cancel()
+                                       End Sub
+
+        fw.ChangeDefaultFont()
+        fw.Show()
+
+        TaskHelper.
+            Run(Sub()
+                    SimObject.TestConvergence()
+                End Sub,
+                GlobalSettings.Settings.TaskCancellationTokenSource.Token).
+                ContinueWith(Sub(t)
+                                 If t.Exception IsNot Nothing Then
+                                     MessageBox.Show("Failed to converge: " + t.Exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                 ElseIf t.IsCanceled Then
+                                     MessageBox.Show("Test cancelled by the user.", "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                                 Else
+                                     MessageBox.Show("Converged successfully.", "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                                 End If
+                                 fw.UIThread(Sub()
+                                                 fw.Close()
+                                                 UpdateInfo()
+                                             End Sub)
+                             End Sub)
+
+    End Sub
+
+    Private Sub cbInitialEstimatesProvider_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cbInitialEstimatesProvider.SelectedIndexChanged
+
+        If Loaded Then
+            Try
+                SimObject.InitialEstimatesProvider = cbInitialEstimatesProvider.SelectedItem.ToString()
+            Catch ex As Exception
+            End Try
+        End If
+
+    End Sub
+
     Private Sub lblTag_KeyPress(sender As Object, e As KeyEventArgs) Handles lblTag.KeyUp
 
         If e.KeyCode = Keys.Enter Then
+
+            SimObject.FlowSheet.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout)
 
             If Loaded Then SimObject.GraphicObject.Tag = lblTag.Text
             If Loaded Then SimObject.FlowSheet.UpdateOpenEditForms()

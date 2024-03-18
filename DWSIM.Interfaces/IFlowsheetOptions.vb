@@ -144,4 +144,8 @@ Imports DWSIM.Interfaces.Enums.GraphicObjects
 
     Property RTFAnnotations As String
 
+    Property EnabledUndoRedo As Boolean
+
+    Property EnableGHGEmissionsSubsystem As Boolean
+
 End Interface

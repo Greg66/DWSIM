@@ -36,7 +36,7 @@ Namespace PropertyPackages
 
             MyBase.New(comode)
 
-            EnthalpyEntropyCpCvCalculationMode = EnthalpyEntropyCpCvCalcMode.Excess
+            EnthalpyEntropyCpCvCalculationMode = EnthalpyEntropyCpCvCalcMode.LiqCp_Excess
 
             LiquidDensityCalculationMode_Subcritical = LiquidDensityCalcMode.COSTALD
 
@@ -373,18 +373,14 @@ Namespace PropertyPackages
                             H = Me.RET_Hid(298.15, T, Vx) - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P)
                         Case 2 'Excess
                             Dim Hex = Me.m_act.CalcExcessEnthalpy(T, Vx, Me.GetArguments()) / Me.AUX_MMM(Vx)
-                            If Double.IsNaN(Hex) Then
-                                If Flowsheet IsNot Nothing Then
-                                    Flowsheet.ShowMessage(Tag + ": " + Flowsheet.GetTranslatedString("Error calculating excess enthalpy from activity coefficients. If this error persists, try changing the Enthalpy Calculation Mode in Property Package settings"), Interfaces.IFlowsheet.MessageType.Warning)
-                                    Flowsheet.ShowMessage(Tag + ": " + Flowsheet.GetTranslatedString("Assuming excess enthalpy = 0"), Interfaces.IFlowsheet.MessageType.Warning)
-                                    Hex = 0.0
-                                Else
-                                    Throw New Exception("Error calculating excess enthalpy from activity coefficients. If this error persists, try changing the Enthalpy Calculation Mode in Property Package settings.")
-                                End If
-                            End If
-                            H = Me.RET_Hid(298.15, T, Vx) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) - Hex - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T)
-                        Case 3 'Experimental Liquid
+                            If Double.IsNaN(Hex) Then Hex = 0.0
+                            H = Me.RET_Hid(298.15, T, Vx) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) + Hex - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T)
+                                Case 3 'Experimental Liquid
                             H = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P)
+                        Case 4 'Experimental Liquid + Excess
+                            Dim Hex = Me.m_act.CalcExcessEnthalpy(T, Vx, Me.GetArguments()) / Me.AUX_MMM(Vx)
+                            If Double.IsNaN(Hex) Then Hex = 0.0
+                            H = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) + Hex
                     End Select
                 ElseIf st = State.Vapor Then
                     Select Case EnthalpyEntropyCpCvCalculationMode
@@ -394,8 +390,8 @@ Namespace PropertyPackages
                             H = Me.RET_Hid(298.15, T, Vx)
                         Case 2 'Excess
                             H = Me.RET_Hid(298.15, T, Vx)
-                        Case 3 'Experimental Liquid
-                            H = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) + Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T)
+                        Case 3, 4 'Experimental Liquid
+                            H = RET_Hid_FromLiqCp(Vx, T, P)
                     End Select
                 ElseIf st = State.Solid Then
                     If SolidPhaseEnthalpy_UsesCp Then
@@ -406,7 +402,7 @@ Namespace PropertyPackages
                                 H = Me.m_lk.H_LK_MIX("L", T, P, Vx, RET_VKij(), RET_VTC, RET_VPC, RET_VW, RET_VMM, Me.RET_Hid(298.15, T, Vx)) - RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T)
                             Case 1, 2 'Ideal
                                 H = Me.RET_Hid(298.15, T, Vx) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) - RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T)
-                            Case 3 'Experimental Liquid
+                            Case 3, 4 'Experimental Liquid
                                 H = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) - RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T)
                         End Select
                     End If
@@ -471,10 +467,14 @@ Namespace PropertyPackages
                             S = Me.RET_Sid(298.15, T, P, Vx) - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T
                         Case 2 'Excess
                             Dim gammaex = Me.m_act.CalcExcessEnthalpy(T, Vx, Me.GetArguments()) / Me.AUX_MMM(Vx)
-                            If Double.IsNaN(gammaex) Then Throw New Exception("Error calculating excess enthalpy from activity coefficients. If this error persists, try changing the Enthalpy Calculation Mode in Property Package settings.")
-                            S = Me.RET_Sid(298.15, T, P, Vx) - gammaex / T + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T
+                            If Double.IsNaN(gammaex) Then gammaex = 0.0
+                            S = Me.RET_Sid(298.15, T, P, Vx) + gammaex / T + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T
                         Case 3 'Experimental Liquid
                             S = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) / T + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T
+                        Case 4 'Experimental Liquid + Excess
+                            Dim gammaex = Me.m_act.CalcExcessEnthalpy(T, Vx, Me.GetArguments()) / Me.AUX_MMM(Vx)
+                            If Double.IsNaN(gammaex) Then gammaex = 0.0
+                            S = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) / T + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T + gammaex / T
                     End Select
                 ElseIf st = State.Vapor Then
                     Select Case EnthalpyEntropyCpCvCalculationMode
@@ -484,8 +484,8 @@ Namespace PropertyPackages
                             S = Me.RET_Sid(298.15, T, P, Vx)
                         Case 2 'Excess
                             S = Me.RET_Sid(298.15, T, P, Vx)
-                        Case 3 'Experimental Liquid
-                            S = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) / T + Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T
+                        Case 3, 4 'Experimental Liquid
+                            S = RET_Sid_FromLiqCp(Vx, T, P)
                     End Select
                 ElseIf st = State.Solid Then
                     If SolidPhaseEnthalpy_UsesCp Then
@@ -498,7 +498,7 @@ Namespace PropertyPackages
                                 S = Me.RET_Sid(298.15, T, P, Vx) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T - Me.RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T
                             Case 2 'Excess
                                 S = Me.RET_Sid(298.15, T, P, Vx) + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T - Me.m_act.CalcExcessEnthalpy(T, Vx, Me.GetArguments()) / Me.AUX_MMM(Vx) / T - Me.RET_HVAPM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T - Me.RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T
-                            Case 3 'Experimental Liquid
+                            Case 3, 4 'Experimental Liquid
                                 S = AUX_INT_CPDTm_L(298.15, T, Me.AUX_CONVERT_MOL_TO_MASS(Vx)) / T - RET_HFUSM(Me.AUX_CONVERT_MOL_TO_MASS(Vx), T) / T + P / 1000 / Me.AUX_LIQDENS(T, Vx, P) / T
                         End Select
                     End If
@@ -877,12 +877,6 @@ Namespace PropertyPackages
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.molarflow = result
                 result = result * Me.AUX_MMM(Phase) / 1000
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.massflow = result
-                If Me.CurrentMaterialStream.Phases(0).Properties.massflow.GetValueOrDefault > 0 Then
-                    result = phasemolarfrac * overallmolarflow * Me.AUX_MMM(Phase) / 1000 / Me.CurrentMaterialStream.Phases(0).Properties.massflow.GetValueOrDefault
-                Else
-                    result = 0
-                End If
-                Me.CurrentMaterialStream.Phases(phaseID).Properties.massfraction = result
                 IObj?.SetCurrent
                 Me.DW_CalcCompVolFlow(phaseID)
                 IObj?.SetCurrent

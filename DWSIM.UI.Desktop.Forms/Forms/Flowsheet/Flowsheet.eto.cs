@@ -20,7 +20,6 @@ using s = DWSIM.GlobalSettings.Settings;
 using DWSIM.UI.Desktop.Editors.Charts;
 using DWSIM.UI.Desktop.Editors.Dynamics;
 using SkiaSharp;
-using DWSIM.UI.Controls;
 using DWSIM.ExtensionMethods;
 
 namespace DWSIM.UI.Forms
@@ -314,6 +313,9 @@ namespace DWSIM.UI.Forms
             var btnmBasis = new ButtonToolItem { ToolTip = "Basis", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "icons8-math.png", this.GetType().Assembly)) };
             var btnmOptions = new ButtonToolItem { ToolTip = "Settings", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "icons8-sorting_options.png", this.GetType().Assembly)) };
 
+            var btnmUndo = new ButtonToolItem { ToolTip = "Undo Action", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "back_arrow_96px.png", this.GetType().Assembly)) };
+            var btnmRedo = new ButtonToolItem { ToolTip = "Redo Action", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "forward_button_96px.png", this.GetType().Assembly)) };
+
             chkmDynamics = new CheckToolItem { Checked = FlowsheetObject.DynamicMode, ToolTip = "Enable/Disable Dynamic Mode", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "icons8-exercise.png", this.GetType().Assembly)) };
             var btnmDynManager = new ButtonToolItem { ToolTip = "Dynamics Manager", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "icons8-module.png", this.GetType().Assembly)) };
             var btnmDynIntegrator = new ButtonToolItem { ToolTip = "Dynamics Integrator Controls", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "icons8-ecg.png", this.GetType().Assembly)) };
@@ -323,6 +325,8 @@ namespace DWSIM.UI.Forms
 
             if (Application.Instance.Platform.IsMac)
             {
+                btnmUndo.Text = "Undo";
+                btnmRedo.Text = "Redo";
                 btnmSave.Text = "Save";
                 btnmSolve.Text = "Solve Flowsheet";
                 btnmStop.Text = "Stop Solving";
@@ -341,6 +345,8 @@ namespace DWSIM.UI.Forms
             {
                 Items = { btnmSave, new SeparatorToolItem { Type = SeparatorToolItemType.Space },
                 btnmComps, btnmBasis, btnmOptions,
+                new SeparatorToolItem{ Type = SeparatorToolItemType.Space },
+                btnmUndo, btnmRedo,
                 new SeparatorToolItem{ Type = SeparatorToolItemType.Space },
                 btnmSolve, btnmStop, btnmSimultSolve,
                 new SeparatorToolItem{ Type = SeparatorToolItemType.Space },
@@ -366,6 +372,8 @@ namespace DWSIM.UI.Forms
 
             FlowsheetObject.UpdateEditorPanels = () => UpdateEditorPanels();
 
+            FlowsheetObject.CloseEditorPanels = () => CloseOpenedEditorPanels();
+
             FlowsheetObject.UpdateSurface = (() =>
             {
                 Application.Instance.Invoke(() =>
@@ -388,6 +396,7 @@ namespace DWSIM.UI.Forms
                 editor.listcontainer.CellEdited += (sender, e) => UpdateEditorPanels();
 
                 form.Show();
+                form.Center();
             };
 
             ActBasis = () =>
@@ -400,11 +409,13 @@ namespace DWSIM.UI.Forms
                 new DWSIM.UI.Desktop.Editors.ReactionsManager(FlowsheetObject, cont2);
                 var form = UI.Shared.Common.GetDefaultTabbedForm("Simulation Basis", (int)(sf * 800), (int)(sf * 600), new[] { cont1, cont2 });
                 form.Show();
+                form.Center();
                 form.Width += 10;
             };
 
             ActOptions = () =>
             {
+                FlowsheetObject.RegisterSnapshot(Interfaces.Enums.SnapshotType.SimulationSettings);
                 var cont = UI.Shared.Common.GetDefaultContainer();
                 new DWSIM.UI.Desktop.Editors.SimulationSettings(FlowsheetObject, cont);
                 cont.Tag = "Settings";
@@ -412,6 +423,7 @@ namespace DWSIM.UI.Forms
                 cont2.Tag = "Visible Properties";
                 var form = UI.Shared.Common.GetDefaultTabbedForm("Flowsheet Settings", (int)(sf * 800), (int)(sf * 600), new[] { cont, cont2 });
                 form.Show();
+                form.Center();
                 form.Width += 1;
             };
 
@@ -465,18 +477,21 @@ namespace DWSIM.UI.Forms
 
             ActZoomIn = () =>
             {
+                FlowsheetObject.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
                 FlowsheetControl.FlowsheetSurface.Zoom += 0.1f;
                 FlowsheetControl.Invalidate();
             };
 
             ActZoomOut = () =>
             {
+                FlowsheetObject.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
                 FlowsheetControl.FlowsheetSurface.Zoom -= 0.1f;
                 FlowsheetControl.Invalidate();
             };
 
             ActZoomFit = () =>
             {
+                FlowsheetObject.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
                 FlowsheetControl.FlowsheetSurface.ZoomAll((int)(FlowsheetControl.Width * GlobalSettings.Settings.DpiScale), (int)(FlowsheetControl.Height * GlobalSettings.Settings.DpiScale));
                 FlowsheetControl.FlowsheetSurface.ZoomAll((int)(FlowsheetControl.Width * GlobalSettings.Settings.DpiScale), (int)(FlowsheetControl.Height * GlobalSettings.Settings.DpiScale));
                 FlowsheetControl.FlowsheetSurface.Center((int)(FlowsheetControl.Width * GlobalSettings.Settings.DpiScale), (int)(FlowsheetControl.Height * GlobalSettings.Settings.DpiScale));
@@ -485,6 +500,7 @@ namespace DWSIM.UI.Forms
 
             ActZoomDefault = () =>
             {
+                FlowsheetObject.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
                 FlowsheetControl.FlowsheetSurface.Zoom = 1.0f;
                 FlowsheetControl.Invalidate();
             };
@@ -542,6 +558,27 @@ namespace DWSIM.UI.Forms
 
             // button click events
 
+            btnmUndo.Click += (sender, e) => {
+                if (!FlowsheetObject.FlowsheetOptions.EnabledUndoRedo)
+                {
+                    FlowsheetObject.ShowMessage("Undo/Redo feature is disabled (Edit > Flowsheet Settings > General > Enable Undo/Redo)", Interfaces.IFlowsheet.MessageType.Tip);
+                }
+                else {
+                    FlowsheetObject.ProcessUndo();
+                }
+            };
+
+            btnmRedo.Click += (sender, e) => {
+                if (!FlowsheetObject.FlowsheetOptions.EnabledUndoRedo)
+                {
+                    FlowsheetObject.ShowMessage("Undo/Redo feature is disabled (Edit > Flowsheet Settings > General > Enable Undo/Redo)", Interfaces.IFlowsheet.MessageType.Tip);
+                }
+                else
+                {
+                    FlowsheetObject.ProcessRedo();
+                }
+            };
+
             chkmInspector.CheckedChanged += (sender, e) => s.InspectorEnabled = chkmInspector.Checked;
 
             btnmInspector.Click += (sender, e) => ActInspector.Invoke();
@@ -586,6 +623,7 @@ namespace DWSIM.UI.Forms
                 var tcp = new Desktop.Editors.Utilities.TrueCriticalPointView(FlowsheetObject);
                 var form = DWSIM.UI.Shared.Common.GetDefaultEditorForm("True Critical Point", (int)(sf * 500), (int)(sf * 500), tcp);
                 form.Show();
+                form.Center();
             };
 
             btnUtilities_BinaryEnvelope.Click += (sender, e) =>
@@ -593,6 +631,7 @@ namespace DWSIM.UI.Forms
                 var bpe = new Desktop.Editors.Utilities.BinaryEnvelopeView(FlowsheetObject);
                 var form = DWSIM.UI.Shared.Common.GetDefaultEditorForm("Binary Phase Envelope", (int)(sf * 1024), (int)(sf * 768), bpe, false);
                 form.Show();
+                form.Center();
             };
 
             btnUtilities_PhaseEnvelope.Click += (sender, e) =>
@@ -600,6 +639,7 @@ namespace DWSIM.UI.Forms
                 var pe = new Desktop.Editors.Utilities.PhaseEnvelopeView(FlowsheetObject);
                 var form = DWSIM.UI.Shared.Common.GetDefaultEditorForm("Phase Envelope", (int)(sf * 1024), (int)(sf * 768), pe, false);
                 form.Show();
+                form.Center();
             };
 
             var btnObjects = new ButtonMenuItem { Text = "Add New Simulation Object", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "icons8-workflow.png", this.GetType().Assembly)), Shortcut = Keys.A | Application.Instance.AlternateModifier };
@@ -628,6 +668,7 @@ namespace DWSIM.UI.Forms
                 var saeditor = new Desktop.Editors.SensAnalysisView(FlowsheetObject);
                 var form = DWSIM.UI.Shared.Common.GetDefaultEditorForm("Sensitivity Analysis", (int)(sf * 860), (int)(sf * 600), saeditor);
                 form.Show();
+                form.Center();
             };
 
             btnOptimization.Click += (sender, e) =>
@@ -635,6 +676,7 @@ namespace DWSIM.UI.Forms
                 var foeditor = new Desktop.Editors.OptimizerView(FlowsheetObject);
                 var form = DWSIM.UI.Shared.Common.GetDefaultEditorForm("Flowsheet Optimizer", (int)(sf * 800), (int)(sf * 650), foeditor);
                 form.Show();
+                form.Center();
             };
 
             Drawing.SkiaSharp.GraphicsSurface.BackgroundColor = SkiaSharp.SKColor.Parse(SystemColors.ControlBackground.ToHex());
@@ -666,10 +708,13 @@ namespace DWSIM.UI.Forms
             };
             FlowsheetControl.MouseDoubleClick += (sender, e) =>
             {
+
                 if (Application.Instance.Platform.IsMac) FlowsheetControl.FlowsheetSurface.InputRelease();
                 var obj = FlowsheetControl.FlowsheetSurface.SelectedObject;
                 if (obj == null)
                 {
+                    FlowsheetObject.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
+
                     FlowsheetControl.FlowsheetSurface.ZoomAll((int)(FlowsheetControl.Width * GlobalSettings.Settings.DpiScale), (int)(FlowsheetControl.Height * GlobalSettings.Settings.DpiScale));
                     FlowsheetControl.FlowsheetSurface.ZoomAll((int)(FlowsheetControl.Width * GlobalSettings.Settings.DpiScale), (int)(FlowsheetControl.Height * GlobalSettings.Settings.DpiScale));
                     FlowsheetControl.FlowsheetSurface.Center((int)(FlowsheetControl.Width * GlobalSettings.Settings.DpiScale), (int)(FlowsheetControl.Height * GlobalSettings.Settings.DpiScale));
@@ -741,6 +786,7 @@ namespace DWSIM.UI.Forms
                 var editor = new PIDTuningTool(FlowsheetObject, DynIntegratorControl);
                 var form = UI.Shared.Common.GetDefaultEditorForm("PID Tuning Tool", 800, 600, editor, false);
                 form.Show();
+                form.Center();
             };
 
             // menu items
@@ -792,6 +838,7 @@ namespace DWSIM.UI.Forms
                             {
                                 Form f = (Form)iplugin.UtilityForm;
                                 f.Show();
+                                f.Center();
                             }
                             else
                             {
@@ -1804,11 +1851,6 @@ namespace DWSIM.UI.Forms
                 FlowsheetObject.UpdateInterface();
             };
 
-            DocumentContainer.SelectedIndexChanged += (sender2, e2) =>
-            {
-                DynManagerControl.CheckModelStatus();
-            };
-
             if (Application.Instance.Platform.IsWpf)
             {
                 DocumentContainer.SelectedIndexChanged += (sender2, e2) =>
@@ -2178,6 +2220,13 @@ namespace DWSIM.UI.Forms
                 obj.GraphicObject.Status = item1.Checked ? Interfaces.Enums.GraphicObjects.Status.Idle : Interfaces.Enums.GraphicObjects.Status.Inactive;
             };
 
+            var item1a = new CheckMenuItem { Text = "Toggle Show/Hide Label", Checked = obj.GraphicObject.Active };
+
+            item1a.CheckedChanged += (sender, e) =>
+            {
+                obj.GraphicObject.DrawLabel = !obj.GraphicObject.DrawLabel;
+            };
+
             var item3 = new ButtonMenuItem { Text = "Calculate", Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "icons8-play.png")) };
             item3.Click += (sender, e) => FlowsheetObject.RequestCalculation(obj, false);
 
@@ -2252,7 +2301,7 @@ namespace DWSIM.UI.Forms
                 }
             };
 
-            selctxmenu.Items.AddRange(new MenuItem[] { item0, item1, new SeparatorMenuItem(), menuitem0, item7, new SeparatorMenuItem(), item3, item4, new SeparatorMenuItem(), item5, item6 });
+            selctxmenu.Items.AddRange(new MenuItem[] { item0, item1, item1a, new SeparatorMenuItem(), menuitem0, item7, new SeparatorMenuItem(), item3, item4, new SeparatorMenuItem(), item5, item6 });
 
             if (obj.GraphicObject.ObjectType == Interfaces.Enums.GraphicObjects.ObjectType.MaterialStream)
             {
@@ -2501,6 +2550,7 @@ namespace DWSIM.UI.Forms
 
         void EditConnections()
         {
+
             var obj = FlowsheetObject.GetSelectedFlowsheetSimulationObject(null);
             if (obj == null) return;
             var cont = UI.Shared.Common.GetDefaultContainer();
@@ -2765,6 +2815,11 @@ namespace DWSIM.UI.Forms
                 ((ObjectEditorContainer)item.Content).Update();
                 ((ObjectEditorContainer)item.Content).UpdateConnections();
             }
+        }
+
+        public void CloseOpenedEditorPanels()
+        {
+            EditorHolder.Pages.Clear();
         }
 
         public void UpdateEditorConnectionsPanel()

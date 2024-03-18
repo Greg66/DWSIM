@@ -1,5 +1,5 @@
 '    Flowsheet Object Base Classes 
-'    Copyright 2008-2020 Daniel Wagner O. de Medeiros
+'    Copyright 2008-2024 Daniel Wagner O. de Medeiros
 '
 '    This file is part of DWSIM.
 '
@@ -22,7 +22,7 @@ Imports DWSIM.Interfaces.Enums.GraphicObjects
 Imports DWSIM.Interfaces.Enums
 Imports System.Dynamic
 Imports System.Reflection
-Imports DWSIM.ExtensionMethods
+Imports cv = DWSIM.SharedClasses.SystemsOfUnits.Converter
 
 Namespace UnitOperations
 
@@ -35,6 +35,10 @@ Namespace UnitOperations
         Public Const ClassId As String = ""
 
         <System.NonSerialized()> Protected Friend m_flowsheet As Interfaces.IFlowsheet
+
+        Public Shared InitializationAction1 As Action(Of BaseClass)
+        Public Shared InitializationAction2 As Action(Of BaseClass)
+        Public Shared InitializationAction3 As Action(Of BaseClass)
 
         <Newtonsoft.Json.JsonIgnore> <Xml.Serialization.XmlIgnore> Public Property LastSolutionInputSnapshot As String = ""
 
@@ -119,6 +123,10 @@ Namespace UnitOperations
 #Region "    Constructors"
 
         Public Sub New()
+
+            InitializationAction1?.Invoke(Me)
+            InitializationAction2?.Invoke(Me)
+            InitializationAction3?.Invoke(Me)
 
         End Sub
 
@@ -484,6 +492,12 @@ Namespace UnitOperations
                 End If
             End If
 
+            If GHGEmissionData IsNot Nothing Then
+                GHGEmissionData.OwnerID = Name
+                GHGEmissionData.Flowsheet = FlowSheet
+                GHGEmissionData.Update()
+            End If
+
         End Sub
 
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public fd As DynamicsPropertyEditor
@@ -705,6 +719,19 @@ Namespace UnitOperations
                 proplist.Add(item.Key)
             Next
 
+            If FlowSheet IsNot Nothing Then
+                If FlowSheet.FlowsheetOptions.EnableGHGEmissionsSubsystem Then
+                    If proptype <> PropertyType.WR Then
+                        proplist.Add("GHG Emission Factor")
+                        proplist.Add("GHG Mass Emission")
+                        proplist.Add("GHG Molar Emission")
+                        proplist.Add("CO2eq GHG Mass Emission")
+                        proplist.Add("CO2eq GHG Molar Emission")
+                        proplist.Add("GHG Emission Reference Power Value")
+                    End If
+                End If
+            End If
+
             For Each item In AttachedUtilities
                 proplist.AddRange(item.GetPropertyList().ConvertAll(New Converter(Of String, String)(Function(s As String)
                                                                                                          Return item.Name & ": " & s
@@ -731,6 +758,21 @@ Namespace UnitOperations
                 Else
                     Return ""
                 End If
+            Else
+                Select Case prop
+                    Case "GHG Emission Factor"
+                        Return "[kg/s]/kW"
+                    Case "GHG Mass Emission"
+                        Return "kg/s"
+                    Case "GHG Molar Emission"
+                        Return "mol/s"
+                    Case "CO2eq GHG Mass Emission"
+                        Return "kg/s"
+                    Case "CO2eq GHG Molar Emission"
+                        Return "mol/s"
+                    Case "GHG Emission Reference Power Value"
+                        Return "kW"
+                End Select
             End If
 
             For Each item In AttachedUtilities
@@ -746,6 +788,63 @@ Namespace UnitOperations
         End Function
 
         Public Overridable Function GetPropertyValue(prop As String, Optional su As Interfaces.IUnitsOfMeasure = Nothing) As Object Implements Interfaces.ISimulationObject.GetPropertyValue
+
+            If su Is Nothing Then
+                su = FlowSheet.FlowsheetOptions.SelectedUnitSystem
+            End If
+
+            Dim epcol = DirectCast(ExtraProperties, IDictionary(Of String, Object))
+            Dim epucol = DirectCast(ExtraPropertiesUnitTypes, IDictionary(Of String, Object))
+
+            If epcol.ContainsKey(prop) Then
+                If epucol.ContainsKey(prop) Then
+                    Dim utype = epucol(prop)
+                    Dim units = su.GetCurrentUnits(utype)
+                    Return cv.ConvertFromSI(units, Convert.ToDouble(epcol(prop)))
+                Else
+                    Return epcol(prop)
+                End If
+            Else
+                Select Case prop
+                    Case "GHG Emission Factor"
+                        If GHGEmissionData IsNot Nothing Then
+                            Return cv.ConvertFromSI(su.emission_factor, GHGEmissionData.GHGEmissionFactor)
+                        Else
+                            Return 0.0
+                        End If
+                    Case "GHG Mass Emission"
+                        If GHGEmissionData IsNot Nothing Then
+                            Return cv.ConvertFromSI(su.massflow, GHGEmissionData.GHGEmissionMassFlow)
+                        Else
+                            Return 0.0
+                        End If
+                    Case "GHG Molar Emission"
+                        If GHGEmissionData IsNot Nothing Then
+                            Return cv.ConvertFromSI(su.molarflow, GHGEmissionData.GHGEmissionMolarFlow)
+                        Else
+                            Return 0.0
+                        End If
+                    Case "CO2eq GHG Mass Emission"
+                        If GHGEmissionData IsNot Nothing Then
+                            Return cv.ConvertFromSI(su.massflow, GHGEmissionData.CO2eqEmissionMassFlow)
+                        Else
+                            Return 0.0
+                        End If
+                    Case "CO2eq GHG Molar Emission"
+                        If GHGEmissionData IsNot Nothing Then
+                            Return cv.ConvertFromSI(su.molarflow, GHGEmissionData.CO2eqEmissionMolarFlow)
+                        Else
+                            Return 0.0
+                        End If
+                    Case "GHG Emission Reference Power Value"
+                        If GHGEmissionData IsNot Nothing Then
+                            Return cv.ConvertFromSI(su.heatflow, GetEnergyConsumption())
+                        Else
+                            Return 0.0
+                        End If
+                End Select
+            End If
+
 
             For Each item In AttachedUtilities
                 If prop.StartsWith(item.Name) Then
@@ -945,6 +1044,11 @@ Namespace UnitOperations
             End If
 
             If Me.Annotation = "DWSIM.DWSIM.Outros.Annotation" Then Me.Annotation = ""
+
+            If GHGEmissionData IsNot Nothing Then
+                GHGEmissionData.OwnerID = Name
+                GHGEmissionData.Flowsheet = FlowSheet
+            End If
 
             Return True
 
@@ -1166,7 +1270,11 @@ Namespace UnitOperations
         ''' <param name="flowsheet">Flowsheet instance.</param>
         ''' <remarks></remarks>
         Public Sub SetFlowsheet(ByVal flowsheet As Object) Implements Interfaces.ISimulationObject.SetFlowsheet
+
             m_flowsheet = flowsheet
+
+            If GHGEmissionData IsNot Nothing Then GHGEmissionData.Flowsheet = flowsheet
+
         End Sub
 
         Public Overridable Function GetStructuredReport() As List(Of Tuple(Of ReportItemType, String())) Implements ISimulationObject.GetStructuredReport
@@ -1548,6 +1656,8 @@ Namespace UnitOperations
 
         Public Overridable ReadOnly Property IsSink As Boolean = False Implements ISimulationObject.IsSink
 
+        Public Property GHGEmissionData As IGHGEmitter Implements ISimulationObject.GHGEmissionData
+
 #End Region
 
 
@@ -1704,6 +1814,19 @@ Namespace UnitOperations
 
         End Function
 
+        Public Overridable Function GetEnergyConsumption() As Double Implements ISimulationObject.GetEnergyConsumption
+
+            Return 0.0
+
+        End Function
+        
+        Public Overridable Function GetPreferredGraphicObjectWidth() As Double Implements ISimulationObject.GetPreferredGraphicObjectWidth
+            Return 40.0
+        End Function
+
+        Public Overridable Function GetPreferredGraphicObjectHeight() As Double Implements ISimulationObject.GetPreferredGraphicObjectHeight
+            Return 40.0
+        End Function
     End Class
 
 End Namespace

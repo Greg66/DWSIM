@@ -124,9 +124,13 @@ Public Class FormWelcome
             Me.lvlatestfolders.View = View.List
         End If
 
-        ExtensionMethods.ChangeDefaultFont(Me)
+        ChangeDefaultFont(Me)
 
-        NewsViewer.Source = New Uri("https://www.patreon.com/dwsim/posts")
+        NewsViewer.EnsureCoreWebView2Async(FormMain.WebView2Environment).ContinueWith(Sub()
+                                                                                          UIThread(Sub()
+                                                                                                       NewsViewer.Source = New Uri("https://www.patreon.com/dwsim/posts")
+                                                                                                   End Sub)
+                                                                                      End Sub)
 
         FormMain.TranslateFormFunction?.Invoke(Me)
 
@@ -480,11 +484,6 @@ Public Class FormWelcome
 
         Dim wform As New UI.Desktop.Editors.CompoundCreatorWizard(Nothing)
         wform.SetupAndDisplayPage(1)
-
-        'start dispatcher for WPF Interop
-        If Not GlobalSettings.Settings.IsRunningOnMono Then
-            System.Windows.Threading.Dispatcher.Run()
-        End If
 
     End Sub
 

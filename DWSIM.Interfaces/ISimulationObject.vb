@@ -276,4 +276,12 @@ Imports DWSIM.Interfaces.Enums
 
     Function GetEditingForm() As System.Windows.Forms.Form
 
+    Function GetPreferredGraphicObjectWidth() As Double
+
+    Function GetPreferredGraphicObjectHeight() As Double
+
+    Property GHGEmissionData As IGHGEmitter
+
+    Function GetEnergyConsumption() As Double
+
 End Interface

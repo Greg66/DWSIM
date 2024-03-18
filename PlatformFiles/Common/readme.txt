@@ -1,7 +1,7 @@
 ﻿==================================================
 DWSIM - Open Source Process Simulator
-Version 8.5.0
-Copyright (c) 2017-2023 Daniel Medeiros and contributors
+Version 8.7.0
+Copyright (c) 2017-2024 Daniel Medeiros and contributors
 Copyright (c) 2008-2016 Daniel Medeiros, Gregor Reichert, Gustavo Leon
 ==================================================
 
@@ -61,6 +61,145 @@ VERSION HISTORY / CHANGELOG
 ==================================================
 
 The full changelog including souce code changes can be viewed at https://github.com/DanWBR/dwsim/commits/windows
+
+Version 8.7.0
+
+- Import/Export NRTL/UNIQUAC/Wilson BIPs
+- Import/Export PR/SRK/PRSV2/LKP BIPs
+- Wilson BIP estimation
+- Various Rigorous Column enhancements: new initial estimates selector, enhanced reporting, test convergence tool
+- Data Regression Utility: added support for Wilson BIPs
+- Data Regression Utility: Export regressed BIPs
+- Export imported compounds to JSON (Classic UI)
+- Estimate PID Controller parameters (Classic UI)
+- Enhanced floating table drawing for big property lists
+- Dynamic valve flow calculation now obeys Material Stream's maximum allowable dynamic flow rate
+- Toggle show/hide object label
+- Fixed Heat Exchanger sizing sample
+- Fixed issue with CSTR
+- Fixed issue with PRLK enthalpy/entropy calculations (#593)
+- Fixed Reporting tool (Classic UI)
+- Fixed infinite loop message issue
+- Fixed axes in embedded dynamic mode charts
+- Fixed phase split heuristics
+- Fixed object recalculation not updating editor
+- Fixed issue with SimpleLLE flash algorithm
+- Fixed issue with single comp PH flash
+- Fixed issue with Dynamics Cause and Matrix editor (Classic UI)
+- Fixed port/connector positions for ChemSep column
+- CAPE-OPEN Property Package Manager fix
+- Added compound mass balance check for rigorous columns (#599)
+
+Version 8.6.8
+
+- Implemented compressor/expander pressure ratio calculation mode (#550)
+- Update material stream when changing specs in dynamic mode (#588)
+- Fixed issue #566 (Material Streams not updating - Classic UI)
+- Fixed issue #567 ("What's New in DWSIM" dialog hides "Update Available" dialog)
+- Fixed issues with defining number of stages and initial estimates for rigorous column (#590)
+- Fixed issue with dynamic charts
+- Fixed issue with compressor and expander performance curves
+- Fixed memory leaks in dynamic mode
+- Fixed issue with PID Controller
+- Fixed issue with ChemSep column
+
+Version 8.6.7
+
+- Fixed issues with CoolProp Incompressible Mixtures (#563)
+- Fixed issues with Steam Tables and CoolProp Property Packages
+- Fixed an issue with Simultaneous Adjust Solver
+- Fixed issues with online compound importing
+- Fixed some UI issues
+- Removed Online UNIFAC/MODFAC Structure retrieval tool (currently unavailable)
+
+Version 8.6.6
+
+- Added Mach number calculation and reporting for gas flow in pipes
+- Added slurry viscosity correction for PFR and Pipe Segment (Yoshida et al, https://www.aidic.it/cet/13/32/349.pdf)
+- New Modified Bubble-Point solver for Rigorous Columns
+- Kinetic/HetCat/Conversion reactions/reactors now support compounds in solid phase
+- Surface Tension is now calculated for all liquid phases
+- General fixes to Rigorous Column model and solvers
+- Fixed issue with Coolprop Incompressibles PP
+- Fixed issues with Pump model
+- Fixed Solid Cp calculation
+- Other minor fixes and enhancements
+
+Version 8.6.5
+
+- Includes ThermoC Property Package  
+- Dynamic Event transitions
+- Export PFR Profile to new spreadsheet (Classic UI/CPUI)
+- Heat Exchange Profile now available for all Heat Exchanger calculation modes
+- Enhanced Heat Exchange Profile Viewer (CPUI)
+- New Enthalpy calculation method (Liquid Cp + Excess)
+- EOS-based models can now select Experimental Liquid Cp as Enthalpy calculation method
+- Changed duration controls for Dynamics Integrator to allow periods higher than 24 hours (Classic UI)
+- Fixed issues with Pure Compound Viewer (Classic UI)
+- Fixed conversion reactor energy balance (#541)
+- Fixed not being able to update kappa parameters for PRSV2 PP
+- Fixed Heat Exchanger calculation when specifiyng invalid outlet temperatures
+- Fixed Enthalpy calculation from Liquid Cp
+- Fixed/added CO2 Normal Boiling Point
+- Fixed Excess Enthalpy calculation
+- Fixed Pump curves are not being correctly saved (#548)
+- Fixed input issue with Pipe Hydraulic Profile on Classic UI (#543)
+- German translation fix
+
+Version 8.6.1
+
+- Updated connections for Fuel Cell and Electrolyzer models
+- Updated H/S/Cp calculation routine for Raoult's Law Property Package
+- Added more Dynamics Integrator events to Script Manager
+- Exposing Indicators' monitored values
+- Fixed issue with Compound Viewer (Classic UI)
+- Fixed some Inspector issues
+- Other minor fixes and enhancements
+
+Version 8.6.0
+
+- Redesigned Undo/Redo feature (Classic & Cross-Platform UI)
+- Better handling of unknown errors
+- New standard volumetric flow units
+- Fixed Input and PID controller editors (Classic UI)
+- Fixed object deletion in context menu (Classic UI)
+- Added fields to setup the equilibrium constant calculation in equilibrium reactions (Cross-Platform UI)
+- Fixed Component Properties View: Liquid Phase Missing Property Displays (#521)
+- Fixed Chemsep flowsheet mouse hover issue (#520)
+- CoolProp fix density for INCOM mixture (#519)
+- Bug fixes
+
+Version 8.5.1
+
+- Added messages log feature (Classic UI)
+- Added Experimental liquid cp option for PRSV2
+- Copy object ID to clipboard (Classic UI)
+- Redesigned input box (Classic UI)
+- Implemented feature request #502 (Include Stream Description/Comments for HMB)
+- Implemented #503 (Mixer in dynamic mode, equalize all option)
+- Implemented feature request #500 (Define profile segment from tabular data input Length/Elevation)
+- Added t/h and t/min to mass flow unit set (#513)
+- Redesigned material stream list (Classic UI)
+- Fixed spreadsheet formatting
+- Fixed thermo importing
+- Fixed floating table formatting for compound amounts
+- Fixed energy mixer icon
+- Throwing exception for calculated negative flows in compound separator (#496)
+- Fixed issue with dynamics integrator (Classic UI)
+- Fixed issue #497 (Need clone ForcePhase for ShallowCopy MaterialStream?)
+- Fixed deltaT conversion in phase envelope (Classic UI) (#492)
+- Floating table adjustments
+- Fixed diamter/height units for rig columns
+- Fixed viscosity conversion
+- Fixed calculation order for single object solver requests
+- Fixed updating pump outlet pressure
+- Fixed T/P units in column properties report
+- Fixed issue #505 (Fix add json-compound)
+- Fixed issue #494 ([Linux Cross-Platform UI] Reaction edit exception)
+- Fixed issue #491 ([Linux Cross-Platform UI] New reaction buttons placement)
+- Fixed issue #480 ([Linux Cross-Platform UI] Mono process use 100% CPU after solver failed to calculate)
+- Fixed PR/SRK BIP not updating (#507)
+- Other minor fixes and enhancements
 
 Version 8.5.0
 

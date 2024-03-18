@@ -18,17 +18,19 @@ Public Class PropertyPackageSettingsEditingControl
 
         ExtensionMethods.ChangeDefaultFont(Me)
 
-        chkIgnoreIPs.Enabled = TypeOf PropPack Is NRTLPropertyPackage Or TypeOf PropPack Is UNIQUACPropertyPackage
+        chkIgnoreIPs.Enabled = PropPack.ComponentName.Contains("UNIQUAC") Or PropPack.ComponentName.Contains("NRTL") Or PropPack.ComponentName.Contains("Wilson")
 
         chkIgnoreSalLim.Enabled = TypeOf PropPack Is SeawaterPropertyPackage
 
         chkIgnoreVapFracLim.Enabled = TypeOf PropPack Is SourWaterPropertyPackage
 
-        cbHSCpCalcMode.Enabled = TypeOf PropPack Is ActivityCoefficientPropertyPackage Or PropPack.PackageType = PackageType.ActivityCoefficient
+        cbHSCpCalcMode.Enabled = TypeOf PropPack Is ActivityCoefficientPropertyPackage Or TypeOf PropPack Is RaoultPropertyPackage Or PropPack.PackageType = PackageType.ActivityCoefficient
+
+        cbEOSLiqEnthMethod.Enabled = PropPack.PackageType = PackageType.EOS
 
         chkVapFugIdeal.Enabled = TypeOf PropPack Is ActivityCoefficientPropertyPackage Or PropPack.PackageType = PackageType.ActivityCoefficient
 
-        chkAutoEstimateNU.Enabled = TypeOf PropPack Is NRTLPropertyPackage Or TypeOf PropPack Is UNIQUACPropertyPackage
+        chkAutoEstimateNU.Enabled = PropPack.ComponentName.Contains("UNIQUAC") Or PropPack.ComponentName.Contains("NRTL") Or PropPack.ComponentName.Contains("Wilson")
 
         cbLiqDens.SelectedIndex = PropPack.LiquidDensityCalculationMode_Subcritical
 
@@ -64,6 +66,8 @@ Public Class PropertyPackageSettingsEditingControl
 
         chkUseHenry.Checked = PropPack.UseHenryConstants
 
+        cbEOSLiqEnthMethod.SelectedIndex = PropPack.LiquidEnthalpyEntropyCpCvCalculationMode_EOS
+
         AddHandler tbSPCheckThres.TextChanged, Sub()
                                                    Try
                                                        PropPack.SingleCompoundCheckThreshold = tbSPCheckThres.Text.ToDoubleFromCurrent()
@@ -90,6 +94,10 @@ Public Class PropertyPackageSettingsEditingControl
         AddHandler cbHSCpCalcMode.SelectedIndexChanged, Sub()
                                                             PropPack.EnthalpyEntropyCpCvCalculationMode = cbHSCpCalcMode.SelectedIndex
                                                         End Sub
+
+        AddHandler cbEOSLiqEnthMethod.SelectedIndexChanged, Sub()
+                                                                PropPack.LiquidEnthalpyEntropyCpCvCalculationMode_EOS = cbEOSLiqEnthMethod.SelectedIndex
+                                                            End Sub
 
         AddHandler chkIgnoreIPs.CheckedChanged, Sub()
                                                     PropPack.ActivityCoefficientModels_IgnoreMissingInteractionParameters = chkIgnoreIPs.Checked
@@ -141,7 +149,8 @@ Public Class PropertyPackageSettingsEditingControl
 
     End Sub
 
-    Private Sub LinkLabel1_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel1.LinkClicked
+    Private Sub LinkLabel1_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs)
         Process.Start("https://github.com/DanWBR/dwsim/blob/windows/DWSIM.Thermodynamics/Assets/henry.txt")
     End Sub
+
 End Class

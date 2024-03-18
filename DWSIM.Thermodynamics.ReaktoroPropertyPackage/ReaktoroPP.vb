@@ -1,5 +1,5 @@
 ﻿'    Reaktoro Property Package
-'    Copyright 2020-2023 Daniel Wagner O. de Medeiros
+'    Copyright 2020-2024 Daniel Wagner O. de Medeiros
 '
 '    This file is part of DWSIM.
 '
@@ -34,8 +34,6 @@ Imports System.Windows.Forms
 
     Private m_props As New Auxiliary.PROPS
     Private m_id As New Auxiliary.Ideal
-
-    Public Overrides ReadOnly Property Popular As Boolean = True
 
     Public Sub New(ByVal comode As Boolean)
 
@@ -1058,7 +1056,7 @@ Imports System.Windows.Forms
 
     End Function
 
-    Public Overrides Function AUX_PVAPi(ByVal sub1 As String, ByVal T As Double)
+    Public Overrides Function AUX_PVAPi(ByVal sub1 As String, ByVal T As Double) As Double
 
         Dim cprops = Me.DW_GetConstantProperties.Where(Function(x) x.Name = sub1).FirstOrDefault
 

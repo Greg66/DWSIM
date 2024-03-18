@@ -1,12 +1,10 @@
 ﻿Imports System.Linq
 Imports System.Threading.Tasks
 Imports DWSIM.DynamicsManager
-Imports Eto.Threading
-Imports Mono.CSharp
+Imports DWSIM.Interfaces
 Imports OxyPlot
 Imports OxyPlot.Axes
 Imports OxyPlot.Series
-Imports Python.Runtime
 
 Public Class FormDynamicsIntegratorControl
 
@@ -21,6 +19,10 @@ Public Class FormDynamicsIntegratorControl
     Public LiveChart As New FormChart_OxyPlot
 
     Private ChartIsSetup As Boolean = False
+
+    Private FlowsheetClone As IFlowsheet
+
+    Private Historian As New Dictionary(Of Date, XDocument)
 
     Private Sub FormDynamicsIntegratorControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
@@ -46,8 +48,12 @@ Public Class FormDynamicsIntegratorControl
 
             For Each item In Flowsheet.DynamicsManager.ScheduleList
                 If item.Value.CurrentIntegrator <> "" Then
-                    Dim integ = Flowsheet.DynamicsManager.IntegratorList(item.Value.CurrentIntegrator).Description
-                    cbScenario.Items.Add(item.Value.Description & " (" & integ & ")")
+                    If Flowsheet.DynamicsManager.IntegratorList.ContainsKey(item.Value.CurrentIntegrator) Then
+                        Dim integ = Flowsheet.DynamicsManager.IntegratorList(item.Value.CurrentIntegrator).Description
+                        cbScenario.Items.Add(item.Value.Description & " (" & integ & ")")
+                    Else
+                        cbScenario.Items.Add(item.Value.Description)
+                    End If
                 Else
                     cbScenario.Items.Add(item.Value.Description)
                 End If
@@ -81,14 +87,28 @@ Public Class FormDynamicsIntegratorControl
         If Flowsheet.DynamicMode Then
             If Not Running Then
                 ChartIsSetup = False
-                RunIntegrator(False, False, False, False)
+                Try
+                    RunIntegrator(False, False, False, False)
+                Catch ex As Exception
+                    Running = False
+                    btnRun.BackgroundImage = My.Resources.icons8_play
+                    Throw ex
+                End Try
             Else
                 If Not Paused Then
-                    RunIntegrator(False, False, True, False)
+                    Try
+                        RunIntegrator(False, False, True, False)
+                    Catch ex As Exception
+                        Running = False
+                        btnRun.BackgroundImage = My.Resources.icons8_play
+                        Throw ex
+                    End Try
                 End If
             End If
         Else
             Flowsheet.ShowMessage(DWSIM.App.GetLocalString("DynamicsDisabled"), Interfaces.IFlowsheet.MessageType.Warning)
+            Running = False
+            btnRun.BackgroundImage = My.Resources.icons8_play
         End If
 
     End Sub
@@ -99,6 +119,8 @@ Public Class FormDynamicsIntegratorControl
 
         Paused = False
         Abort = True
+
+        Flowsheet.UpdateOpenEditForms()
 
     End Sub
 
@@ -130,6 +152,14 @@ Public Class FormDynamicsIntegratorControl
         Dim finaltime = currentposition
 
         Dim events = eventset.Events.Values.Where(Function(x) x.TimeStamp >= initialtime And x.TimeStamp < finaltime).ToList
+
+        Dim props = Flowsheet.DynamicsManager.GetPropertyValuesFromEvents(FlowsheetClone, currentposition, Historian, eventset)
+
+        For Each p In props
+            Dim obj = Flowsheet.SimulationObjects(p.Item1)
+            Dim value = p.Item3
+            obj.SetPropertyValue(p.Item2, value)
+        Next
 
         For Each ev In events
             If ev.Enabled Then
@@ -218,6 +248,11 @@ Public Class FormDynamicsIntegratorControl
         If Not Flowsheet.DynamicsManager.IntegratorList.ContainsKey(schedule.CurrentIntegrator) Then
             Throw New Exception(Flowsheet.GetTranslatedString1("Please select a valid integrator for the selected schedule."))
         End If
+
+        Flowsheet.ClearLog()
+        Flowsheet.ShowMessage(DWSIM.App.GetLocalString("Dynamics Integrator Starting..."), Interfaces.IFlowsheet.MessageType.Information)
+
+        My.Application.MainWindowForm.AnalyticsProvider?.RegisterEvent("Dynamics Integrator Started", "", Nothing)
 
         Dim integrator = Flowsheet.DynamicsManager.IntegratorList(schedule.CurrentIntegrator)
 
@@ -315,6 +350,11 @@ Public Class FormDynamicsIntegratorControl
 
         Flowsheet.SupressMessages = True
 
+        Flowsheet.ClearLog()
+        FlowsheetClone = Flowsheet.Clone()
+
+        Historian = New Dictionary(Of Date, XDocument)()
+
         Dim exceptions As New List(Of Exception)
 
         If Not restarting Then
@@ -342,12 +382,15 @@ Public Class FormDynamicsIntegratorControl
                                         Dim sw As New Stopwatch
                                         sw.Start()
 
+                                        Flowsheet.ProcessScripts(Scripts.EventType.IntegratorPreStep, Scripts.ObjectType.Integrator, "")
+
                                         Dim i0 As Integer = i
 
                                         If Not guiless Then
                                             Flowsheet.RunCodeOnUIThread(Sub()
                                                                             ProgressBar1.Value = i0
                                                                             lblCurrent.Text = New TimeSpan(0, 0, i0).ToString("c")
+                                                                            Refresh()
                                                                         End Sub)
                                         End If
 
@@ -376,7 +419,11 @@ Public Class FormDynamicsIntegratorControl
                                             integrator.ShouldCalculatePressureFlow = False
                                         End If
 
-                                        exceptions = FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Flowsheet, GlobalSettings.Settings.SolverMode)
+                                        If Flowsheet.ExternalFlowsheetSolver IsNot Nothing Then
+                                            exceptions = Flowsheet.ExternalFlowsheetSolver.SolveFlowsheet(Flowsheet)
+                                        Else
+                                            exceptions = FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Flowsheet, GlobalSettings.Settings.SolverMode)
+                                        End If
 
                                         While GlobalSettings.Settings.CalculatorBusy
                                             Task.Delay(200).Wait()
@@ -384,14 +431,17 @@ Public Class FormDynamicsIntegratorControl
 
                                         If exceptions.Count > 0 Then Exit While
 
+                                        Historian.Add(integrator.CurrentTime, Flowsheet.GetSnapshot(SnapshotType.ObjectData))
+
                                         StoreVariableValues(integrator, i, integrator.CurrentTime)
+
+                                        Flowsheet.ProcessScripts(Scripts.EventType.IntegratorStep, Scripts.ObjectType.Integrator, "")
 
                                         If Not guiless Then
                                             Flowsheet.RunCodeOnUIThread(Sub()
                                                                             Flowsheet.FormDynamics.UpdateControllerList()
                                                                             Flowsheet.FormDynamics.UpdateIndicatorList()
                                                                             Flowsheet.FormSurface.FControl.Invalidate()
-                                                                            Application.DoEvents()
                                                                         End Sub)
                                         End If
 
@@ -459,10 +509,20 @@ Public Class FormDynamicsIntegratorControl
                                 End Sub)
 
         maintask.ContinueWith(Sub(t)
+
                                   If Not Paused Then Running = False
                                   If t.Exception IsNot Nothing Then
+                                      Dim datadict = New Dictionary(Of String, String) From {
+                                          {"Exception", t.Exception.Message}
+                                      }
+                                      Flowsheet.RunCodeOnUIThread(Sub()
+                                                                      My.Application.MainWindowForm.AnalyticsProvider?.RegisterEvent("Dynamics Integrator Finished with Errors", "", datadict)
+                                                                  End Sub)
                                       Flowsheet.ProcessScripts(Scripts.EventType.IntegratorError, Scripts.ObjectType.Integrator, "")
                                   Else
+                                      Flowsheet.RunCodeOnUIThread(Sub()
+                                                                      My.Application.MainWindowForm.AnalyticsProvider?.RegisterEvent("Dynamics Integrator Finished Successfully", "", Nothing)
+                                                                  End Sub)
                                       Flowsheet.ProcessScripts(Scripts.EventType.IntegratorFinished, Scripts.ObjectType.Integrator, "")
                                   End If
                                   If Not guiless Then
@@ -504,6 +564,12 @@ Public Class FormDynamicsIntegratorControl
                                                                               End If
                                                                           Next
                                                                       End If
+
+                                                                      DirectCast(FlowsheetClone, FormFlowsheet)?.Dispose()
+                                                                      FlowsheetClone = Nothing
+                                                                      Historian.Clear()
+                                                                      GC.Collect()
+
                                                                   End Sub)
                                   End If
                               End Sub)
@@ -528,7 +594,9 @@ Public Class FormDynamicsIntegratorControl
 
         sheet.RowCount = integrator.MonitoredVariableValues.Count + 1
 
-        sheet.Cells(0, 0).Data = "Time (ms)"
+        Dim units = Flowsheet.Options.SelectedUnitSystem
+
+        sheet.Cells(0, 0).Data = String.Format("Time ({0})", units.time)
 
         Dim i, j As Integer
 
@@ -540,7 +608,7 @@ Public Class FormDynamicsIntegratorControl
 
         i = 1
         For Each item In integrator.MonitoredVariableValues
-            sheet.Cells(i, 0).Data = New TimeSpan(item.Key).TotalMilliseconds
+            sheet.Cells(i, 0).Data = SystemsOfUnits.Converter.ConvertFromSI(units.time, New TimeSpan(item.Key).TotalMilliseconds / 1000.0)
             j = 1
             For Each var In item.Value
                 sheet.Cells(i, j).Data = var.PropertyValue.ToDoubleFromInvariant
@@ -609,7 +677,9 @@ Public Class FormDynamicsIntegratorControl
 
         Dim pointset = integrator.MonitoredVariableValues.Last
 
-        x = New TimeSpan(pointset.Key).TotalMilliseconds
+        Dim units = Flowsheet.Options.SelectedUnitSystem
+
+        x = SystemsOfUnits.Converter.ConvertFromSI(units.time, New TimeSpan(pointset.Key).TotalMilliseconds / 1000.0)
 
         i = 0
         For Each var In pointset.Value
@@ -632,6 +702,8 @@ Public Class FormDynamicsIntegratorControl
 
         Dim model = New PlotModel() With {.Subtitle = "Live View", .Title = integrator.Description}
 
+        Dim units = Flowsheet.Options.SelectedUnitSystem
+
         model.TitleFontSize = 16
         model.SubtitleFontSize = 14
         model.TitleHorizontalAlignment = TitleHorizontalAlignment.CenteredWithinPlotArea
@@ -641,7 +713,7 @@ Public Class FormDynamicsIntegratorControl
             .MinorGridlineStyle = LineStyle.Dot,
             .Position = AxisPosition.Bottom,
             .FontSize = 14,
-            .Title = "Time (ms)"
+            .Title = String.Format("Time ({0})", units.time)
         })
 
         model.LegendFontSize = 12

@@ -5,66 +5,68 @@
 🥈 Sukin Oh
 🥈 Jane Ferris
 🌟 Adam Kovalovszki
+🌟 Alberto Marzi
 🌟 Alfred Gongaware
 🌟 Alberto Baumeister
+🌟 Bernhard Seyfang
 🌟 Bryan Evans
 🌟 Cameron Paul Ward
-🌟 Carlos Reetz
 🌟 Casey Houston
+🌟 Chris Hart
 🌟 Christian Hornhofer
 🌟 Dave Carpency
 🌟 Domenico Marchese
+🌟 Edson Zaparoli
+🌟 Fernando Lino
 🌟 George Brindle
 🌟 Gerry Agnew
+🌟 Helena Thogersen
 🌟 Henk Fikkert
 🌟 H-Tec Systems GmbH
 🌟 Javier Fontalvo
 🌟 Jens Greimeier
-🌟 Jonathan
+🌟 Jonathan Reichelt
+🌟 José Marques
 🌟 Leonard Seed
 🌟 Lorenzo Giuseppe Montani
 🌟 Martin Heiser
 🌟 Michael Papantoniou
 🌟 Michael Saucier
-🌟 Rafael Melo-González
-🌟 Renato Corrêa Arrieche
+🌟 Pawel Zjezdzalka
 🌟 Richard Huntington
-🌟 Rida Bin Hashim
 🌟 Roland Berger
 🌟 Ronald J. Dunbar
 🌟 Ronald Visness
-🌟 Tino Josef Ritter
+🌟 Simone Vidille
+🌟 Tech-Rudra
 Alberto Baumeister
+Alex Michinel
 Alex Platon
 Andras Nady
 Anders Andreasen
 Andrew Dickson
+Antony Loane
 Bednarz Marc
-Bernhard Seyfang
 Bruce Bishkin
-Bruce Rising
-Camilo Gantiva
+Carlos Eduardo Pantoja
 Christian Jordan
 Christian Pedersen
 CollectiveObjective
 Daniel Bajolet
-Daniel Dornellas Athayde
 David Miller
 David Whitlock
 Denislav Zdravkov
 Dorivaldo Junior
 Doug Palfreyman
-Emanuel Cardoso
+Eugenio León
 Fernando Almeida
-Gokhan Candan 
+Frans Le Roux
 Guenther Holzer
-Henar Portero
 Hep Ingham
 Hurudza
 John Kossik
 Joseph Attia
 Kenneth Troldal
-Kiran Pashikanti
 Les Waymont
 Lewis Estall
 Luca Finardi
@@ -72,18 +74,18 @@ Marcos Silva
 Masahiro Sakai
 Mohan Vaze
 Nicolas Spogis
-Okechukwu Nwadigo
 Pablo Jimenez
 Paulo Bernardo
 Pedro Sabóia
 Petroconsulting LLC
 Protherm Systems
 Rainer Scheuring
-Rick Kempf
+Renato Corrêa Arrieche
 Rupert Easter
 Ryszard Sadowski
-Shailesh Paranjpe
+Satinder Singh Virdi
 Shankar Ananth
+Shubham Wankhede
 Tetsuo Fuchino
 Tibor Lányi
 Will Flores

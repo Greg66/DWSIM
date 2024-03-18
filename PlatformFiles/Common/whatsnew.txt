@@ -1,11 +1,27 @@
-Version 8.5.0
+Version 8.7.0
 
-- New Object Palette (Classic UI)
-- Added Aqueous Electorlytes (Reaktoro) Property Package
-- Added Cut/Copy/Paste items to context menus (Classic UI)
-- Removed dependency of the additional Python environments package
-- Fixed an issue with Gibbs Reactor
-- Removed interactive python console (Classic UI)
-- Fixed compound search (Classic UI) (#489)
-- Fixed Infinity Loop on Calc Critical Point in PR78 (#487)
-- Other fixes and enhancements
+- Import/Export NRTL/UNIQUAC/Wilson BIPs
+- Import/Export PR/SRK/PRSV2/LKP BIPs
+- Wilson BIP estimation
+- Various Rigorous Column enhancements: new initial estimates selector, enhanced reporting, test convergence tool
+- Data Regression Utility: added support for Wilson BIPs
+- Data Regression Utility: Export regressed BIPs
+- Export imported compounds to JSON (Classic UI)
+- Estimate PID Controller parameters (Classic UI)
+- Enhanced floating table drawing for big property lists
+- Dynamic valve flow calculation now obeys Material Stream's maximum allowable dynamic flow rate
+- Toggle show/hide object label
+- Fixed Heat Exchanger sizing sample
+- Fixed issue with CSTR
+- Fixed issue with PRLK enthalpy/entropy calculations (#593)
+- Fixed Reporting tool (Classic UI)
+- Fixed infinite loop message issue
+- Fixed axes in embedded dynamic mode charts
+- Fixed phase split heuristics
+- Fixed object recalculation not updating editor
+- Fixed issue with SimpleLLE flash algorithm
+- Fixed issue with single comp PH flash
+- Fixed issue with Dynamics Cause and Matrix editor (Classic UI)
+- Fixed port/connector positions for ChemSep column
+- CAPE-OPEN Property Package Manager fix
+- Added compound mass balance check for rigorous columns (#599)

@@ -104,8 +104,8 @@ Partial Class FormFlowsheet
         Me.tsbAbortCalc = New System.Windows.Forms.ToolStripButton()
         Me.tsbSimultAdjustSolver = New System.Windows.Forms.ToolStripButton()
         Me.ToolStripSeparator2 = New System.Windows.Forms.ToolStripSeparator()
-        Me.tsbUndo = New System.Windows.Forms.ToolStripDropDownButton()
-        Me.tsbRedo = New System.Windows.Forms.ToolStripDropDownButton()
+        Me.tsbUndo = New System.Windows.Forms.ToolStripButton()
+        Me.tsbRedo = New System.Windows.Forms.ToolStripButton()
         Me.ToolStripSeparator3 = New System.Windows.Forms.ToolStripSeparator()
         Me.ToolStripLabel2 = New System.Windows.Forms.ToolStripLabel()
         Me.tsbDynamics = New System.Windows.Forms.ToolStripButton()
@@ -125,8 +125,15 @@ Partial Class FormFlowsheet
         Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.lblLastMessage = New System.Windows.Forms.LinkLabel()
+        Me.pbSolver = New CircularProgress.SpinningProgress.SpinningProgress()
         Me.btnOpenLogPanel = New System.Windows.Forms.Button()
         Me.btnViewFullLog = New System.Windows.Forms.Button()
+        Me.PanelCOWarning = New System.Windows.Forms.Panel()
+        Me.FlowLayoutPanel2 = New System.Windows.Forms.FlowLayoutPanel()
+        Me.PictureBox2 = New System.Windows.Forms.PictureBox()
+        Me.Label2 = New System.Windows.Forms.Label()
+        Me.Label3 = New System.Windows.Forms.Label()
+        Me.btnDismissPanelCOWarning = New System.Windows.Forms.Button()
         Me.MenuStrip1.SuspendLayout()
         Me.ToolStrip1.SuspendLayout()
         CType(Me.DataGridView1, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -134,6 +141,9 @@ Partial Class FormFlowsheet
         Me.Panel1.SuspendLayout()
         Me.FlowLayoutPanel1.SuspendLayout()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.PanelCOWarning.SuspendLayout()
+        Me.FlowLayoutPanel2.SuspendLayout()
+        CType(Me.PictureBox2, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'MenuStrip1
@@ -173,7 +183,7 @@ Partial Class FormFlowsheet
         'tsmiUndo
         '
         resources.ApplyResources(Me.tsmiUndo, "tsmiUndo")
-        Me.tsmiUndo.Image = Global.DWSIM.My.Resources.Resources.undo_161
+        Me.tsmiUndo.Image = Global.DWSIM.My.Resources.Resources.undo_96px
         Me.tsmiUndo.MergeAction = System.Windows.Forms.MergeAction.Insert
         Me.tsmiUndo.MergeIndex = 0
         Me.tsmiUndo.Name = "tsmiUndo"
@@ -181,7 +191,7 @@ Partial Class FormFlowsheet
         'tsmiRedo
         '
         resources.ApplyResources(Me.tsmiRedo, "tsmiRedo")
-        Me.tsmiRedo.Image = Global.DWSIM.My.Resources.Resources.redo_16
+        Me.tsmiRedo.Image = Global.DWSIM.My.Resources.Resources.redo_96px
         Me.tsmiRedo.MergeAction = System.Windows.Forms.MergeAction.Insert
         Me.tsmiRedo.MergeIndex = 1
         Me.tsmiRedo.Name = "tsmiRedo"
@@ -674,15 +684,15 @@ Partial Class FormFlowsheet
         'tsbUndo
         '
         Me.tsbUndo.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
-        Me.tsbUndo.Image = Global.DWSIM.My.Resources.Resources.undo_96px
         resources.ApplyResources(Me.tsbUndo, "tsbUndo")
+        Me.tsbUndo.Image = Global.DWSIM.My.Resources.Resources.undo_96px
         Me.tsbUndo.Name = "tsbUndo"
         '
         'tsbRedo
         '
         Me.tsbRedo.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
-        Me.tsbRedo.Image = Global.DWSIM.My.Resources.Resources.redo_96px
         resources.ApplyResources(Me.tsbRedo, "tsbRedo")
+        Me.tsbRedo.Image = Global.DWSIM.My.Resources.Resources.redo_96px
         Me.tsbRedo.Name = "tsbRedo"
         '
         'ToolStripSeparator3
@@ -812,6 +822,7 @@ Partial Class FormFlowsheet
         Me.FlowLayoutPanel1.Controls.Add(Me.PictureBox1)
         Me.FlowLayoutPanel1.Controls.Add(Me.Label1)
         Me.FlowLayoutPanel1.Controls.Add(Me.lblLastMessage)
+        Me.FlowLayoutPanel1.Controls.Add(Me.pbSolver)
         resources.ApplyResources(Me.FlowLayoutPanel1, "FlowLayoutPanel1")
         Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
         '
@@ -834,6 +845,16 @@ Partial Class FormFlowsheet
         Me.lblLastMessage.Name = "lblLastMessage"
         Me.lblLastMessage.TabStop = True
         '
+        'pbSolver
+        '
+        Me.pbSolver.ActiveSegmentColour = System.Drawing.Color.SteelBlue
+        Me.pbSolver.AutoIncrementFrequency = 50.0R
+        Me.pbSolver.BehindTransistionSegmentIsActive = False
+        resources.ApplyResources(Me.pbSolver, "pbSolver")
+        Me.pbSolver.Name = "pbSolver"
+        Me.pbSolver.TransistionSegment = 10
+        Me.pbSolver.TransistionSegmentColour = System.Drawing.Color.LightSkyBlue
+        '
         'btnOpenLogPanel
         '
         resources.ApplyResources(Me.btnOpenLogPanel, "btnOpenLogPanel")
@@ -846,11 +867,54 @@ Partial Class FormFlowsheet
         Me.btnViewFullLog.Name = "btnViewFullLog"
         Me.btnViewFullLog.UseVisualStyleBackColor = True
         '
+        'PanelCOWarning
+        '
+        Me.PanelCOWarning.BackColor = System.Drawing.Color.LightYellow
+        Me.PanelCOWarning.Controls.Add(Me.FlowLayoutPanel2)
+        Me.PanelCOWarning.Controls.Add(Me.btnDismissPanelCOWarning)
+        resources.ApplyResources(Me.PanelCOWarning, "PanelCOWarning")
+        Me.PanelCOWarning.Name = "PanelCOWarning"
+        '
+        'FlowLayoutPanel2
+        '
+        Me.FlowLayoutPanel2.Controls.Add(Me.PictureBox2)
+        Me.FlowLayoutPanel2.Controls.Add(Me.Label2)
+        Me.FlowLayoutPanel2.Controls.Add(Me.Label3)
+        resources.ApplyResources(Me.FlowLayoutPanel2, "FlowLayoutPanel2")
+        Me.FlowLayoutPanel2.Name = "FlowLayoutPanel2"
+        '
+        'PictureBox2
+        '
+        Me.PictureBox2.Image = Global.DWSIM.My.Resources.Resources.box_important_48px
+        resources.ApplyResources(Me.PictureBox2, "PictureBox2")
+        Me.PictureBox2.Name = "PictureBox2"
+        Me.PictureBox2.TabStop = False
+        '
+        'Label2
+        '
+        resources.ApplyResources(Me.Label2, "Label2")
+        Me.Label2.ForeColor = System.Drawing.Color.DarkRed
+        Me.Label2.Name = "Label2"
+        '
+        'Label3
+        '
+        resources.ApplyResources(Me.Label3, "Label3")
+        Me.Label3.AutoEllipsis = True
+        Me.Label3.ForeColor = System.Drawing.Color.DarkRed
+        Me.Label3.Name = "Label3"
+        '
+        'btnDismissPanelCOWarning
+        '
+        resources.ApplyResources(Me.btnDismissPanelCOWarning, "btnDismissPanelCOWarning")
+        Me.btnDismissPanelCOWarning.Name = "btnDismissPanelCOWarning"
+        Me.btnDismissPanelCOWarning.UseVisualStyleBackColor = True
+        '
         'FormFlowsheet
         '
         resources.ApplyResources(Me, "$this")
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.Controls.Add(Me.Panel1)
+        Me.Controls.Add(Me.PanelCOWarning)
         Me.Controls.Add(Me.ToolStrip1)
         Me.Controls.Add(Me.dckPanel)
         Me.Controls.Add(Me.MenuStrip1)
@@ -869,6 +933,10 @@ Partial Class FormFlowsheet
         Me.FlowLayoutPanel1.ResumeLayout(False)
         Me.FlowLayoutPanel1.PerformLayout()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.PanelCOWarning.ResumeLayout(False)
+        Me.PanelCOWarning.PerformLayout()
+        Me.FlowLayoutPanel2.ResumeLayout(False)
+        CType(Me.PictureBox2, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -941,8 +1009,6 @@ Partial Class FormFlowsheet
     Friend WithEvents ToolStripSeparator1 As ToolStripSeparator
     Friend WithEvents tsbSimultAdjustSolver As ToolStripButton
     Friend WithEvents ToolStripSeparator2 As ToolStripSeparator
-    Friend WithEvents tsbUndo As ToolStripDropDownButton
-    Friend WithEvents tsbRedo As ToolStripDropDownButton
     Friend WithEvents tsbCalcF As ToolStripButton
     Friend WithEvents ToolStripSeparator3 As ToolStripSeparator
     Friend WithEvents ToolStripLabel1 As ToolStripLabel
@@ -976,4 +1042,13 @@ Partial Class FormFlowsheet
     Public WithEvents tsbAtivar As ToolStripButton
     Friend WithEvents InvertSelectionToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents btnViewFullLog As Button
+    Friend WithEvents tsbUndo As ToolStripButton
+    Friend WithEvents tsbRedo As ToolStripButton
+    Friend WithEvents pbSolver As CircularProgress.SpinningProgress.SpinningProgress
+    Friend WithEvents PanelCOWarning As Panel
+    Friend WithEvents FlowLayoutPanel2 As FlowLayoutPanel
+    Friend WithEvents PictureBox2 As PictureBox
+    Friend WithEvents Label2 As Label
+    Friend WithEvents Label3 As Label
+    Friend WithEvents btnDismissPanelCOWarning As Button
 End Class

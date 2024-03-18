@@ -63,8 +63,8 @@ namespace DWSIM.FileStorage
         {
             var file = DB.FileStorage.FindById(Path.GetFileName(filename));
             if (file != null)
-            {                
-                 if (!File.Exists(exportpath)) file.SaveAs(exportpath);
+            {
+                if (!File.Exists(exportpath)) file.SaveAs(exportpath);
             }
             else
             {
@@ -183,6 +183,7 @@ namespace DWSIM.FileStorage
         {
             ReleaseDatabase();
             DBMem = ReadStream(dbpath);
+            DBMem.Position = 0;
             DB = new LiteDatabase(DBMem);
             IsDBLoaded = true;
         }
@@ -194,6 +195,17 @@ namespace DWSIM.FileStorage
         public void PutFile(string filepath)
         {
             DB.FileStorage.Upload(Path.GetFileName(filepath), filepath);
+            DB.Checkpoint();
+        }
+
+        /// <summary>
+        /// Stores a file in the database.
+        /// </summary>
+        /// <param name="filepath">Path of the file to import.</param>
+        /// <param name="internalfilename">Internal name of the stored file.</param>
+        public void PutFile(string filepath, string internalfilename)
+        {
+            DB.FileStorage.Upload(internalfilename, filepath);
             DB.Checkpoint();
         }
 

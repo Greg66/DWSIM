@@ -2,6 +2,9 @@
 Imports DWSIM.Thermodynamics.Databases.KDBLink
 Imports DWSIM.Thermodynamics.Databases.ChemeoLink
 Imports DWSIM.Thermodynamics.Databases.DDBStructureLink
+Imports DWSIM.Interfaces
+Imports DWSIM.SharedClassesCSharp.FilePicker
+Imports System.IO
 
 Public Class FormImportCompoundOnline
 
@@ -139,14 +142,19 @@ Public Class FormImportCompoundOnline
                                               End Function, tcs.Token)
 
                 Dim t1 As New Task(Of Global.DWSIM.Thermodynamics.BaseClasses.ConstantProperties)(Function()
-                                                                                                      Return KDBParser.GetCompoundData(Integer.Parse(KDBParser.GetCompoundIDs(casid, True)(0)(0)))
+                                                                                                      Dim res1 = KDBParser.GetCompoundIDs(casid, True)
+                                                                                                      If res1.Count = 0 Then
+                                                                                                          Return Nothing
+                                                                                                      Else
+                                                                                                          Return KDBParser.GetCompoundData(Integer.Parse(res1(0)(0)))
+                                                                                                      End If
                                                                                                   End Function, tcs.Token)
                 Dim t2 As New Task(Of Global.DWSIM.Thermodynamics.BaseClasses.ConstantProperties)(Function()
                                                                                                       Return ChemeoParser.GetCompoundData(cstring)
                                                                                                   End Function, tcs.Token)
-                Dim t3 As New Task(Of Dictionary(Of String, List(Of String())))(Function()
-                                                                                    Return DDBStructureParser.GetData(DDBStructureParser.GetID(casid))
-                                                                                End Function, tcs.Token)
+                'Dim t3 As New Task(Of Dictionary(Of String, List(Of String())))(Function()
+                '                                                                    Return DDBStructureParser.GetData(DDBStructureParser.GetID(casid))
+                '                                                                End Function, tcs.Token)
 
 
                 Task.Factory.StartNew(Sub()
@@ -155,8 +163,8 @@ Public Class FormImportCompoundOnline
                                           casid = t0.Result
                                           t1.Start()
                                           t2.Start()
-                                          t3.Start()
-                                          Task.WaitAll(t1, t2, t3)
+                                          't3.Start()
+                                          Task.WaitAll(t1, t2)
                                       End Sub).ContinueWith(Sub(tsk)
                                                                 If tsk.Exception IsNot Nothing Then
                                                                     UIThread(Sub()
@@ -190,9 +198,9 @@ Public Class FormImportCompoundOnline
                                                                                  If Not t2.Status = TaskStatus.WaitingToRun AndAlso t2.Exception Is Nothing Then
                                                                                      compoundc = t2.Result
                                                                                  End If
-                                                                                 If Not t3.Status = TaskStatus.WaitingToRun AndAlso t3.Exception Is Nothing Then
-                                                                                     structuredata = t3.Result
-                                                                                 End If
+                                                                                 'If Not t3.Status = TaskStatus.WaitingToRun AndAlso t3.Exception Is Nothing Then
+                                                                                 '    structuredata = t3.Result
+                                                                                 'End If
                                                                                  AddPropertiesToGrid()
                                                                                  btnNext.Enabled = compoundk IsNot Nothing
                                                                                  If dgResults.Rows.Count = 0 Then btnNext.Enabled = False
@@ -203,9 +211,15 @@ Public Class FormImportCompoundOnline
                                                                                          compoundk.Acentric_Factor > 0.0# And
                                                                                          compoundk.IdealgasCpEquation <> "" Then
                                                                                          btnNext.Enabled = True
+                                                                                         btnExportJSON.Enabled = True
                                                                                      Else
                                                                                          btnNext.Enabled = False
+                                                                                         btnExportJSON.Enabled = False
+                                                                                         MessageBox.Show("Could not find data for this compound in KDB Korean Thermo Database.", DWSIM.App.GetLocalString("Erro"))
                                                                                      End If
+                                                                                 Else
+                                                                                     btnExportJSON.Enabled = False
+                                                                                     MessageBox.Show("Could not find data for this compound in KDB Korean Thermo Database.", DWSIM.App.GetLocalString("Erro"))
                                                                                  End If
                                                                              End Sub)
                                                                 End If
@@ -252,7 +266,7 @@ Public Class FormImportCompoundOnline
                     End With
                 End If
 
-                Me.DialogResult = Windows.Forms.DialogResult.OK
+                Me.DialogResult = System.Windows.Forms.DialogResult.OK
 
                 Me.Close()
 
@@ -361,6 +375,64 @@ Public Class FormImportCompoundOnline
 
     Private Sub LinkLabel3_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel3.LinkClicked
         Process.Start("http://www.ddbst.com/unifacga.html")
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles btnExportJSON.Click
+
+        FormMain.AnalyticsProvider?.RegisterEvent("Exporting Compound to JSON", "", Nothing)
+
+        BaseCompound = compoundk.Clone
+
+        If Not compoundc Is Nothing Then
+            BaseCompound.InChI = compoundc.InChI
+            BaseCompound.SMILES = compoundc.SMILES
+            BaseCompound.Comments += vbCrLf + compoundc.Comments
+        End If
+
+        If Not structuredata Is Nothing Then
+            With BaseCompound
+                If structuredata.ContainsKey("Original") Then
+                    If .UNIFACGroups Is Nothing Then .UNIFACGroups = New SortedList
+                    .UNIFACGroups.Clear()
+                    For Each item In structuredata("Original")
+                        .UNIFACGroups.Add(item(1), item(2))
+                    Next
+                End If
+                If structuredata.ContainsKey("Modified") Then
+                    If .MODFACGroups Is Nothing Then .UNIFACGroups = New SortedList
+                    .MODFACGroups.Clear()
+                    For Each item In structuredata("Modified")
+                        .MODFACGroups.Add(item(1), item(2))
+                    Next
+                    If .NISTMODFACGroups Is Nothing Then .NISTMODFACGroups = New SortedList
+                    .NISTMODFACGroups.Clear()
+                    For Each sg As String In .MODFACGroups.Keys
+                        .NISTMODFACGroups.Add(sg, .MODFACGroups(sg))
+                    Next
+                End If
+            End With
+        End If
+
+        Dim filePickerForm As IFilePicker = FilePickerService.GetInstance().GetFilePicker()
+
+        Dim handler As IVirtualFile = filePickerForm.ShowSaveDialog(
+            New List(Of FilePickerAllowedType) From {New FilePickerAllowedType("JSON File", "*.json")})
+
+        If handler IsNot Nothing Then
+            Using stream As New IO.MemoryStream()
+                Using writer As New StreamWriter(stream) With {.AutoFlush = True}
+                    Try
+                        Dim jsondata = Newtonsoft.Json.JsonConvert.SerializeObject(BaseCompound, Newtonsoft.Json.Formatting.Indented)
+                        writer.Write(jsondata)
+                        handler.Write(stream)
+                        MessageBox.Show(DWSIM.App.GetLocalString("FileSaved"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    Catch ex As Exception
+                        MessageBox.Show(DWSIM.App.GetLocalString("Erroaosalvararquivo") + ex.Message.ToString, "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End Try
+                End Using
+            End Using
+        End If
+
     End Sub
 
 End Class

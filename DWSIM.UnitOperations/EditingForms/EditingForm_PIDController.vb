@@ -40,7 +40,7 @@ Public Class EditingForm_PIDController
 
             'connections
 
-            Dim objlist As String() = .FlowSheet.SimulationObjects.Values.Where(Function(x) TypeOf x Is ISimulationObject).Select(Function(m) m.GraphicObject.Tag).ToArray
+            Dim objlist As String() = .FlowSheet.SimulationObjects.Values.Where(Function(x) TypeOf x Is ISimulationObject).Select(Function(m) m.GraphicObject.Tag).OrderBy(Function(m) m).ToArray
 
             cbSourceObj.Items.Clear()
             cbSourceObj.Items.AddRange(objlist)
@@ -416,6 +416,18 @@ Public Class EditingForm_PIDController
 
     Private Sub chkReverse_CheckedChanged(sender As Object, e As EventArgs) Handles chkReverse.CheckedChanged
         SimObject.ReverseActing = chkReverse.Checked
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+
+        SimObject.EstimateParameters()
+
+        tbKd.Text = SimObject.Kd
+
+        tbKp.Text = SimObject.Kp
+
+        tbKi.Text = SimObject.Ki
+
     End Sub
 
 End Class

@@ -301,12 +301,6 @@ Namespace PropertyPackages
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.molarflow = result
                 result = result * Me.AUX_MMM(Phase) / 1000
                 Me.CurrentMaterialStream.Phases(phaseID).Properties.massflow = result
-                If Me.CurrentMaterialStream.Phases(0).Properties.massflow.GetValueOrDefault > 0 Then
-                    result = phasemolarfrac * overallmolarflow * Me.AUX_MMM(Phase) / 1000 / Me.CurrentMaterialStream.Phases(0).Properties.massflow.GetValueOrDefault
-                Else
-                    result = 0
-                End If
-                Me.CurrentMaterialStream.Phases(phaseID).Properties.massfraction = result
                 Me.DW_CalcCompVolFlow(phaseID)
                 Me.DW_CalcCompFugCoeff(Phase)
 
@@ -589,7 +583,7 @@ Namespace PropertyPackages
 
         End Function
 
-        Public Overrides Function AUX_PVAPi(sub1 As String, T As Double) As Object
+        Public Overrides Function AUX_PVAPi(sub1 As String, T As Double) As Double
 
             Dim comp As Interfaces.ICompound = (From subst As Interfaces.ICompound In Me.CurrentMaterialStream.Phases(0).Compounds.Values Select subst Where subst.ConstantProperties.Name = sub1).SingleOrDefault
 

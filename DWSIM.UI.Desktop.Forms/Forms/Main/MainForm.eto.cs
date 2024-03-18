@@ -17,6 +17,7 @@ using System.Text;
 using s = DWSIM.GlobalSettings.Settings;
 using c = DWSIM.UI.Shared.Common;
 using DWSIM.ExtensionMethods;
+using DWSIM.ExtensionMethods.Eto;
 
 namespace DWSIM.UI
 {
@@ -114,7 +115,7 @@ namespace DWSIM.UI
             pfile.Add(img1, (int)(400 * sf), 0);
             var link1 = new LinkButton { Text = "Create New", Width = (int)(140 * sf), Font = boldfont2 };
             pfile.Add(link1, dx2, (int)(100 * sf - rfh - dy));
-            var link2 = new LinkButton { Text = "Open Existing", Width = (int)(200 * sf), Font = boldfont2 };
+            var link2 = new LinkButton { Text = "Open File", Width = (int)(200 * sf), Font = boldfont2 };
             pfile.Add(link2, dx2 + (int)(150 * sf), (int)(100 * sf - rfh - dy));
 
             link2.Click += (sender, e) =>
@@ -580,6 +581,7 @@ namespace DWSIM.UI
         var splash = new SplashScreen { MainFrm = this };
                 splash.Show();
             });
+            this.Center();
 
         }
 

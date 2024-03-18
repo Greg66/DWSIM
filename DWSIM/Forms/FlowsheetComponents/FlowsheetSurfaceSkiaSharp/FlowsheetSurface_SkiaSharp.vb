@@ -56,7 +56,7 @@ Public Class FlowsheetSurface_SkiaSharp
         FlowsheetSurface = FControl.FlowsheetSurface
         FormMain.AnalyticsProvider?.RegisterEvent("Flowsheet Renderer", "Software", Nothing)
 
-        FlowsheetSurface.Zoom = Settings.DpiScale
+        FlowsheetSurface.Zoom = Settings.DpiScale * 2.0
 
     End Sub
 
@@ -502,6 +502,8 @@ Public Class FlowsheetSurface_SkiaSharp
 
     Sub MaterialStreamClickHandler(ByVal sender As System.Object, ByVal e As ToolStripItemClickedEventArgs)
 
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
+
         Dim obj1 As Thermodynamics.Streams.MaterialStream = Flowsheet.Collections.FlowsheetObjectCollection(FlowsheetSurface.SelectedObject.Name)
 
         Dim obj2 As Thermodynamics.Streams.MaterialStream = Flowsheet.GetFlowsheetSimulationObject(e.ClickedItem.Text)
@@ -525,6 +527,8 @@ Public Class FlowsheetSurface_SkiaSharp
     End Sub
 
     Public Sub ClonarToolStripMenuItem_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles ClonarToolStripMenuItem.Click
+
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
 
         For Each obj In FlowsheetSurface.SelectedObjects.Values
             If TypeOf obj.Owner Is ISimulationObject Then
@@ -1538,15 +1542,25 @@ Public Class FlowsheetSurface_SkiaSharp
 
     Private Sub CMS_ItemsToDisconnect_ItemClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.ToolStripItemClickedEventArgs) Handles CMS_ItemsToDisconnect.ItemClicked
 
-        Me.Flowsheet.DisconnectObject(FlowsheetSurface.SelectedObject, FormFlowsheet.SearchSurfaceObjectsByTag(e.ClickedItem.Text, FlowsheetSurface), True)
-        Flowsheet.UpdateOpenEditForms()
+        Try
+            Me.Flowsheet.DisconnectObject(FlowsheetSurface.SelectedObject, FormFlowsheet.SearchSurfaceObjectsByTag(e.ClickedItem.Text, FlowsheetSurface), True)
+        Catch ex As Exception
+            Flowsheet.ShowMessage("Error: " + ex.Message, IFlowsheet.MessageType.GeneralError)
+        Finally
+            Flowsheet.UpdateOpenEditForms()
+        End Try
 
     End Sub
 
     Private Sub CMS_ItemsToConnect_ItemClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.ToolStripItemClickedEventArgs) Handles CMS_ItemsToConnect.ItemClicked
 
-        Call Me.Flowsheet.ConnectObject(FlowsheetSurface.SelectedObject, FormFlowsheet.SearchSurfaceObjectsByTag(e.ClickedItem.Text, FlowsheetSurface))
-        Flowsheet.UpdateOpenEditForms()
+        Try
+            Flowsheet.ConnectObject(FlowsheetSurface.SelectedObject, FormFlowsheet.SearchSurfaceObjectsByTag(e.ClickedItem.Text, FlowsheetSurface))
+        Catch ex As Exception
+            Flowsheet.ShowMessage("Error: " + ex.Message, IFlowsheet.MessageType.GeneralError)
+        Finally
+            Flowsheet.UpdateOpenEditForms()
+        End Try
 
     End Sub
 
@@ -1593,7 +1607,7 @@ Public Class FlowsheetSurface_SkiaSharp
 
         Dim conables As New ArrayList
 
-        For Each obj In Me.Flowsheet.Collections.FlowsheetObjectCollection.Values
+        For Each obj In Me.Flowsheet.Collections.FlowsheetObjectCollection.Values.OrderBy(Function(o) o.GraphicObject.Tag)
             If obj.GraphicObject.Tag <> refobj.Tag Then
                 If obj.GraphicObject.ObjectType <> ObjectType.GO_Text And
                     obj.GraphicObject.ObjectType <> ObjectType.GO_HTMLText And
@@ -1635,6 +1649,14 @@ Public Class FlowsheetSurface_SkiaSharp
                                 obj.GraphicObject.ObjectType = ObjectType.EnergyStream And
                                 cp.Type = ConType.ConEn Then conables.Add(obj.GraphicObject.Tag)
                             Next
+                        End If
+                    ElseIf TypeOf refobj.Owner Is IUnitOperation Then
+                        If obj.GraphicObject.ObjectType = ObjectType.MaterialStream Then
+                            cp = obj.GraphicObject.InputConnectors(0)
+                            If Not cp.IsAttached And Not conables.Contains(obj.GraphicObject.Tag) Then conables.Add(obj.GraphicObject.Tag)
+                        ElseIf obj.GraphicObject.ObjectType = ObjectType.EnergyStream Then
+                            cp = obj.GraphicObject.InputConnectors(0)
+                            If Not cp.IsAttached And Not refobj.EnergyConnector.IsAttached And Not conables.Contains(obj.GraphicObject.Tag) Then conables.Add(obj.GraphicObject.Tag)
                         End If
                     Else
                         For Each cp In obj.GraphicObject.InputConnectors
@@ -1700,7 +1722,9 @@ Public Class FlowsheetSurface_SkiaSharp
     End Function
 
     Private Sub ExcluirToolStripMenuItem_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles ExcluirToolStripMenuItem.Click
-        Call Me.Flowsheet.DeleteSelectedObject(sender, e, FlowsheetSurface.SelectedObject)
+
+        Flowsheet.tsmiRemoveSelected_Click(sender, e)
+
     End Sub
 
     Public Function AddObjectToSurface(type As ObjectType, x As Integer, y As Integer,
@@ -1708,6 +1732,8 @@ Public Class FlowsheetSurface_SkiaSharp
                                        Optional id As String = "",
                                        Optional uoobj As Interfaces.IExternalUnitOperation = Nothing,
                                        Optional CreateConnected As Boolean = False) As String
+
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
 
         If Flowsheet Is Nothing Then Flowsheet = My.Application.ActiveSimulation
 
@@ -1723,16 +1749,17 @@ Public Class FlowsheetSurface_SkiaSharp
 
             Case ObjectType.External
 
-                Dim myNode As New ExternalUnitOperationGraphic(mpx, mpy, 40, 40)
+                Dim sobj = DirectCast(uoobj, Interfaces.ISimulationObject)
+                Dim myNode As New ExternalUnitOperationGraphic(mpx, mpy, sobj.GetPreferredGraphicObjectWidth(), sobj.GetPreferredGraphicObjectHeight())
                 myNode.Tag = uoobj.Prefix + objindex
                 If tag <> "" Then myNode.Tag = tag
                 gObj = myNode
                 CheckTag(gObj)
                 gObj.Name = Guid.NewGuid.ToString
                 If id <> "" Then gObj.Name = id
-                DirectCast(uoobj, Interfaces.ISimulationObject).Name = gObj.Name
+                sobj.Name = gObj.Name
                 Flowsheet.Collections.GraphicObjectCollection.Add(gObj.Name, myNode)
-                DirectCast(uoobj, Interfaces.ISimulationObject).GraphicObject = myNode
+                sobj.GraphicObject = myNode
                 myNode.CreateConnectors(0, 0)
                 Flowsheet.Collections.FlowsheetObjectCollection.Add(myNode.Name, uoobj)
 
@@ -2527,38 +2554,6 @@ Public Class FlowsheetSurface_SkiaSharp
 
                 Flowsheet.WriteToLog(DWSIM.App.GetLocalTipString("CAPE001"), Color.Black, MessageType.Tip)
 
-            Case ObjectType.AirCooler2
-
-                Dim fsobj = New AirCooler2()
-                Dim grobj As New ExternalUnitOperationGraphic(mpx, mpy, 40, 40)
-                grobj.Tag = "AC-" + objindex
-                If tag <> "" Then grobj.Tag = tag
-                gObj = grobj
-                CheckTag(gObj)
-                gObj.Name = Guid.NewGuid.ToString
-                If id <> "" Then gObj.Name = id
-                DirectCast(fsobj, Interfaces.ISimulationObject).Name = gObj.Name
-                Flowsheet.Collections.GraphicObjectCollection.Add(gObj.Name, grobj)
-                DirectCast(fsobj, Interfaces.ISimulationObject).GraphicObject = grobj
-                grobj.CreateConnectors(0, 0)
-                Flowsheet.Collections.FlowsheetObjectCollection.Add(grobj.Name, fsobj)
-
-            Case ObjectType.EnergyMixer
-
-                Dim fsobj = New EnergyMixer()
-                Dim grobj As New ExternalUnitOperationGraphic(mpx, mpy, 40, 40)
-                grobj.Tag = "EMIX-" + objindex
-                If tag <> "" Then grobj.Tag = tag
-                gObj = grobj
-                CheckTag(gObj)
-                gObj.Name = Guid.NewGuid.ToString
-                If id <> "" Then gObj.Name = id
-                DirectCast(fsobj, Interfaces.ISimulationObject).Name = gObj.Name
-                Flowsheet.Collections.GraphicObjectCollection.Add(gObj.Name, grobj)
-                DirectCast(fsobj, Interfaces.ISimulationObject).GraphicObject = grobj
-                grobj.CreateConnectors(0, 0)
-                Flowsheet.Collections.FlowsheetObjectCollection.Add(grobj.Name, fsobj)
-
             Case ObjectType.RCT_GibbsReaktoro
 
                 Dim fsobj = New Reactor_ReaktoroGibbs()
@@ -2673,10 +2668,6 @@ Public Class FlowsheetSurface_SkiaSharp
             'End If
             gObj.PositionConnectors()
             Application.DoEvents()
-            If My.Application.PushUndoRedoAction Then Flowsheet.AddUndoRedoAction(New SharedClasses.UndoRedoAction() With {.AType = UndoRedoActionType.ObjectAdded,
-                                     .ObjID = gObj.Name,
-                                     .NewValue = gObj,
-                                     .Name = String.Format(DWSIM.App.GetLocalString("UndoRedo_ObjectAdded"), gObj.Tag)})
         End If
 
         SplitContainerHorizontal.Panel1.Cursor = Cursors.Arrow
@@ -3276,8 +3267,8 @@ Public Class FlowsheetSurface_SkiaSharp
 
     Private Sub SplitToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles SplitToolStripMenuItem.Click
 
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
         Try
-            My.Application.PushUndoRedoAction = False
             Dim stream = FlowsheetSurface.SelectedObject
             Dim newstream = CloneObject(stream)
             newstream.CreateConnectors(1, 1)
@@ -3294,16 +3285,14 @@ Public Class FlowsheetSurface_SkiaSharp
             newstream.FlippedH = stream.FlippedH
 
         Catch ex As Exception
-        Finally
-            My.Application.PushUndoRedoAction = True
         End Try
 
     End Sub
 
     Private Sub MergeStreamsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles MergeStreamsToolStripMenuItem.Click
 
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
         Try
-            My.Application.PushUndoRedoAction = False
             Dim stream1 = FlowsheetSurface.SelectedObjects.Values.ElementAt(0)
             Dim stream2 = FlowsheetSurface.SelectedObjects.Values.ElementAt(1)
 
@@ -3321,8 +3310,6 @@ Public Class FlowsheetSurface_SkiaSharp
                 Flowsheet.ConnectObjects(stream1, objto, 0, toidx)
             End If
         Catch ex As Exception
-        Finally
-            My.Application.PushUndoRedoAction = True
         End Try
 
     End Sub
@@ -3468,6 +3455,7 @@ Public Class FlowsheetSurface_SkiaSharp
         If DWSIM.App.IsRunningOnMono Then
             MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         Else
+            Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
             If FlowsheetSurface.SelectedObject.Rotation + 90 >= 360 Then
                 FlowsheetSurface.SelectedObject.Rotation = Math.Truncate((FlowsheetSurface.SelectedObject.Rotation + 90) / 360)
             Else
@@ -3481,6 +3469,7 @@ Public Class FlowsheetSurface_SkiaSharp
         If DWSIM.App.IsRunningOnMono Then
             MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         Else
+            Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
             If FlowsheetSurface.SelectedObject.Rotation + 180 >= 360 Then
                 FlowsheetSurface.SelectedObject.Rotation = Math.Truncate((FlowsheetSurface.SelectedObject.Rotation + 180) / 360)
             Else
@@ -3494,6 +3483,7 @@ Public Class FlowsheetSurface_SkiaSharp
         If DWSIM.App.IsRunningOnMono Then
             MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         Else
+            Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
             If FlowsheetSurface.SelectedObject.Rotation + 270 >= 360 Then
                 FlowsheetSurface.SelectedObject.Rotation = Math.Truncate((FlowsheetSurface.SelectedObject.Rotation + 270) / 360)
             Else
@@ -3507,6 +3497,7 @@ Public Class FlowsheetSurface_SkiaSharp
         If DWSIM.App.IsRunningOnMono Then
             MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         Else
+            Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
             FlowsheetSurface.SelectedObject.Rotation = 0
             Me.Invalidate()
         End If
@@ -3516,6 +3507,7 @@ Public Class FlowsheetSurface_SkiaSharp
         If DWSIM.App.IsRunningOnMono Then
             MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         Else
+            Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
             FlowsheetSurface.SelectedObject.Rotation = 90
             Me.Invalidate()
         End If
@@ -3525,12 +3517,14 @@ Public Class FlowsheetSurface_SkiaSharp
         If DWSIM.App.IsRunningOnMono Then
             MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         Else
+            Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
             FlowsheetSurface.SelectedObject.Rotation = 180
             Me.Invalidate()
         End If
     End Sub
 
     Private Sub HorizontalmenteToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles HorizontalmenteToolStripMenuItem.Click
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
         If Me.HorizontalmenteToolStripMenuItem.Checked Then
             FlowsheetSurface.SelectedObject.FlippedH = True
         Else
@@ -3543,6 +3537,7 @@ Public Class FlowsheetSurface_SkiaSharp
         If DWSIM.App.IsRunningOnMono Then
             MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         Else
+            Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
             FlowsheetSurface.SelectedObject.Rotation = 270
             Me.Invalidate()
         End If
@@ -3662,9 +3657,8 @@ Public Class FlowsheetSurface_SkiaSharp
 
     Private Sub SplitAndInsertRecycleMenuItem_Click(sender As Object, e As EventArgs) Handles SplitAndInsertRecycleMenuItem.Click
 
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
         Try
-
-            My.Application.PushUndoRedoAction = False
 
             Dim stream = FlowsheetSurface.SelectedObject
             Dim newstream = CloneObject(stream)
@@ -3714,13 +3708,13 @@ Public Class FlowsheetSurface_SkiaSharp
 
         Catch ex As Exception
 
-        Finally
-            My.Application.PushUndoRedoAction = True
         End Try
 
     End Sub
 
     Private Sub EditarAparênciaToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles EditAppearanceToolStripMenuItem.Click
+
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
 
         If FlowsheetSurface.SelectedObject.Editor Is Nothing OrElse DirectCast(FlowsheetSurface.SelectedObject.Editor, Form).IsDisposed Then
             Dim f As New FormEditGraphicObject() With {.gobj = FlowsheetSurface.SelectedObject, .fs = FlowsheetSurface, .flowsheet = Me.Flowsheet}
@@ -3750,9 +3744,8 @@ Public Class FlowsheetSurface_SkiaSharp
 
     Private Sub SplitAndInsertValveTSMI_Click(sender As Object, e As EventArgs) Handles SplitAndInsertValveTSMI.Click
 
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
         Try
-
-            My.Application.PushUndoRedoAction = False
 
             Dim stream = FlowsheetSurface.SelectedObject
             Dim newstream = CloneObject(stream)
@@ -3813,8 +3806,6 @@ Public Class FlowsheetSurface_SkiaSharp
 
         Catch ex As Exception
 
-        Finally
-            My.Application.PushUndoRedoAction = True
         End Try
 
 
@@ -3869,6 +3860,8 @@ Public Class FlowsheetSurface_SkiaSharp
     End Sub
 
     Private Sub LayoutAutomaticoToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles LayoutAutomaticoToolStripMenuItem.Click
+
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
 
         FlowsheetSurface.AutoArrange()
         FlowsheetSurface.ZoomAll(SplitContainerHorizontal.Panel1.Width, SplitContainerHorizontal.Panel1.Height)
@@ -3933,6 +3926,7 @@ Public Class FlowsheetSurface_SkiaSharp
     End Sub
 
     Private Sub tsmiInvertVertically_Click(sender As Object, e As EventArgs) Handles tsmiInvertVertically.Click
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
         If Me.tsmiInvertVertically.Checked Then
             FlowsheetSurface.SelectedObject.FlippedV = True
         Else
@@ -4137,6 +4131,8 @@ Public Class FlowsheetSurface_SkiaSharp
 
     Public Sub tsmiNaturalLayout_Click(sender As Object, e As EventArgs) Handles tsmiNaturalLayout.Click
 
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectLayout)
+
         Try
             FlowsheetSurface.ApplyNaturalLayout(FlowsheetSolver.FlowsheetSolver.GetSolvingList(Flowsheet, False)(0), 75)
             FlowsheetSurface.ZoomAll(SplitContainerHorizontal.Panel1.Width, SplitContainerHorizontal.Panel1.Height)
@@ -4156,15 +4152,31 @@ Public Class FlowsheetSurface_SkiaSharp
     End Sub
 
     Private Sub PasteObjectTSMI_Click(sender As Object, e As EventArgs) Handles PasteObjectTSMI.Click
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
         Flowsheet.PasteObjects()
     End Sub
 
     Private Sub CutTSMI_Click(sender As Object, e As EventArgs) Handles CutTSMI.Click
+        Flowsheet.RegisterSnapshot(SnapshotType.ObjectAddedOrRemoved)
         Flowsheet.CutObjects()
     End Sub
 
     Private Sub CopyTSMI_Click(sender As Object, e As EventArgs) Handles CopyTSMI.Click
         Flowsheet.CopyObjects()
+    End Sub
+
+    Private Sub tsmiCopyObjID_Click(sender As Object, e As EventArgs) Handles tsmiCopyObjID.Click
+
+        Clipboard.SetText(FlowsheetSurface.SelectedObject.Name)
+        Flowsheet.ShowMessage(String.Format(Flowsheet.GetTranslatedString1("Object's ID copied to clipboard. [{0}: {1}]"), FlowsheetSurface.SelectedObject.Tag, FlowsheetSurface.SelectedObject.Name), IFlowsheet.MessageType.Information)
+
+    End Sub
+
+    Private Sub tsmiToggleDrawLabel_Click(sender As Object, e As EventArgs) Handles tsmiToggleDrawLabel.Click
+
+        FlowsheetSurface.SelectedObject.DrawLabel = Not FlowsheetSurface.SelectedObject.DrawLabel
+        Me.Flowsheet.UpdateInterface()
+
     End Sub
 
     Public Sub ReleaseResources()

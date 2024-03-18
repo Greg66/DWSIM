@@ -1,5 +1,5 @@
 '    Heat Exchanger Calculation Routines 
-'    Copyright 2008-2023 Daniel Wagner O. de Medeiros
+'    Copyright 2008-2024 Daniel Wagner O. de Medeiros
 '
 '    This file is part of DWSIM.
 '
@@ -110,6 +110,10 @@ Namespace UnitOperations
         Public Property OutletVaporFraction2 As Double = 0.0
 
         Public Property PinchPointAtOutlets As Boolean = False
+
+        Public Property UseShellAndTubeGeometryInformation As Boolean = False
+
+        Public Property CalculateHeatExchangeProfile As Boolean = False
 
         Public Property STProperties() As STHXProperties
             Get
@@ -1205,6 +1209,10 @@ Namespace UnitOperations
             'Validate unitop status.
             Me.Validate()
 
+            HeatProfile = New Double() {}
+            TemperatureProfileCold = New Double() {}
+            TemperatureProfileHot = New Double() {}
+
             StIn0 = Me.GetInletMaterialStream(0)
             StIn1 = Me.GetInletMaterialStream(1)
 
@@ -1582,8 +1590,10 @@ Namespace UnitOperations
                         End Select
                         If DebugMode Then AppendDebugLine(String.Format("Dimensionless Temp Change - P_cold :{0}  P_hot: {1}", PPc, PPh))
 
-                        If Double.IsNaN(PPc) Then PPc = 0
-                        If Double.IsNaN(PPh) Then PPh = 0
+                        If Double.IsNaN(PPc) Or Double.IsNaN(PPh) Then
+                            Throw New Exception("failed to calculate the Number of Transfer Units (NTU) with the current input and specs")
+                        End If
+
                         Tc2 = Tc1 + PPc * (Th1 - Tc1)
                         Th2 = Th1 - PPh * (Th1 - Tc1)
                         If DebugMode Then AppendDebugLine(String.Format("Outlet Temperatures - Tc2 :{0} K  Th2: {1} K", Tc2, Th2))
@@ -1686,7 +1696,9 @@ Namespace UnitOperations
                     Dim tmp = StInHot.PropertyPackage.CalculateEquilibrium2(FlashCalculationType.PressureTemperature, Ph2, Th2, 0.0#)
                     Hh2 = tmp.CalculatedEnthalpy
                     Q = -Wh * (Hh2 - Hh1)
-                    If Q > MaxHeatExchange Then Q = MaxHeatExchange
+                    If Q > MaxHeatExchange Then
+                        Throw New Exception(String.Format("Invalid Outlet Temperature for Hot Fluid: {0} kW required but only {1} kW are available", Q, MaxHeatExchange))
+                    End If
                     DeltaHc = (Q - HeatLoss) / Wc
                     Hc2 = Hc1 + DeltaHc
                     StInCold.PropertyPackage.CurrentMaterialStream = StInCold
@@ -1716,7 +1728,9 @@ Namespace UnitOperations
                     Dim tmp = StInCold.PropertyPackage.CalculateEquilibrium2(FlashCalculationType.PressureTemperature, Pc2, Tc2, 0)
                     Hc2 = tmp.CalculatedEnthalpy
                     Q = Wc * (Hc2 - Hc1)
-                    If Q > MaxHeatExchange Then Q = MaxHeatExchange
+                    If Q > MaxHeatExchange Then
+                        Throw New Exception(String.Format("Invalid Outlet Temperature for Cold Fluid: {0} kW required but only {1} kW are available", Q, MaxHeatExchange))
+                    End If
                     DeltaHh = -(Q + HeatLoss) / Wh
                     Hh2 = Hh1 + DeltaHh
                     StInHot.PropertyPackage.CurrentMaterialStream = StInHot
@@ -2552,6 +2566,58 @@ Namespace UnitOperations
             CheckSpec(Ph2, True, "hot stream outlet pressure")
             CheckSpec(Pc2, True, "cold stream outlet pressure")
 
+            If CalcMode <> HeatExchangerCalcMode.PinchPoint And CalculateHeatExchangeProfile Then
+
+                Dim dhc, dhh As Double
+
+                Dim tcprof, thprof, qprof As New List(Of Double)
+
+                tcprof.Clear()
+                thprof.Clear()
+                qprof.Clear()
+
+                For j = 0 To 10
+
+                    Dim dqx = CDbl(j) / 10.0 * MaxHeatExchange
+
+                    dhc = dqx / Wc
+                    dhh = dqx / Wh
+
+                    'calculate profiles
+
+                    tmpstr = StInCold.Clone
+                    tmpstr.PropertyPackage = StInCold.PropertyPackage
+                    tmpstr.SetFlowsheet(StInCold.FlowSheet)
+
+                    tmpstr.Phases(0).Properties.enthalpy = Hc1 + dhc
+                    tmpstr.Phases(0).Properties.pressure = Pc1 - Convert.ToDouble(j) / 10.0 * ColdSidePressureDrop
+                    tmpstr.SpecType = StreamSpec.Pressure_and_Enthalpy
+                    IObj?.SetCurrent()
+                    tmpstr.Calculate(True, True)
+
+                    qprof.Add(dqx)
+                    tcprof.Add(tmpstr.Phases(0).Properties.temperature.GetValueOrDefault)
+
+                    tmpstr = StInHot.Clone
+                    tmpstr.PropertyPackage = StInHot.PropertyPackage
+                    tmpstr.SetFlowsheet(StInHot.FlowSheet)
+
+                    tmpstr.Phases(0).Properties.enthalpy = Hh1 - dhh
+                    tmpstr.Phases(0).Properties.pressure = Ph1 - Convert.ToDouble(j) / 10.0 * HotSidePressureDrop
+                    tmpstr.SpecType = StreamSpec.Pressure_and_Enthalpy
+                    IObj?.SetCurrent()
+                    tmpstr.Calculate(True, True)
+
+                    thprof.Add(tmpstr.Phases(0).Properties.temperature.GetValueOrDefault)
+
+                Next
+
+                Me.HeatProfile = qprof.ToArray
+                Me.TemperatureProfileCold = tcprof.ToArray
+                Me.TemperatureProfileHot = thprof.ToArray
+
+            End If
+
             IObj?.Paragraphs.Add("<h2>Results</h2>")
 
             IObj?.Paragraphs.Add("<mi>T_{c,out}</mi> = " & Tc2 & " K")
@@ -2565,7 +2631,7 @@ Namespace UnitOperations
 
             IObj?.Paragraphs.Add("<mi>\Delta T_{ml}</mi> = " & LMTD & " K")
 
-            ThermalEfficiency = (Q - HeatLoss) / MaxHeatExchange * 100
+            If CalcMode <> HeatExchangerCalcMode.ThermalEfficiency Then ThermalEfficiency = (Q - HeatLoss) / MaxHeatExchange * 100
 
             If HeatLoss > Math.Abs(Q.GetValueOrDefault) Then Throw New Exception("Invalid Heat Loss.")
 

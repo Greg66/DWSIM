@@ -605,6 +605,28 @@ Namespace ExcelAddIn
                     End If
                     pp.Dispose()
                     pp = Nothing
+                Case "Wilson"
+                    Dim pp As WilsonPropertyPackage = proppack
+                    If pp.WilsonM.BIPs.ContainsKey(Compound1) Then
+                        If pp.WilsonM.BIPs(Compound1).ContainsKey(Compound2) Then
+                            ipdata(1, 2) = pp.WilsonM.BIPs(Compound1)(Compound2)(0)
+                            ipdata(1, 3) = pp.WilsonM.BIPs(Compound1)(Compound2)(1)
+                        Else
+                            If pp.WilsonM.BIPs.ContainsKey(Compound2) Then
+                                If pp.WilsonM.BIPs(Compound2).ContainsKey(Compound1) Then
+                                    ipdata(1, 2) = pp.WilsonM.BIPs(Compound2)(Compound1)(1)
+                                    ipdata(1, 3) = pp.WilsonM.BIPs(Compound2)(Compound1)(0)
+                                End If
+                            End If
+                        End If
+                    ElseIf pp.WilsonM.BIPs.ContainsKey(Compound2) Then
+                        If pp.WilsonM.BIPs(Compound2).ContainsKey(Compound1) Then
+                            ipdata(1, 2) = pp.WilsonM.BIPs(Compound2)(Compound1)(1)
+                            ipdata(1, 3) = pp.WilsonM.BIPs(Compound2)(Compound1)(0)
+                        End If
+                    End If
+                    pp.Dispose()
+                    pp = Nothing
             End Select
 
             Return ipdata
@@ -1933,7 +1955,6 @@ Namespace ExcelAddIn
                             Next
                         End If
                     End With
-                    CType(pp, PengRobinsonPropertyPackage).m_pr.BIPChanged = True
                 Case "Peng-Robinson-Stryjek-Vera 2 (PRSV2)", "Peng-Robinson-Stryjek-Vera 2 (PRSV2-M)"
                     With CType(pp, PRSV2PropertyPackage).m_pr.InteractionParameters
                         If Not ip1 Is Nothing Then
@@ -1993,7 +2014,6 @@ Namespace ExcelAddIn
                             Next
                         End If
                     End With
-                    CType(pp, SRKPropertyPackage).m_pr.BIPChanged = True
                 Case "Peng-Robinson / Lee-Kesler (PR/LK)"
                     With CType(pp, PengRobinsonLKPropertyPackage).m_pr.InteractionParameters
                         If Not ip1 Is Nothing Then
@@ -2013,7 +2033,6 @@ Namespace ExcelAddIn
                             Next
                         End If
                     End With
-                    CType(pp, PengRobinsonLKPropertyPackage).m_pr.BIPChanged = True
                 Case "UNIFAC"
                     With CType(pp, UNIFACPropertyPackage).m_pr.InteractionParameters
                         If Not ip1 Is Nothing Then
@@ -2135,6 +2154,42 @@ Namespace ExcelAddIn
                                             .C21 = ip7(i, j)
                                         End If
                                     End With
+                                    j += 1
+                                Next
+                                i += 1
+                            Next
+                        End If
+                    End With
+                Case "Wilson"
+                    With CType(pp, WilsonPropertyPackage).m_pr.InteractionParameters
+                        If Not ip1 Is Nothing Then
+                            .Clear()
+                            i = 0
+                            For Each c1 As String In compounds
+                                If Not .ContainsKey(c1) Then .Add(c1, New Dictionary(Of String, PR_IPData))
+                                j = 0
+                                For Each c2 As String In compounds
+                                    If Not .Item(c1).ContainsKey(c2) Then .Item(c1).Add(c2, New PR_IPData())
+                                    With .Item(c1).Item(c2)
+                                        .kij = ip1(i, j)
+                                    End With
+                                    j += 1
+                                Next
+                                i += 1
+                            Next
+                        End If
+                    End With
+                    With CType(pp, WilsonPropertyPackage).WilsonM.BIPs
+                        If Not ip2 Is Nothing Then
+                            .Clear()
+                            i = 0
+                            For Each c1 As String In compounds
+                                If Not .ContainsKey(c1) Then .Add(c1, New Dictionary(Of String, Double()))
+                                j = 0
+                                For Each c2 As String In compounds
+                                    If Not .Item(c1).ContainsKey(c2) Then .Item(c1).Add(c2, New Double() {0.0, 0.0})
+                                    .Item(c1).Item(c2)(0) = ip2(i, j)
+                                    .Item(c1).Item(c2)(1) = ip3(i, j)
                                     j += 1
                                 Next
                                 i += 1

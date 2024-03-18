@@ -47,6 +47,7 @@ Namespace UnitOperations
             PowerGenerated = 2
             Head = 3
             Curves = 4
+            PressureRatio = 5
         End Enum
 
         Public Enum ProcessPathType
@@ -72,7 +73,9 @@ Namespace UnitOperations
 
         Public Property DeltaQ As Double = 0.0
 
-        Public Property POut() As Double = 101325.0
+        Public Property POut As Double = 101325.0
+
+        Public Property PressureRatio As Double = Double.NaN
 
         Public Property AdiabaticCoefficient As Double = 0.0
 
@@ -336,16 +339,6 @@ Namespace UnitOperations
             If DebugMode Then AppendDebugLine(String.Format("Property Package: {0}", Me.PropertyPackage.Name))
             If DebugMode Then AppendDebugLine(String.Format("Input variables: T = {0} K, P = {1} Pa, H = {2} kJ/kg, S = {3} kJ/[kg.K], W = {4} kg/s", Ti, Pi, Hi, Si, Wi))
 
-            Select Case Me.CalcMode
-                Case CalculationMode.Delta_P
-                    P2 = Pi - Me.DeltaP
-                    POut = P2
-                Case CalculationMode.OutletPressure
-                    P2 = Me.POut
-                    DeltaP = Pi - P2
-            End Select
-            CheckSpec(P2, True, "outlet pressure")
-
             Dim tmp As IFlashCalculationResult
 
             Dim rho1, rho2, rho2i, n_isent, n_poly, Wic, Wpc, fce As Double
@@ -354,7 +347,21 @@ Namespace UnitOperations
 
             Select Case Me.CalcMode
 
-                Case CalculationMode.Delta_P, CalculationMode.OutletPressure
+                Case CalculationMode.Delta_P, CalculationMode.OutletPressure, CalculationMode.PressureRatio
+
+                    Select Case Me.CalcMode
+                        Case CalculationMode.Delta_P
+                            P2 = Pi - Me.DeltaP
+                            POut = P2
+                            PressureRatio = P2 / Pi
+                        Case CalculationMode.OutletPressure
+                            P2 = Me.POut
+                            DeltaP = Pi - P2
+                            PressureRatio = P2 / Pi
+                        Case CalculationMode.PressureRatio
+                            P2 = Pi * PressureRatio
+                            DeltaP = Pi - P2
+                    End Select
 
                     If DebugMode Then AppendDebugLine(String.Format("Doing a PS flash to calculate ideal outlet enthalpy... P = {0} Pa, S = {1} kJ/[kg.K]", P2, Si))
 
@@ -505,6 +512,7 @@ Namespace UnitOperations
 
                     POut = P2
                     DeltaP = Pi - P2
+                    PressureRatio = P2 / Pi
 
                 Case CalculationMode.PowerGenerated, CalculationMode.Head, CalculationMode.Curves
 
@@ -605,19 +613,31 @@ Namespace UnitOperations
 
                         If LHead.Count > 0 Then
                             ' head has priority over power
-                            ires = MathNet.Numerics.Interpolate.Linear(LHeadSpeed.ToArray, LHead.ToArray()).Interpolate(Speed)
+                            If LHead.Count >= 2 Then
+                                ires = MathNet.Numerics.Interpolate.Linear(LHeadSpeed.ToArray, LHead.ToArray()).Interpolate(Speed)
+                            Else
+                                ires = Convert.ToDouble(Speed) / LHeadSpeed(0) * LHead(0)
+                            End If
                             Me.CurvePower = Double.NegativeInfinity
                             Me.CurveHead = ires
                         Else
                             'power
-                            ires = MathNet.Numerics.Interpolate.Linear(LPowerSpeed.ToArray, LPower.ToArray()).Interpolate(Speed)
+                            If LHead.Count >= 2 Then
+                                ires = MathNet.Numerics.Interpolate.Linear(LPowerSpeed.ToArray, LPower.ToArray()).Interpolate(Speed)
+                            Else
+                                ires = Convert.ToDouble(Speed) / LPowerSpeed(0) * LPower(0)
+                            End If
                             Me.CurveHead = Double.NegativeInfinity
                             Me.CurvePower = ires
                         End If
 
                         If LEff.Count > 0 Then
                             'efficiency
-                            ires = MathNet.Numerics.Interpolate.Linear(LEffSpeed.ToArray, LEff.ToArray()).Interpolate(Speed)
+                            If LHead.Count >= 2 Then
+                                ires = MathNet.Numerics.Interpolate.Linear(LEffSpeed.ToArray, LEff.ToArray()).Interpolate(Speed)
+                            Else
+                                ires = Convert.ToDouble(Speed) / LEffSpeed(0) * LEff(0)
+                            End If
                             Me.CurveEff = ires * 100
                         Else
                             Me.CurveEff = Double.NegativeInfinity
@@ -802,6 +822,7 @@ Namespace UnitOperations
 
                     POut = P2
                     DeltaP = Pi - P2
+                    PressureRatio = P2 / Pi
 
                     IObj?.Paragraphs.Add("<h3>Results</h3>")
 
@@ -982,6 +1003,8 @@ Namespace UnitOperations
                             Return PolytropicEfficiency
                         Case "RotationSpeed"
                             Return Speed
+                        Case "PressureRatio"
+                            Return PressureRatio
                     End Select
 
                 End If
@@ -1014,6 +1037,7 @@ Namespace UnitOperations
                     proplist.Add("AdiabaticHead")
                     proplist.Add("PolytropicHead")
                     proplist.Add("RotationSpeed")
+                    proplist.Add("PressureRatio")
                 Case PropertyType.WR
                     For i = 0 To 1
                         proplist.Add("PROP_TU_" + CStr(i))
@@ -1023,6 +1047,7 @@ Namespace UnitOperations
                     proplist.Add("AdiabaticHead")
                     proplist.Add("PolytropicHead")
                     proplist.Add("RotationSpeed")
+                    proplist.Add("PressureRatio")
                 Case PropertyType.ALL
                     For i = 0 To 4
                         proplist.Add("PROP_TU_" + CStr(i))
@@ -1033,6 +1058,7 @@ Namespace UnitOperations
                     proplist.Add("AdiabaticHead")
                     proplist.Add("PolytropicHead")
                     proplist.Add("RotationSpeed")
+                    proplist.Add("PressureRatio")
             End Select
             Return proplist.ToArray(GetType(System.String))
             proplist = Nothing
@@ -1074,6 +1100,8 @@ Namespace UnitOperations
                         PolytropicEfficiency = propval
                     Case "RotationSpeed"
                         Speed = propval
+                    Case "PressureRatio"
+                        PressureRatio = propval
                 End Select
 
             End If

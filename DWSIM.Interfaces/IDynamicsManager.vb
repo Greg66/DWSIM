@@ -30,7 +30,7 @@ Public Interface IDynamicsManager
 
     Property IntegratorList As Dictionary(Of String, IDynamicsIntegrator)
 
-    Function GetChartModel(IntegratorID As String) As Object
+    Function GetChartModel(fs As IFlowsheet, IntegratorID As String) As Object
 
     Property ToggleDynamicMode() As Action(Of Boolean)
 
@@ -43,5 +43,7 @@ Public Interface IDynamicsManager
     Function GetEventSet(name As String) As IDynamicsEventSet
 
     Function GetCauseAndEffectMatrix(name As String) As IDynamicsCauseAndEffectMatrix
+
+    Function GetPropertyValuesFromEvents(fs As IFlowsheet, currenttime As DateTime, history As Dictionary(Of DateTime, XDocument), eventset As IDynamicsEventSet) As List(Of Tuple(Of String, String, Double))
 
 End Interface

@@ -48,6 +48,7 @@ namespace DWSIM.UI.Desktop.Mac
                         catch { }
                     }
                 }
+                Widget.FlowsheetObject?.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
                 var scale = (float)GlobalSettings.Settings.DpiScale;
                 nativecontrol._lastTouchX = e.Location.X * scale;
                 nativecontrol._lastTouchY = e.Location.Y * scale;
@@ -222,6 +223,7 @@ namespace DWSIM.UI.Desktop.Mac
                 _lastTouchY = Bounds.Height - this.ConvertPointFromView(theEvent.LocationInWindow, null).Y;
                 _lastTouchX *= scale;
                 _lastTouchY *= scale;
+                fbase?.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
                 fsurface.InputMove((int)_lastTouchX, (int)_lastTouchY);
                 this.NeedsDisplay = true;
             }
@@ -253,6 +255,7 @@ namespace DWSIM.UI.Desktop.Mac
 
         public override void ScrollWheel(NSEvent theEvent)
         {
+            fbase?.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
             var oldzoom = fsurface.Zoom;
             var scroll = theEvent.ScrollingDeltaX;
             fsurface.Zoom += (float)(scroll / 100.0f);
@@ -262,6 +265,7 @@ namespace DWSIM.UI.Desktop.Mac
             _lastTouchY = Bounds.Height - this.ConvertPointFromView(theEvent.LocationInWindow, null).Y;
             _lastTouchX *= scale;
             _lastTouchY *= scale;
+            fbase?.RegisterSnapshot(Interfaces.Enums.SnapshotType.ObjectLayout);
             fsurface.CenterTo(oldzoom, (int)_lastTouchX, (int)_lastTouchY, (int)Bounds.Width, (int)Bounds.Height);
             this.NeedsDisplay = true;
         }

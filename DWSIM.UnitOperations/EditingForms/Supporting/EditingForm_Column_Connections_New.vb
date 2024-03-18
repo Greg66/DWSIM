@@ -174,9 +174,15 @@ Public Class EditingForm_Column_Connections_New
         Dim cbST As New DataGridViewComboBoxCell
 
         cbMS.Items.Add("")
-        cbMS.Items.AddRange(rc.GetFlowsheet.SimulationObjects.Values.Where(Function(x) x.GraphicObject.ObjectType = Enums.GraphicObjects.ObjectType.MaterialStream).Select(Function(x2) x2.GraphicObject.Tag).OrderBy(Function(x) x).ToArray)
+        Try
+            cbMS.Items.AddRange(rc.GetFlowsheet.SimulationObjects.Values.Where(Function(x) x.GraphicObject.ObjectType = Enums.GraphicObjects.ObjectType.MaterialStream).Select(Function(x2) x2.GraphicObject.Tag).OrderBy(Function(x) x).ToArray)
+        Catch ex As Exception
+        End Try
         cbES.Items.Add("")
-        cbES.Items.AddRange(rc.GetFlowsheet.SimulationObjects.Values.Where(Function(x) x.GraphicObject.ObjectType = Enums.GraphicObjects.ObjectType.EnergyStream).Select(Function(x2) x2.GraphicObject.Tag).OrderBy(Function(x) x).ToArray)
+        Try
+            cbES.Items.AddRange(rc.GetFlowsheet.SimulationObjects.Values.Where(Function(x) x.GraphicObject.ObjectType = Enums.GraphicObjects.ObjectType.EnergyStream).Select(Function(x2) x2.GraphicObject.Tag).OrderBy(Function(x) x).ToArray)
+        Catch ex As Exception
+        End Try
         cbST.Items.AddRange(stageNames.ToArray)
 
         DirectCast(gridFeeds.Columns(2), DataGridViewComboBoxColumn).CellTemplate = cbMS
@@ -297,10 +303,102 @@ Public Class EditingForm_Column_Connections_New
 
         loaded = True
 
+
+        AddHandler gridAssociations.EditingControlShowing, AddressOf Me.EditingControlShowing1
+
+        AddHandler gridDuties.EditingControlShowing, AddressOf Me.EditingControlShowing2
+
+        AddHandler gridFeeds.EditingControlShowing, AddressOf Me.EditingControlShowing3
+
+        AddHandler gridProducts.EditingControlShowing, AddressOf Me.EditingControlShowing4
+
+        AddHandler gridSideDraws.EditingControlShowing, AddressOf Me.EditingControlShowing5
+
+        AddHandler gridSideDrawSpecs.EditingControlShowing, AddressOf Me.EditingControlShowing6
+
+    End Sub
+
+    Private Sub EditingControlShowing1(ByVal sender As Object, ByVal e As DataGridViewEditingControlShowingEventArgs)
+        If (e.Control.GetType = GetType(DataGridViewComboBoxEditingControl)) Then
+            Dim cmb As ComboBox = CType(e.Control, ComboBox)
+            RemoveHandler DirectCast(sender, DataGridView).EditingControlShowing, AddressOf cmb_SelectionChangeCommitted
+            AddHandler cmb.SelectionChangeCommitted, AddressOf cmb_SelectionChangeCommitted
+            SendKeys.Send("{F4}")
+        End If
+    End Sub
+
+    Private Sub cmb_SelectionChangeCommitted(ByVal sender As Object, ByVal e As EventArgs)
+        gridAssociations.CurrentCell.Value = CType(sender, DataGridViewComboBoxEditingControl).EditingControlFormattedValue
+    End Sub
+
+    Private Sub EditingControlShowing2(ByVal sender As Object, ByVal e As DataGridViewEditingControlShowingEventArgs)
+        If (e.Control.GetType = GetType(DataGridViewComboBoxEditingControl)) Then
+            Dim cmb As ComboBox = CType(e.Control, ComboBox)
+            RemoveHandler DirectCast(sender, DataGridView).EditingControlShowing, AddressOf cmb_SelectionChangeCommitted2
+            AddHandler cmb.SelectionChangeCommitted, AddressOf cmb_SelectionChangeCommitted2
+            SendKeys.Send("{F4}")
+        End If
+    End Sub
+
+    Private Sub cmb_SelectionChangeCommitted2(ByVal sender As Object, ByVal e As EventArgs)
+        gridDuties.CurrentCell.Value = CType(sender, DataGridViewComboBoxEditingControl).EditingControlFormattedValue
+    End Sub
+
+    Private Sub EditingControlShowing3(ByVal sender As Object, ByVal e As DataGridViewEditingControlShowingEventArgs)
+        If (e.Control.GetType = GetType(DataGridViewComboBoxEditingControl)) Then
+            Dim cmb As ComboBox = CType(e.Control, ComboBox)
+            RemoveHandler DirectCast(sender, DataGridView).EditingControlShowing, AddressOf cmb_SelectionChangeCommitted3
+            AddHandler cmb.SelectionChangeCommitted, AddressOf cmb_SelectionChangeCommitted3
+            SendKeys.Send("{F4}")
+        End If
+    End Sub
+
+    Private Sub cmb_SelectionChangeCommitted3(ByVal sender As Object, ByVal e As EventArgs)
+        gridFeeds.CurrentCell.Value = CType(sender, DataGridViewComboBoxEditingControl).EditingControlFormattedValue
+    End Sub
+
+    Private Sub EditingControlShowing4(ByVal sender As Object, ByVal e As DataGridViewEditingControlShowingEventArgs)
+        If (e.Control.GetType = GetType(DataGridViewComboBoxEditingControl)) Then
+            Dim cmb As ComboBox = CType(e.Control, ComboBox)
+            RemoveHandler DirectCast(sender, DataGridView).EditingControlShowing, AddressOf cmb_SelectionChangeCommitted4
+            AddHandler cmb.SelectionChangeCommitted, AddressOf cmb_SelectionChangeCommitted4
+            SendKeys.Send("{F4}")
+        End If
+    End Sub
+
+    Private Sub cmb_SelectionChangeCommitted4(ByVal sender As Object, ByVal e As EventArgs)
+        gridProducts.CurrentCell.Value = CType(sender, DataGridViewComboBoxEditingControl).EditingControlFormattedValue
+    End Sub
+
+    Private Sub EditingControlShowing5(ByVal sender As Object, ByVal e As DataGridViewEditingControlShowingEventArgs)
+        If (e.Control.GetType = GetType(DataGridViewComboBoxEditingControl)) Then
+            Dim cmb As ComboBox = CType(e.Control, ComboBox)
+            RemoveHandler DirectCast(sender, DataGridView).EditingControlShowing, AddressOf cmb_SelectionChangeCommitted5
+            AddHandler cmb.SelectionChangeCommitted, AddressOf cmb_SelectionChangeCommitted5
+            SendKeys.Send("{F4}")
+        End If
+    End Sub
+
+    Private Sub cmb_SelectionChangeCommitted5(ByVal sender As Object, ByVal e As EventArgs)
+        gridSideDraws.CurrentCell.Value = CType(sender, DataGridViewComboBoxEditingControl).EditingControlFormattedValue
+    End Sub
+
+    Private Sub EditingControlShowing6(ByVal sender As Object, ByVal e As DataGridViewEditingControlShowingEventArgs)
+        If (e.Control.GetType = GetType(DataGridViewComboBoxEditingControl)) Then
+            Dim cmb As ComboBox = CType(e.Control, ComboBox)
+            RemoveHandler DirectCast(sender, DataGridView).EditingControlShowing, AddressOf cmb_SelectionChangeCommitted6
+            AddHandler cmb.SelectionChangeCommitted, AddressOf cmb_SelectionChangeCommitted6
+            SendKeys.Send("{F4}")
+        End If
+    End Sub
+
+    Private Sub cmb_SelectionChangeCommitted6(ByVal sender As Object, ByVal e As EventArgs)
+        gridSideDrawSpecs.CurrentCell.Value = CType(sender, DataGridViewComboBoxEditingControl).EditingControlFormattedValue
     End Sub
 
     Private Sub gridSideDrawSpecs_CellValueChanged(sender As Object, e As DataGridViewCellEventArgs) Handles gridSideDrawSpecs.CellValueChanged
         If loaded Then
+            rc.FlowSheet.RegisterSnapshot(Enums.SnapshotType.ObjectData, rc)
             Dim id = gridSideDrawSpecs.Rows(e.RowIndex).Cells(0).Value
             Dim value = gridSideDrawSpecs.Rows(e.RowIndex).Cells(e.ColumnIndex).Value
             If rc.MaterialStreams.ContainsKey(id) Then
@@ -325,6 +423,7 @@ Public Class EditingForm_Column_Connections_New
 
     Private Sub gridAssociations_CellValueChanged(sender As Object, e As DataGridViewCellEventArgs) Handles gridAssociations.CellValueChanged
         If loaded Then
+            rc.FlowSheet.RegisterSnapshot(Enums.SnapshotType.ObjectData, rc)
             Dim id = gridAssociations.Rows(e.RowIndex).Cells(0).Value
             Dim value = gridAssociations.Rows(e.RowIndex).Cells(e.ColumnIndex).Value
             If rc.MaterialStreams.ContainsKey(id) Then

@@ -20,6 +20,10 @@ Imports DWSIM.ExtensionMethods
 Imports DWSIM.Interfaces
 Imports OxyPlot
 Imports OxyPlot.Axes
+Imports DWSIM.SharedClasses.SystemsOfUnits
+Imports interp = DWSIM.MathOps.MathEx.Interpolation
+Imports cv = DWSIM.SharedClasses.SystemsOfUnits.Converter
+Imports OxyPlot.Series
 
 Public Class Manager
 
@@ -96,23 +100,19 @@ Public Class Manager
         Return True
     End Function
 
-    Public Function GetChartModel(IntegratorID As String) As Object Implements IDynamicsManager.GetChartModel
+    Public Function GetChartModel(fs As IFlowsheet, IntegratorID As String) As Object Implements IDynamicsManager.GetChartModel
 
         Dim integrator = IntegratorList(IntegratorID)
 
         Dim model = New PlotModel() With {.Title = integrator.Description}
 
-        Dim i, j As Integer
+        Dim i As Integer
+
+        Dim su = fs.FlowsheetOptions.SelectedUnitSystem
 
         Dim xavals = New List(Of Double)
-        i = 1
         For Each item In integrator.MonitoredVariableValues
-            If integrator.RealTime Then
-                xavals.Add(item.Key * integrator.RealTimeStepMs / 1000)
-            Else
-                xavals.Add(item.Key * integrator.IntegrationStep.TotalMilliseconds / 1000)
-            End If
-            i += 1
+            xavals.Add(cv.ConvertFromSI(su.time, New TimeSpan(item.Key).TotalMilliseconds / 1000.0))
         Next
 
         model.TitleFontSize = 12
@@ -122,16 +122,7 @@ Public Class Manager
             .MinorGridlineStyle = LineStyle.Dot,
             .Position = AxisPosition.Bottom,
             .FontSize = 10,
-            .Title = "Time (s)"
-        })
-
-        model.Axes.Add(New LinearAxis() With {
-            .MajorGridlineStyle = LineStyle.Dash,
-            .MinorGridlineStyle = LineStyle.Dot,
-            .Position = AxisPosition.Left,
-            .FontSize = 10,
-            .Title = "",
-            .Key = "0"
+            .Title = String.Format("Time ({0})", su.time)
         })
 
         model.LegendFontSize = 10
@@ -143,6 +134,21 @@ Public Class Manager
         If integrator.MonitoredVariableValues.Count = 0 Then
             Return model
         End If
+
+        i = 0
+        For Each item In integrator.MonitoredVariables
+            model.Axes.Add(New LinearAxis() With {
+                .MajorGridlineStyle = LineStyle.Dash,
+                .MinorGridlineStyle = LineStyle.Dot,
+                .Position = AxisPosition.Left,
+                .FontSize = 10,
+                .Key = item.ID,
+                .Title = integrator.MonitoredVariables(i).Description + If(item.PropertyUnits <> "", " (" + item.PropertyUnits + ")", ""),
+                .PositionTier = i,
+                .AxislineStyle = LineStyle.Solid
+            })
+            i += 1
+        Next
 
         Dim values As New List(Of List(Of Double))
         Dim names As New List(Of String)
@@ -166,6 +172,8 @@ Public Class Manager
         i = 0
         For Each l In values
             model.AddLineSeries(xavals, l, names(i))
+            DirectCast(model.Series(model.Series.Count - 1), LineSeries).Tag = integrator.MonitoredVariables(i).ID
+            DirectCast(model.Series(model.Series.Count - 1), LineSeries).YAxisKey = integrator.MonitoredVariables(i).ID
             i += 1
         Next
 
@@ -186,7 +194,143 @@ Public Class Manager
     End Function
 
     Public Function GetCauseAndEffectMatrix(name As String) As IDynamicsCauseAndEffectMatrix Implements IDynamicsManager.GetCauseAndEffectMatrix
+
         Return CauseAndEffectMatrixList.Values.Where(Function(s) s.Description = name).FirstOrDefault()
+
+    End Function
+
+    Public Function GetPropertyValuesFromEvents(fs As IFlowsheet, currenttime As DateTime, history As Dictionary(Of DateTime, XDocument), eventset As IDynamicsEventSet) As List(Of Tuple(Of String, String, Double)) Implements IDynamicsManager.GetPropertyValuesFromEvents
+
+        Dim props As New List(Of Tuple(Of String, String, Double))
+
+        Dim i As Integer
+
+        Dim events = eventset.Events.Values.OrderBy(Function(e) e.TimeStamp).ToList()
+
+        For i = 0 To events.Count - 1
+
+            Dim current = events(i)
+
+            If currenttime <= current.TimeStamp And current.EventType = Enums.Dynamics.DynamicsEventType.ChangeProperty Then
+
+                If current.TransitionType <> Enums.Dynamics.DynamicsEventTransitionType.StepChange Then
+
+                    Dim obj = fs.SimulationObjects(current.SimulationObjectID)
+                    Dim values = current.SimulationObjectPropertyValue
+                    Dim units = current.SimulationObjectPropertyUnits
+
+                    Dim value = Converter.ConvertToSI(units, values.ToDoubleFromInvariant())
+
+                    Dim state As XDocument = Nothing
+
+                    Dim active As Boolean = False
+
+                    Dim refevent As IDynamicsEvent = Nothing
+
+                    Select Case current.TransitionReference
+
+                        Case Enums.Dynamics.DynamicsEventTransitionReferenceType.InitialState
+
+                            state = history.Values.First()
+
+                            active = True
+
+                        Case Enums.Dynamics.DynamicsEventTransitionReferenceType.PreviousEvent
+
+                            If i = 0 Then
+
+                                state = history.Values.First()
+
+                                active = True
+
+                            Else
+
+                                refevent = events(i - 1)
+
+                                If refevent.TimeStamp < currenttime Then active = True
+
+                                state = history.Where(Function(h) h.Key <= refevent.TimeStamp).OrderByDescending(Function(h) h.Key).FirstOrDefault().Value
+
+                            End If
+
+                        Case Enums.Dynamics.DynamicsEventTransitionReferenceType.SpecificEvent
+
+                            If Not eventset.Events.ContainsKey(current.TransitionReferenceEventID) Then
+
+                                Throw New Exception(String.Format("could not find reference event for transition in event '{0}'", current.Description))
+
+                            End If
+
+                            refevent = eventset.Events(current.TransitionReferenceEventID)
+
+                            state = history.Where(Function(h) h.Key <= refevent.TimeStamp).OrderByDescending(Function(h) h.Key).FirstOrDefault().Value
+
+                            If refevent.TimeStamp <= currenttime Then active = True
+
+                    End Select
+
+                    If active Then
+
+                        fs.RestoreSnapshot(state, Enums.SnapshotType.ObjectData)
+
+                        Dim value0 = Convert.ToDouble(fs.SimulationObjects(current.SimulationObjectID).GetPropertyValue(current.SimulationObjectProperty))
+
+                        Dim span, dt As Double
+
+                        If refevent Is Nothing Then
+
+                            span = (current.TimeStamp - Date.MinValue).TotalMilliseconds
+                            dt = (currenttime - Date.MinValue).TotalMilliseconds
+
+                        Else
+
+                            span = (current.TimeStamp - refevent.TimeStamp).TotalMilliseconds
+                            dt = (currenttime - refevent.TimeStamp).TotalMilliseconds
+
+                        End If
+
+                        Dim xt = dt / span
+                        Dim y0 = value0
+                        Dim y1 = value
+
+                        If y0 = 0.0 Then y0 = 1.0E-30
+                        If y1 = 0.0 Then y1 = 1.0E-30
+
+                        Dim yt As Double
+
+                        Select Case current.TransitionType
+
+                            Case Enums.Dynamics.DynamicsEventTransitionType.LinearChange
+
+                                yt = interp.LinearInterpolation.Interpolate({1.0E-30, 1.0}, {y0, y1}, xt)
+
+                            Case Enums.Dynamics.DynamicsEventTransitionType.LogChange
+
+                                yt = interp.LogLinearInterpolation.Interpolate({1.0E-30, 1.0}, {y0, y1}, xt)
+
+                            Case Enums.Dynamics.DynamicsEventTransitionType.InverseLogChange
+
+                                yt = interp.LogLinearInterpolation.Interpolate({1.0, 1.0E-30}, {y0, y1}, xt)
+                                yt = y1 - (yt - y0)
+
+                            Case Enums.Dynamics.DynamicsEventTransitionType.RandomChange
+
+                                yt = y0 + Math.Sign(y1 - y0) * New Random().NextDouble() * Math.Abs(y1 - y0)
+
+                        End Select
+
+                        props.Add(New Tuple(Of String, String, Double)(obj.Name, current.SimulationObjectProperty, yt))
+
+                    End If
+
+                End If
+
+            End If
+
+        Next
+
+        Return props
+
     End Function
 
 End Class

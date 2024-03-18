@@ -200,6 +200,7 @@ Public Class FormMain
                 RegistroCAPEOPENToolStripMenuItem.Enabled = False
                 DashboardToolStripMenuItem.Visible = False
                 tsmiProUG.Visible = False
+                DatabaseManagerToolStripMenuItem.Visible = False
             End If
 #End If
 
@@ -742,28 +743,6 @@ Public Class FormMain
             My.Settings.MostRecentFiles = New System.Collections.Specialized.StringCollection
         End If
 
-        Dim latestfolders As New List(Of String)
-
-        For Each f As String In My.Settings.MostRecentFiles
-            If File.Exists(f) And Path.GetExtension(f).ToLower <> ".dwbcs" Then
-                If Not latestfolders.Contains(Path.GetDirectoryName(f)) Then latestfolders.Add(Path.GetDirectoryName(f))
-            End If
-        Next
-
-        If latestfolders.Count > 0 Then
-            tsFolderSeparator.Visible = True
-            Dim tfindex = FileTSMI.DropDownItems.IndexOf(tsFolderSeparator)
-            For Each s In latestfolders
-                Dim tsmi As New ToolStripMenuItem With {.Text = s, .Tag = s, .DisplayStyle = ToolStripItemDisplayStyle.Text}
-                Me.FileTSMI.DropDownItems.Insert(tfindex, tsmi)
-                Me.dropdownlist.Add(Me.FileTSMI.DropDownItems.Count - 2)
-                AddHandler tsmi.Click, AddressOf Me.OpenRecentFolder_click
-            Next
-        Else
-            tsFolderSeparator.Visible = False
-        End If
-
-
     End Sub
 
     Sub AddExternalUOs()
@@ -907,35 +886,15 @@ Public Class FormMain
         Dim RKPP As ReaktoroPropertyPackage.ReaktoroPropertyPackage = New ReaktoroPropertyPackage.ReaktoroPropertyPackage()
         PropertyPackages.Add(RKPP.ComponentName.ToString, RKPP)
 
-        'Dim EUQPP As ExUNIQUACPropertyPackage = New ExUNIQUACPropertyPackage()
-        'EUQPP.ComponentName = "Extended UNIQUAC (Aqueous Electrolytes)"
-        'EUQPP.ComponentDescription = DWSIM.App.GetLocalString("DescEUPP")
+        Dim ISPP As New IdealElectrolytePropertyPackage()
 
-        'PropertyPackages.Add(EUQPP.ComponentName.ToString, EUQPP)
+        PropertyPackages.Add(ISPP.ComponentName.ToString, ISPP)
 
-        'Dim ENQPP As New ElectrolyteNRTLPropertyPackage()
-        'ENQPP.ComponentName = "Electrolyte NRTL (Aqueous Electrolytes)"
-        'ENQPP.ComponentDescription = DWSIM.App.GetLocalString("DescENPP")
+        Dim BOPP As BlackOilPropertyPackage = New BlackOilPropertyPackage()
+        BOPP.ComponentName = "Black Oil"
+        BOPP.ComponentDescription = DWSIM.App.GetLocalString("DescBOPP")
 
-        'PropertyPackages.Add(ENQPP.ComponentName.ToString, ENQPP)
-
-        'Dim LIQPP As New LIQUAC2PropertyPackage()
-        'LIQPP.ComponentName = "Modified LIQUAC (Aqueous Electrolytes)"
-        'LIQPP.ComponentDescription = DWSIM.App.GetLocalString("DescLIPP")
-
-        'PropertyPackages.Add(LIQPP.ComponentName.ToString, LIQPP)
-
-        'Dim DHPP As New DebyeHuckelPropertyPackage()
-        'DHPP.ComponentName = "Debye-Hückel (Aqueous Electrolytes)"
-        'DHPP.ComponentDescription = DWSIM.App.GetLocalString("DescDHPP")
-
-        'PropertyPackages.Add(DHPP.ComponentName.ToString, DHPP)
-
-        'Dim BOPP As BlackOilPropertyPackage = New BlackOilPropertyPackage()
-        'BOPP.ComponentName = "Black Oil"
-        'BOPP.ComponentDescription = DWSIM.App.GetLocalString("DescBOPP")
-
-        'PropertyPackages.Add(BOPP.ComponentName.ToString, BOPP)
+        PropertyPackages.Add(BOPP.ComponentName.ToString, BOPP)
 
         Dim GERGPP As GERG2008PropertyPackage = New GERG2008PropertyPackage()
 
@@ -1082,12 +1041,16 @@ Public Class FormMain
         End If
 
 #If LINUX = False Then
-        Dim currver = Assembly.GetExecutingAssembly().GetName().Version.ToString()
-        If (Settings.CurrentVersion <> currver) Then
-            Settings.CurrentVersion = currver
-            My.Settings.CurrentVersion = currver
-            Dim frmwn As New FormWhatsNew()
-            frmwn.Show()
+        If Not FormMain.IsPro Then
+            Dim currver = Assembly.GetExecutingAssembly().GetName().Version.ToString()
+            If (Settings.CurrentVersion <> currver) Then
+                Settings.CurrentVersion = currver
+                My.Settings.CurrentVersion = currver
+                Dim frmwn As New FormWhatsNew()
+                frmwn.Show()
+            Else
+                If My.Settings.CheckForUpdates Then CheckForUpdates()
+            End If
         End If
 #Else
         MessageBox.Show("The Classic UI version of DWSIM is not supported on Linux. Use it at your own risk.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
@@ -1150,8 +1113,6 @@ Public Class FormMain
         End If
 
         UpdateFlowsheetLinks()
-
-        If My.Settings.CheckForUpdates Then CheckForUpdates()
 
         FormMain.TranslateFormFunction?.Invoke(Me)
 
@@ -1659,8 +1620,6 @@ Public Class FormMain
 
     Sub LoadMobileXML(handler As IVirtualFile)
 
-        My.Application.PushUndoRedoAction = False
-
         Dim ci As CultureInfo = CultureInfo.InvariantCulture
 
         Dim excs As New Concurrent.ConcurrentBag(Of Exception)
@@ -1890,10 +1849,6 @@ Public Class FormMain
 
         form.UpdateFormText()
 
-        'Me.ToolStripStatusLabel1.Text = ""
-
-        My.Application.PushUndoRedoAction = True
-
         Application.DoEvents()
 
     End Sub
@@ -1901,8 +1856,6 @@ Public Class FormMain
     Public Function LoadJSON(handler As IVirtualFile, ProgressFeedBack As Action(Of Integer), Optional ByVal simulationfilename As String = "") As Interfaces.IFlowsheet
 
         RaiseEvent FlowsheetLoadingFromXML(Me, New EventArgs())
-
-        My.Application.PushUndoRedoAction = False
 
         Dim ci As CultureInfo = CultureInfo.InvariantCulture
 
@@ -2243,10 +2196,6 @@ Public Class FormMain
 
         form.UpdateFormText()
 
-        'Me.ToolStripStatusLabel1.Text = ""
-
-        My.Application.PushUndoRedoAction = True
-
         Application.DoEvents()
 
         form.ProcessScripts(Enums.Scripts.EventType.SimulationOpened, Enums.Scripts.ObjectType.Simulation, "")
@@ -2261,8 +2210,6 @@ Public Class FormMain
     Public Function LoadXML(handler As IVirtualFile, ProgressFeedBack As Action(Of Integer), Optional ByVal simulationfilename As String = "", Optional ByVal forcommandline As Boolean = False) As Interfaces.IFlowsheet
 
         RaiseEvent FlowsheetLoadingFromXML(Me, New EventArgs())
-
-        My.Application.PushUndoRedoAction = False
 
         Dim ci As CultureInfo = CultureInfo.InvariantCulture
 
@@ -2324,8 +2271,6 @@ Public Class FormMain
 
         My.Application.ActiveSimulation = form
 
-        Application.DoEvents()
-
         Dim data As List(Of XElement) = xdoc.Element("DWSIM_Simulation_Data").Element("Settings").Elements.ToList
 
         Try
@@ -2341,6 +2286,10 @@ Public Class FormMain
         Catch ex As Exception
             excs.Add(New Exception("Error Loading Flowsheet Settings", ex))
         End Try
+
+        Dim undoredoenabled = form.Options.EnabledUndoRedo
+
+        form.Options.EnabledUndoRedo = False
 
         If Not ProgressFeedBack Is Nothing Then ProgressFeedBack.Invoke(15)
 
@@ -2443,7 +2392,7 @@ Public Class FormMain
                             obj = PropertyPackages(ppkey).ReturnInstance(ptype)
                         Else
                             form.LoaderExceptions.Add(PrepareExceptionInfo(xel))
-                            Throw New Exception("The " & ppkey & " Property Package library was not found. Please download and install it in order to run this simulation.")
+                            Throw New Exception("The " & ppkey & " Property Package library was not found.")
                         End If
                     End If
                 End If
@@ -2685,6 +2634,34 @@ Public Class FormMain
             End Try
         End If
 
+        form.Results = New SharedClasses.DWSIM.Flowsheet.FlowsheetResults
+
+        If xdoc.Element("DWSIM_Simulation_Data").Element("Results") IsNot Nothing Then
+
+            data = xdoc.Element("DWSIM_Simulation_Data").Element("Results").Elements.ToList
+
+            DirectCast(form.Results, ICustomXMLSerialization).LoadData(data)
+
+        End If
+
+        If xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions") IsNot Nothing Then
+
+            form.GHGEmissionCompositions = New Dictionary(Of String, IGHGComposition)()
+
+            data = xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions").Elements.ToList
+
+            For Each xel As XElement In data
+                Try
+                    Dim obj As New GHGEmissionComposition()
+                    obj.LoadData(xel.Elements.ToList)
+                    form.GHGEmissionCompositions.Add(obj.ID, obj)
+                Catch ex As Exception
+                    excs.Add(New Exception("Error Loading GHG Composition Item Information", ex))
+                End Try
+            Next
+
+        End If
+
         If Not ProgressFeedBack Is Nothing Then ProgressFeedBack.Invoke(90)
 
         Try
@@ -2755,6 +2732,8 @@ Public Class FormMain
             form.FormCharts.Flowsheet = form
 
             form.FormDynamics.Flowsheet = form
+
+            form.FormIntegratorControls.Flowsheet = form
 
             form.FormFilesExplorer.Flowsheet = form
 
@@ -2853,23 +2832,19 @@ Public Class FormMain
 
         form.UpdateFormText()
 
-        'Me.ToolStripStatusLabel1.Text = ""
-
-        My.Application.PushUndoRedoAction = True
-
         Application.DoEvents()
 
         form.ProcessScripts(Enums.Scripts.EventType.SimulationOpened, Enums.Scripts.ObjectType.Simulation, "")
 
         RaiseEvent FlowsheetLoadedFromXML(form, New EventArgs())
 
+        form.Options.EnabledUndoRedo = undoredoenabled
+
         Return form
 
     End Function
 
     Public Function LoadXML2(xdoc As XDocument, ProgressFeedBack As Action(Of Integer), Optional ByVal simulationfilename As String = "", Optional ByVal forcommandline As Boolean = False) As Interfaces.IFlowsheet
-
-        My.Application.PushUndoRedoAction = False
 
         Dim ci As CultureInfo = CultureInfo.InvariantCulture
 
@@ -2925,12 +2900,11 @@ Public Class FormMain
             excs.Add(New Exception("Error Loading Flowsheet Settings", ex))
         End Try
 
+        Dim undoredoenabled = form.Options.EnabledUndoRedo
+
+        form.Options.EnabledUndoRedo = False
+
         If Not ProgressFeedBack Is Nothing Then ProgressFeedBack.Invoke(15)
-
-        'If simulationfilename <> "" Then Me.filename = simulationfilename Else Me.filename = Path
-
-        'form.FilePath = filename
-        'form.Options.FilePath = filename
 
         data = xdoc.Element("DWSIM_Simulation_Data").Element("GraphicObjects").Elements.ToList
 
@@ -2999,7 +2973,7 @@ Public Class FormMain
                         obj = PropertyPackages(thermockey).ReturnInstance(xel.Element("Type").Value)
                     Else
                         form.LoaderExceptions.Add(PrepareExceptionInfo(xel))
-                        Throw New Exception("The ThermoC bridge library was not found. Please download and install it in order to run this simulation.")
+                        Throw New Exception("The ThermoC bridge library was not found.")
                     End If
                 Else
                     Dim ppkey As String = xel.Element("ComponentName").Value
@@ -3246,6 +3220,34 @@ Public Class FormMain
 
         End If
 
+        form.Results = New SharedClasses.DWSIM.Flowsheet.FlowsheetResults
+
+        If xdoc.Element("DWSIM_Simulation_Data").Element("Results") IsNot Nothing Then
+
+            data = xdoc.Element("DWSIM_Simulation_Data").Element("Results").Elements.ToList
+
+            DirectCast(form.Results, ICustomXMLSerialization).LoadData(data)
+
+        End If
+
+        If xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions") IsNot Nothing Then
+
+            form.GHGEmissionCompositions = New Dictionary(Of String, IGHGComposition)()
+
+            data = xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions").Elements.ToList
+
+            For Each xel As XElement In data
+                Try
+                    Dim obj As New GHGEmissionComposition()
+                    obj.LoadData(xel.Elements.ToList)
+                    form.GHGEmissionCompositions.Add(obj.ID, obj)
+                Catch ex As Exception
+                    excs.Add(New Exception("Error Loading GHG Composition Item Information", ex))
+                End Try
+            Next
+
+        End If
+
         If Not ProgressFeedBack Is Nothing Then ProgressFeedBack.Invoke(90)
 
         Try
@@ -3313,6 +3315,8 @@ Public Class FormMain
             form.FormCharts.Flowsheet = form
 
             form.FormDynamics.Flowsheet = form
+
+            form.FormIntegratorControls.Flowsheet = form
 
             form.FormFilesExplorer.Flowsheet = form
 
@@ -3397,11 +3401,9 @@ Public Class FormMain
 
         form.UpdateFormText()
 
-        'Me.ToolStripStatusLabel1.Text = ""
-
-        My.Application.PushUndoRedoAction = True
-
         Application.DoEvents()
+
+        form.Options.EnabledUndoRedo = undoredoenabled
 
         Return form
 
@@ -3796,6 +3798,17 @@ Public Class FormMain
             xel.Add(inner_elements)
         End If
 
+        xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("Results"))
+        xel = xdoc.Element("DWSIM_Simulation_Data").Element("Results")
+        xel.Add(DirectCast(form.Results, ICustomXMLSerialization).SaveData().ToArray())
+
+        xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("GHGCompositions"))
+        xel = xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions")
+
+        For Each ghgcomp In form.GHGEmissionCompositions.Values
+            xel.Add(New XElement("GHGComposition", DirectCast(ghgcomp, ICustomXMLSerialization).SaveData().ToArray()))
+        Next
+
         Using stream As New IO.MemoryStream()
             xdoc.Save(stream)
             handler.Write(stream)
@@ -3826,8 +3839,6 @@ Public Class FormMain
         End If
 
         RaiseEvent FlowsheetSavedToXML(form, New EventArgs())
-
-        Application.DoEvents()
 
     End Sub
 
@@ -3899,6 +3910,7 @@ Label_00CC:
             If File.Exists(dbfile) Then
                 Try
                     fs.FileDatabaseProvider.LoadDatabase(dbfile)
+                    DirectCast(fs, FormFlowsheet).FormFilesExplorer.ListFiles()
                 Catch ex As Exception
                 Finally
                     File.Delete(dbfile)
@@ -4154,8 +4166,11 @@ Label_00CC:
         If My.Settings.SaveBackupFile Then
             If TypeOf handler Is SharedClassesCSharp.FilePicker.Windows.WindowsFile Then
                 If File.Exists(handler.FullPath) Then
-                    Dim dfile = Path.GetDirectoryName(handler.FullPath) & Path.DirectorySeparatorChar & Path.GetFileNameWithoutExtension(handler.FullPath) & "_backup" & Path.GetExtension(handler.FullPath)
-                    File.Copy(handler.FullPath, dfile, True)
+                    Try
+                        Dim dfile = Path.GetDirectoryName(handler.FullPath) & Path.DirectorySeparatorChar & Path.GetFileNameWithoutExtension(handler.FullPath) & "_backup" & Path.GetExtension(handler.FullPath)
+                        File.Copy(handler.FullPath, dfile, True)
+                    Catch ex As Exception
+                    End Try
                 End If
             End If
         End If
@@ -4975,6 +4990,13 @@ Label_00CC:
         Else
             Process.Start(My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "Pro_User_Guide.pdf")
         End If
+
+    End Sub
+
+    Private Sub tsmiNewCompoundWizard_Click(sender As Object, e As EventArgs) Handles tsmiNewCompoundWizard.Click
+
+        Dim wform As New UI.Desktop.Editors.CompoundCreatorWizard(Nothing)
+        wform.SetupAndDisplayPage(1)
 
     End Sub
 

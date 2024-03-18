@@ -1,10 +1,13 @@
 ﻿Imports Aga.Controls
+Imports DWSIM.Interfaces
+Imports DWSIM.SharedClassesCSharp.FilePicker
 #If LINUX Then
 Imports DWSIM.CrossPlatform.UI.Controls.ReoGrid
 #End If
 Imports OxyPlot
 Imports OxyPlot.Series
 Imports System.Linq
+Imports System.IO
 
 Public Class TwoDimChartControl
 
@@ -157,7 +160,7 @@ Public Class TwoDimChartControl
                         Dim sheet = Spreadsheet.GetWorksheetByName(item.Split("!")(0))
                         If Not sheet Is Nothing Then
 #If LINUX Then
-                        Dim data As Object(,) = sheet.GetRangeData(New RangePosition(item.Split("!")(1)))
+                            Dim data As Object(,) = sheet.GetRangeData(New RangePosition(item.Split("!")(1)))
 #Else
                             Dim data As Object(,) = sheet.GetRangeData(New unvell.ReoGrid.RangePosition(item.Split("!")(1)))
 #End If
@@ -165,15 +168,19 @@ Public Class TwoDimChartControl
                                 Dim j As Integer = 0
                                 For j = 0 To data.GetLength(0) - 1
                                     Dim d As Double = 0.0
-                                    Double.TryParse(data(j, 0).ToString, d)
-                                    ylist.Add(d)
+                                    If data(j, 0) IsNot Nothing Then
+                                        Double.TryParse(data(j, 0).ToString, d)
+                                        ylist.Add(d)
+                                    End If
                                 Next
                             ElseIf data.GetLength(1) > 1 Then
                                 Dim j As Integer = 0
                                 For j = 0 To data.GetLength(1) - 1
                                     Dim d As Double = 0.0
-                                    Double.TryParse(data(0, j).ToString, d)
-                                    ylist.Add(d)
+                                    If data(0, j) IsNot Nothing Then
+                                        Double.TryParse(data(0, j).ToString, d)
+                                        ylist.Add(d)
+                                    End If
                                 Next
                             End If
                             ynumbers.Add(ylist)
@@ -373,16 +380,17 @@ Public Class TwoDimChartControl
     Private Sub PGrid1_PropertyValueChanged(s As Object, e As PropertyValueChangedEventArgs) Handles PGrid1.PropertyValueChanged
 
         Try
+            Dim tag = DirectCast(e.ChangedItem.PropertyDescriptor, Controls.PropertyGridEx.CustomProperty.CustomPropertyDescriptor).CustomProperty.tag
             If e.ChangedItem.Label.Equals("Source Object") Then
                 Chart.ChartSourceObjectID = Flowsheet.GetFlowsheetSimulationObject(e.ChangedItem.Value).Name
             ElseIf e.ChangedItem.Label.Equals("Name") Then
                 Parent.Text = Chart.DisplayName
             ElseIf e.ChangedItem.Label.Equals("Line Color") Then
-                DirectCast(Chart.PlotModel.Series(e.ChangedItem.Tag), LineSeries).Color = GetType(OxyColors).GetField(e.ChangedItem.Value).GetValue(Nothing)
+                DirectCast(Chart.PlotModel.Series(tag), LineSeries).Color = GetType(OxyColors).GetField(e.ChangedItem.Value).GetValue(Nothing)
             ElseIf e.ChangedItem.Label.Equals("Marker Fill Color") Then
-                DirectCast(Chart.PlotModel.Series(e.ChangedItem.Tag), LineSeries).MarkerFill = GetType(OxyColors).GetField(e.ChangedItem.Value).GetValue(Nothing)
+                DirectCast(Chart.PlotModel.Series(tag), LineSeries).MarkerFill = GetType(OxyColors).GetField(e.ChangedItem.Value).GetValue(Nothing)
             ElseIf e.ChangedItem.Label.Equals("Marker Stroke Color") Then
-                DirectCast(Chart.PlotModel.Series(e.ChangedItem.Tag), LineSeries).MarkerStroke = GetType(OxyColors).GetField(e.ChangedItem.Value).GetValue(Nothing)
+                DirectCast(Chart.PlotModel.Series(tag), LineSeries).MarkerStroke = GetType(OxyColors).GetField(e.ChangedItem.Value).GetValue(Nothing)
             End If
         Catch ex As Exception
             Flowsheet.ShowMessage("Chart property update error: " & ex.Message, Interfaces.IFlowsheet.MessageType.GeneralError)
@@ -394,36 +402,36 @@ Public Class TwoDimChartControl
 
     Private Sub BtnExportPNG_Click(sender As Object, e As EventArgs) Handles btnExportPNG.Click
 
-        SaveFileDialog1.FilterIndex = 1
-        SaveFileDialog1.DefaultExt = "png"
-        SavePlot()
+        SavePlot("PNG")
 
     End Sub
 
     Private Sub BtnExportSVG_Click(sender As Object, e As EventArgs) Handles btnExportSVG.Click
 
-        SaveFileDialog1.FilterIndex = 2
-        SaveFileDialog1.DefaultExt = "svg"
-        SavePlot()
+        SavePlot("SVG")
 
     End Sub
 
-    Sub SavePlot()
+    Sub SavePlot(extension As String)
 
-        If (SaveFileDialog1.ShowDialog = DialogResult.OK) Then
-            If SaveFileDialog1.FilterIndex = 1 Then
-                Using st = System.IO.File.Create(SaveFileDialog1.FileName)
+        Dim filePickerForm As IFilePicker = FilePickerService.GetInstance().GetFilePicker()
+
+        Dim handler As IVirtualFile = filePickerForm.ShowSaveDialog(
+            New List(Of FilePickerAllowedType) From {New FilePickerAllowedType(extension + " File", "*." + extension)})
+
+        If handler IsNot Nothing Then
+            Using stream As New MemoryStream()
+                If extension = "PNG" Then
                     Dim exporter = New OxyPlot.WindowsForms.PngExporter() With {.Background = OxyPlot.OxyColors.White, .Width = PlotView1.Width, .Height = PlotView1.Height}
-                    exporter.Export(Chart.PlotModel, st)
-                    Flowsheet.ShowMessage(String.Format("Chart '{0}' saved to '{1}'.", Chart.DisplayName, SaveFileDialog1.FileName), Interfaces.IFlowsheet.MessageType.Information)
-                End Using
-            Else
-                Using st = System.IO.File.Create(SaveFileDialog1.FileName)
+                    exporter.Export(Chart.PlotModel, stream)
+                    Flowsheet.ShowMessage(String.Format("Chart '{0}' saved to '{1}'.", Chart.DisplayName, handler.FullPath), Interfaces.IFlowsheet.MessageType.Information)
+                Else
                     Dim exporter As New OxyPlot.SvgExporter() With {.Width = PlotView1.Width, .Height = PlotView1.Height}
-                    exporter.Export(Chart.PlotModel, st)
-                    Flowsheet.ShowMessage(String.Format("Chart '{0}' saved to '{1}'.", Chart.DisplayName, SaveFileDialog1.FileName), Interfaces.IFlowsheet.MessageType.Information)
-                End Using
-            End If
+                    exporter.Export(Chart.PlotModel, stream)
+                    Flowsheet.ShowMessage(String.Format("Chart '{0}' saved to '{1}'.", Chart.DisplayName, handler.FullPath), Interfaces.IFlowsheet.MessageType.Information)
+                End If
+                handler.Write(stream)
+            End Using
         End If
 
     End Sub

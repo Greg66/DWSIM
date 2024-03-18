@@ -6,21 +6,32 @@
 
         ExtensionMethods.ChangeDefaultFont(Me)
 
-        Text = PID.GraphicObject.Tag
-
-        chkActive.Checked = PID.Active
-
-        chkAuto.Checked = Not PID.ManualOverride
-
-        tbSP.Text = PID.SPValue.ToString(PID.GetFlowsheet.FlowsheetOptions.NumberFormat)
-
-        tbPV.Text = PID.PVValue.ToString(PID.GetFlowsheet.FlowsheetOptions.NumberFormat)
-
-        tbMV.Text = PID.MVValue.ToString(PID.GetFlowsheet.FlowsheetOptions.NumberFormat)
-
-        tbMV.ReadOnly = chkAuto.Checked
+        UpdateInfo()
 
     End Sub
+
+    Public Sub UpdateInfo()
+
+        If PID IsNot Nothing Then
+
+            Text = PID.GraphicObject.Tag
+
+            chkActive.Checked = PID.Active
+
+            chkAuto.Checked = Not PID.ManualOverride
+
+            tbSP.Text = PID.AdjustValue.ToString(PID.GetFlowsheet.FlowsheetOptions.NumberFormat)
+
+            tbPV.Text = PID.PVValue.ToString(PID.GetFlowsheet.FlowsheetOptions.NumberFormat)
+
+            tbMV.Text = PID.MVValue.ToString(PID.GetFlowsheet.FlowsheetOptions.NumberFormat)
+
+            tbMV.ReadOnly = chkAuto.Checked
+
+        End If
+
+    End Sub
+
 
     Private Sub tbSP_KeyDown(sender As Object, e As KeyEventArgs) Handles tbSP.KeyDown
 

@@ -325,6 +325,8 @@ Public Class FormSimulWizard
             .Add(New String() {DWSIM.App.GetLocalString("FilterSpecificCakeResistance"), su.cakeresistance, DWSIM.App.GetLocalString("FilterMediumResistance"), su.mediumresistance})
             .Add(New String() {DWSIM.App.GetLocalString("IsothermalCompressibility"), su.compressibility, DWSIM.App.GetLocalString("JouleThomsonCoefficient"), su.jouleThomsonCoefficient})
             .Add(New String() {DWSIM.App.GetLocalString("Conductance"), su.conductance, DWSIM.App.GetLocalString("DistComp"), su.distance})
+            .Add(New String() {DWSIM.App.GetLocalString("Heat/Energy"), su.heat, DWSIM.App.GetLocalString("Mass"), su.mass})
+            .Add(New String() {DWSIM.App.GetLocalString("Moles"), su.mole, Nothing, Nothing})
         End With
 
         If ComboBox2.SelectedIndex <= 3 Then
@@ -651,6 +653,27 @@ Public Class FormSimulWizard
             .Style.Tag = 40
         End With
 
+        With DirectCast(Me.DataGridView1.Rows.Item(20).Cells(1), DataGridViewComboBoxCell)
+            .Items.Clear()
+            .Items.AddRange(su.GetUnitSet(UnitOfMeasure.heat).ToArray)
+            .Value = su.heat
+            .Style.Tag = 41
+        End With
+
+        With DirectCast(Me.DataGridView1.Rows.Item(20).Cells(3), DataGridViewComboBoxCell)
+            .Items.Clear()
+            .Items.AddRange(su.GetUnitSet(UnitOfMeasure.mass).ToArray)
+            .Value = su.mass
+            .Style.Tag = 42
+        End With
+
+        With DirectCast(Me.DataGridView1.Rows.Item(21).Cells(1), DataGridViewComboBoxCell)
+            .Items.Clear()
+            .Items.AddRange(su.GetUnitSet(UnitOfMeasure.mole).ToArray)
+            .Value = su.mole
+            .Style.Tag = 43
+        End With
+
     End Sub
 
     Private Sub DataGridView1_CellValueChanged1(ByVal sender As Object, ByVal e As System.Windows.Forms.DataGridViewCellEventArgs) Handles DataGridView1.CellValueChanged
@@ -824,6 +847,16 @@ Public Class FormSimulWizard
                     member = "distance"
                     oldvalue = su.distance
                     su.distance = cell.Value
+                Case 41
+                    member = "heat"
+                    oldvalue = su.heat
+                    su.heat = cell.Value
+                Case 42
+                    oldvalue = su.mass
+                    su.mass = cell.Value
+                Case 43
+                    oldvalue = su.mole
+                    su.mole = cell.Value
             End Select
 
         End If
@@ -965,6 +998,7 @@ Public Class FormSimulWizard
     End Sub
 
     Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem1.Click
+        FormMain.AnalyticsProvider?.RegisterEvent("Importing Compounds from Online Sources", "", Nothing)
         Dim f As New FormImportCompoundOnline
         If f.ShowDialog(Me) = DialogResult.OK Then
             Try
@@ -996,6 +1030,8 @@ Public Class FormSimulWizard
     End Sub
 
     Private Sub ToolStripMenuItem2_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem2.Click
+
+        FormMain.AnalyticsProvider?.RegisterEvent("Importing Compounds from JSON Files", "", Nothing)
 
         Dim filePickerForm As IFilePicker = FilePickerService.GetInstance().GetFilePicker()
 
@@ -1123,6 +1159,9 @@ Public Class FormSimulWizard
     End Sub
 
     Private Sub ImportFromThermoChemicalsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ImportFromThermoChemicalsToolStripMenuItem.Click
+
+        FormMain.AnalyticsProvider?.RegisterEvent("Importing Compounds from Thermo/Chemicals", "", Nothing)
+
         Dim f As New FormImportCompoundFromThermo
         If f.ShowDialog(Me) = DialogResult.OK Then
             Try
@@ -1133,7 +1172,7 @@ Public Class FormSimulWizard
                     Me.CurrentFlowsheet.Options.NotSelectedComponents.Remove(comp.Name)
                     Dim ms As Streams.MaterialStream
                     Dim proplist As New ArrayList
-                    For Each ms In CurrentFlowsheet.Collections.FlowsheetObjectCollection.Values
+                    For Each ms In CurrentFlowsheet.Collections.FlowsheetObjectCollection.Values.Where(Function(obj) obj.GraphicObject.ObjectType = ObjectType.MaterialStream)
                         For Each phase As BaseClasses.Phase In ms.Phases.Values
                             phase.Compounds.Add(comp.Name, New BaseClasses.Compound(comp.Name, ""))
                             phase.Compounds(comp.Name).ConstantProperties = comp
@@ -1173,7 +1212,12 @@ Public Class FormSimulWizard
 
     Public Sub SetupPPRecommendations()
 
+        Dim imgOK = New Bitmap(My.Resources.checkmark_48px, New Size(24 * Settings.DpiScale, 24 * Settings.DpiScale))
+        Dim imgCaution = New Bitmap(My.Resources.box_important_48px, New Size(24 * Settings.DpiScale, 24 * Settings.DpiScale))
+
         Dim names = CurrentFlowsheet.SelectedCompounds.Keys.Select(Function(n) n.ToLower()).ToList()
+
+        Dim hasCP = CurrentFlowsheet.SelectedCompounds.Values.Where(Function(c) c.IsCOOLPROPSupported).Count()
 
         Dim elecs = CurrentFlowsheet.SelectedCompounds.Values.Where(Function(c) c.IsSalt Or c.IsIon Or c.IsHydratedSalt).Count()
 
@@ -1185,7 +1229,7 @@ Public Class FormSimulWizard
                     Dim pp = FormMain.PropertyPackages(row.Cells(0).Value)
                     If pp.IsElectrolytePP Then
                         row.Cells(1).Value = 1
-                        row.Cells(2).Value = My.Resources.icons8_check_mark
+                        row.Cells(2).Value = imgOK
                         If pp.GetType().ToString().Contains("ProExtensions") Then
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Else
@@ -1193,13 +1237,13 @@ Public Class FormSimulWizard
                         End If
                     Else
                         row.Cells(1).Value = 0
-                        row.Cells(2).Value = My.Resources.icons8_cross_mark
-                        ChangeRowForeColor(row, Color.LightGray)
+                        row.Cells(2).Value = imgCaution
+                        ChangeRowForeColor(row, Color.DarkGray)
                     End If
                 Else
                     row.Cells(1).Value = 0
-                    row.Cells(2).Value = My.Resources.icons8_cross_mark
-                    ChangeRowForeColor(row, Color.LightGray)
+                    row.Cells(2).Value = imgCaution
+                    ChangeRowForeColor(row, Color.DarkGray)
                 End If
             Next
         ElseIf names.Contains("water") And names.Where(Function(x) x.EndsWith("ane") Or x.EndsWith("ene") Or x.EndsWith("ine")).Count > 0 Then
@@ -1211,7 +1255,7 @@ Public Class FormSimulWizard
                     Select Case pp.PackageType
                         Case PackageType.EOS, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1219,20 +1263,20 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 Else
                     Dim ptype = row.Cells(0).Value
                     Select Case ptype
                         Case PackageType.EOS, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.exclamation
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 End If
             Next
@@ -1245,7 +1289,7 @@ Public Class FormSimulWizard
                     Select Case pp.PackageType
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1253,20 +1297,20 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 Else
                     Dim ptype = row.Cells(0).Value
                     Select Case ptype
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 End If
             Next
@@ -1279,7 +1323,7 @@ Public Class FormSimulWizard
                     Select Case pp.PackageType
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1287,20 +1331,20 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 Else
                     Dim ptype = row.Cells(0).Value
                     Select Case ptype
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 End If
             Next
@@ -1313,7 +1357,7 @@ Public Class FormSimulWizard
                     Select Case pp.PackageType
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1321,12 +1365,12 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                     If pp.DisplayName.Contains("Strÿjek-Vera") Then
                         row.Cells(1).Value = 1
-                        row.Cells(2).Value = My.Resources.icons8_check_mark
+                        row.Cells(2).Value = imgOK
                         ChangeRowForeColor(row, Color.Blue)
                     End If
                 Else
@@ -1334,12 +1378,12 @@ Public Class FormSimulWizard
                     Select Case ptype
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 End If
             Next
@@ -1352,7 +1396,7 @@ Public Class FormSimulWizard
                     Select Case pp.PackageType
                         Case PackageType.EOS, PackageType.CorrespondingStates, PackageType.VaporPressure
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1360,20 +1404,20 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 Else
                     Dim ptype = row.Cells(0).Value
                     Select Case ptype
                         Case PackageType.EOS, PackageType.CorrespondingStates, PackageType.VaporPressure
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 End If
             Next
@@ -1386,7 +1430,7 @@ Public Class FormSimulWizard
                     Select Case pp.PackageType
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates, PackageType.VaporPressure
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1394,20 +1438,20 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 Else
                     Dim ptype = row.Cells(0).Value
                     Select Case ptype
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates, PackageType.VaporPressure
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 End If
             Next
@@ -1420,7 +1464,7 @@ Public Class FormSimulWizard
                     Select Case pp.PackageType
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates, PackageType.VaporPressure
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1428,20 +1472,20 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 Else
                     Dim ptype = row.Cells(0).Value
                     Select Case ptype
                         Case PackageType.ActivityCoefficient, PackageType.CorrespondingStates, PackageType.VaporPressure
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 End If
             Next
@@ -1450,12 +1494,36 @@ Public Class FormSimulWizard
             For Each row As DataGridViewRow In DataGridViewPP.Rows
                 If Integer.TryParse(row.Cells(0).Value, New Integer) = False Then
                     row.Cells(1).Value = 1
-                    row.Cells(2).Value = My.Resources.icons8_check_mark
+                    row.Cells(2).Value = imgOK
                     ChangeRowForeColor(row, Color.Blue)
                 Else
                     row.Cells(1).Value = 1
-                    row.Cells(2).Value = My.Resources.icons8_check_mark
+                    row.Cells(2).Value = imgOK
                     ChangeRowForeColor(row, Color.DarkGreen)
+                End If
+            Next
+        End If
+
+        If names.Contains("water") Or names.Where(Function(x) x.EndsWith("ane") Or x.EndsWith("ene") Or x.EndsWith("ine")).Count > 0 Then
+            'Water + Hydrocarbons
+            rbSVLLE.Checked = True
+            For Each row As DataGridViewRow In DataGridViewPP.Rows
+                If row.Cells(4).Value.ToString().Contains("Petroleum Industry") Then
+                    row.Cells(1).Value = 1
+                    row.Cells(2).Value = imgOK
+                    ChangeRowForeColor(row, Color.Blue)
+                End If
+            Next
+        End If
+
+        If hasCP > 0 Then
+            For Each row As DataGridViewRow In DataGridViewPP.Rows
+                If row.Cells(4).Value.ToString().Contains("CoolProp") Or
+                        row.Cells(4).Value.ToString().Contains("REFPROP") Or
+                        row.Cells(4).Value.ToString().Contains("Raoult") Then
+                    row.Cells(1).Value = 1
+                    row.Cells(2).Value = imgOK
+                    ChangeRowForeColor(row, Color.Blue)
                 End If
             Next
         End If
@@ -1464,7 +1532,7 @@ Public Class FormSimulWizard
             For Each row As DataGridViewRow In DataGridViewPP.Rows
                 If row.Cells(4).Value.ToString().Contains("Streed") Or row.Cells(4).Value.ToString().Contains("1978") Then
                     row.Cells(1).Value = 1
-                    row.Cells(2).Value = My.Resources.icons8_check_mark
+                    row.Cells(2).Value = imgOK
                     ChangeRowForeColor(row, Color.Blue)
                 End If
             Next
@@ -1474,15 +1542,16 @@ Public Class FormSimulWizard
             For Each row As DataGridViewRow In DataGridViewPP.Rows
                 If row.Cells(4).Value.ToString().Contains("Steam") Or
                     row.Cells(4).Value.ToString().Equals("CoolProp") Or
+                    row.Cells(4).Value.ToString().Contains("REFPROP") Or
                     row.Cells(4).Value.ToString().Equals("Extended CoolProp") Or
                     row.Cells(4).Value.ToString().Contains("Raoult") Then
                     row.Cells(1).Value = 1
-                    row.Cells(2).Value = My.Resources.icons8_check_mark
+                    row.Cells(2).Value = imgOK
                     ChangeRowForeColor(row, Color.Blue)
                 Else
                     row.Cells(1).Value = 0
-                    row.Cells(2).Value = My.Resources.icons8_cross_mark
-                    ChangeRowForeColor(row, Color.LightGray)
+                    row.Cells(2).Value = imgCaution
+                    ChangeRowForeColor(row, Color.DarkGray)
                 End If
             Next
         ElseIf names.Count = 1 Then
@@ -1491,14 +1560,14 @@ Public Class FormSimulWizard
                     row.Cells(4).Value.ToString().Equals("Extended CoolProp") Or
                     row.Cells(4).Value.ToString().Contains("Raoult") Then
                     row.Cells(1).Value = 1
-                    row.Cells(2).Value = My.Resources.icons8_check_mark
+                    row.Cells(2).Value = imgOK
                     ChangeRowForeColor(row, Color.Blue)
                 ElseIf Integer.TryParse(row.Cells(0).Value, New Integer) = False Then
                     Dim pp = FormMain.PropertyPackages(row.Cells(0).Value)
                     Select Case pp.PackageType
                         Case PackageType.CorrespondingStates, PackageType.EOS
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             If pp.GetType().ToString().Contains("ProExtensions") Then
                                 ChangeRowForeColor(row, Color.DarkGreen)
                             Else
@@ -1506,27 +1575,45 @@ Public Class FormSimulWizard
                             End If
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
                 Else
                     Dim ptype = row.Cells(0).Value
                     Select Case ptype
                         Case PackageType.CorrespondingStates, PackageType.EOS
                             row.Cells(1).Value = 1
-                            row.Cells(2).Value = My.Resources.icons8_check_mark
+                            row.Cells(2).Value = imgOK
                             ChangeRowForeColor(row, Color.DarkGreen)
                         Case Else
                             row.Cells(1).Value = 0
-                            row.Cells(2).Value = My.Resources.icons8_cross_mark
-                            ChangeRowForeColor(row, Color.LightGray)
+                            row.Cells(2).Value = imgCaution
+                            ChangeRowForeColor(row, Color.DarkGray)
                     End Select
+                End If
+            Next
+        End If
+
+        If (names.Contains("carbon dioxide") Or names.Contains("hydrogen sulfide")) And
+            (names.Contains("monoethanolamine") Or names.Contains("methyl diethanolamine") Or names.Contains("diethanolamine") Or names.Contains("piperazine")) Then
+            'amines
+            For Each row As DataGridViewRow In DataGridViewPP.Rows
+                If row.Cells(4).Value.ToString().Contains("Amines") Then
+                    row.Cells(1).Value = 1
+                    row.Cells(2).Value = imgOK
+                    ChangeRowForeColor(row, Color.Blue)
+                Else
+                    row.Cells(1).Value = 0
+                    row.Cells(2).Value = imgCaution
+                    ChangeRowForeColor(row, Color.DarkGray)
                 End If
             Next
         End If
 
         DataGridViewPP.Sort(DataGridViewPP.Columns(4), System.ComponentModel.ListSortDirection.Ascending)
         DataGridViewPP.Sort(DataGridViewPP.Columns(1), System.ComponentModel.ListSortDirection.Descending)
+
+        DataGridViewPP.FirstDisplayedScrollingRowIndex = DataGridViewPP.Rows.GetFirstRow(DataGridViewElementStates.Visible)
 
     End Sub
 
@@ -1604,7 +1691,7 @@ Public Class FormSimulWizard
                         Dim pp = FormMain.PropertyPackages(row.Cells(0).Value)
                         row.Visible = pp.Popular
                     Else
-                        row.Visible = False
+                        row.Visible = True
                     End If
                 Next
             Case 1 'All Types
@@ -1749,6 +1836,18 @@ Public Class FormSimulWizard
             MessageBox.Show(t1, t2, MessageBoxButtons.OK, MessageBoxIcon.Error)
 
             e.Cancel = True
+
+        End If
+
+    End Sub
+
+    Private Sub CheckBox1_CheckedChanged(sender As Object, e As EventArgs) Handles chkEnableUndoRedo.CheckedChanged
+
+        If loaded Then
+
+            CurrentFlowsheet.Options.EnabledUndoRedo = chkEnableUndoRedo.Checked
+
+            FormMain.AnalyticsProvider?.RegisterEvent("Undo/Redo Enabled/Disabled", CurrentFlowsheet.Options.EnabledUndoRedo, Nothing)
 
         End If
 

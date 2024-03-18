@@ -1,5 +1,5 @@
 ﻿'    Material Stream Implementation
-'    Copyright 2008-2022 Daniel Wagner O. de Medeiros
+'    Copyright 2008-2024 Daniel Wagner O. de Medeiros
 '
 '    This file is part of DWSIM.
 '
@@ -82,6 +82,8 @@ Namespace Streams
         Public Property ForcePhase As ForcedPhase = ForcedPhase.GlobalDef Implements IMaterialStream.ForcePhase
 
         Public Property TotalEnergyFlow As Double = 0.0
+
+        Public Property MaximumAllowableDynamicMassFlowRate As Nullable(Of Double)
 
         Public Property LastSolutionInputData As MaterialStreamInputData
 
@@ -430,13 +432,23 @@ Namespace Streams
                 Dim integratorID = FlowSheet.DynamicsManager.ScheduleList(FlowSheet.DynamicsManager.CurrentSchedule).CurrentIntegrator
                 Dim integrator = FlowSheet.DynamicsManager.IntegratorList(integratorID)
 
+                Dim mprops = Phases(0).Properties
+
                 If integrator.ShouldCalculateEquilibrium Then
-                    If GetPressure() > 0.0 And GetTemperature() > 0 Then
-                        Calculate()
-                    Else
-                        'Clear()
-                        'ClearAllProps()
-                    End If
+                    Dim needcalc As Boolean = False
+                    Select Case SpecType
+                        Case StreamSpec.Pressure_and_Enthalpy
+                            If mprops.pressure.HasValue And mprops.enthalpy.HasValue Then needcalc = True
+                        Case StreamSpec.Pressure_and_Entropy
+                            If mprops.pressure.HasValue And mprops.entropy.HasValue Then needcalc = True
+                        Case StreamSpec.Temperature_and_Pressure
+                            If mprops.pressure.HasValue And mprops.temperature.HasValue Then needcalc = True
+                        Case StreamSpec.Temperature_and_VaporFraction
+                            If mprops.temperature.HasValue Then needcalc = True
+                        Case StreamSpec.Pressure_and_VaporFraction
+                            If mprops.pressure.HasValue Then needcalc = True
+                    End Select
+                    If needcalc Then Calculate()
                 End If
 
             End If
@@ -466,6 +478,12 @@ Namespace Streams
         Public Overloads Sub Calculate(equilibrium As Boolean, properties As Boolean)
 
             LastSolutionInputData = Nothing
+
+            If GraphicObject IsNot Nothing Then
+                If Not GraphicObject.InputConnectors(0).IsAttached Then
+                    MaximumAllowableDynamicMassFlowRate = Nothing
+                End If
+            End If
 
             Dim IObj As Inspector.InspectorItem = Inspector.Host.GetNewInspectorItem()
 
@@ -625,6 +643,24 @@ Namespace Streams
                     IObj?.Paragraphs.Add("Phase equilibria calculated succesfully.")
 
                     IObj?.Paragraphs.Add("Now that the phase distribution was determined successfully, DWSIM will proceed to calculate the properties for each one of them, again using the associated Property Package.")
+
+                Else
+
+                    Dim xl = Phases(3).Properties.molarfraction.GetValueOrDefault()
+                    Dim xl2 = Phases(4).Properties.molarfraction.GetValueOrDefault()
+                    Dim xv = Phases(2).Properties.molarfraction.GetValueOrDefault()
+                    Dim xs = Phases(7).Properties.molarfraction.GetValueOrDefault()
+
+                    For i = 2 To 7
+                        For Each subst In Phases(i).Compounds.Values
+                            subst.MassFraction = .AUX_CONVERT_MOL_TO_MASS(subst.Name, i)
+                        Next
+                    Next
+
+                    Phases(3).Properties.massfraction = xl * .AUX_MMM(PropertyPackages.Phase.Liquid1) / (xl * .AUX_MMM(PropertyPackages.Phase.Liquid1) + xl2 * .AUX_MMM(PropertyPackages.Phase.Liquid2) + xv * .AUX_MMM(PropertyPackages.Phase.Vapor) + xs * .AUX_MMM(PropertyPackages.Phase.Solid))
+                    Phases(4).Properties.massfraction = xl2 * .AUX_MMM(PropertyPackages.Phase.Liquid2) / (xl * .AUX_MMM(PropertyPackages.Phase.Liquid1) + xl2 * .AUX_MMM(PropertyPackages.Phase.Liquid2) + xv * .AUX_MMM(PropertyPackages.Phase.Vapor) + xs * .AUX_MMM(PropertyPackages.Phase.Solid))
+                    Phases(2).Properties.massfraction = xv * .AUX_MMM(PropertyPackages.Phase.Vapor) / (xl * .AUX_MMM(PropertyPackages.Phase.Liquid1) + xl2 * .AUX_MMM(PropertyPackages.Phase.Liquid2) + xv * .AUX_MMM(PropertyPackages.Phase.Vapor) + xs * .AUX_MMM(PropertyPackages.Phase.Solid))
+                    Phases(7).Properties.massfraction = xs * .AUX_MMM(PropertyPackages.Phase.Solid) / (xl * .AUX_MMM(PropertyPackages.Phase.Liquid1) + xl2 * .AUX_MMM(PropertyPackages.Phase.Liquid2) + xv * .AUX_MMM(PropertyPackages.Phase.Vapor) + xs * .AUX_MMM(PropertyPackages.Phase.Solid))
 
                 End If
 
@@ -857,17 +893,17 @@ Namespace Streams
 
             End With
 
-            LastSolutionInputData = New MaterialStreamInputData()
-
-            LastSolutionInputData.Temperature = GetTemperature()
-            LastSolutionInputData.Pressure = GetPressure()
-            LastSolutionInputData.MassFlow = GetMassFlow()
-            LastSolutionInputData.MolarFlow = GetMolarFlow()
-            LastSolutionInputData.VolumetricFlow = GetVolumetricFlow()
-            LastSolutionInputData.Enthalpy = GetMassEnthalpy()
-            LastSolutionInputData.Entropy = GetMassEntropy()
-            LastSolutionInputData.VaporFraction = Phases(2).Properties.molarfraction.GetValueOrDefault()
-            LastSolutionInputData.MolarComposition = GetOverallComposition().ToList()
+            LastSolutionInputData = New MaterialStreamInputData With {
+                .Temperature = GetTemperature(),
+                .Pressure = GetPressure(),
+                .MassFlow = GetMassFlow(),
+                .MolarFlow = GetMolarFlow(),
+                .VolumetricFlow = GetVolumetricFlow(),
+                .Enthalpy = GetMassEnthalpy(),
+                .Entropy = GetMassEntropy(),
+                .VaporFraction = Phases(2).Properties.molarfraction.GetValueOrDefault(),
+                .MolarComposition = GetOverallComposition().ToList()
+            }
 
             IObj?.Close()
 
@@ -951,6 +987,13 @@ Namespace Streams
 
         End Sub
 
+        Public Sub DeepClear()
+
+            Clear()
+            ClearAllProps()
+
+        End Sub
+
         ''' <summary>
         ''' Clears the basic phase properties of this stream.
         ''' </summary>
@@ -988,6 +1031,8 @@ Namespace Streams
 
             If GraphicObject IsNot Nothing Then GraphicObject.Calculated = False
 
+            MaximumAllowableDynamicMassFlowRate = Nothing
+
             Calculated = False
 
         End Sub
@@ -996,23 +1041,29 @@ Namespace Streams
         ''' Clear all calculated props on this stream.
         ''' </summary>
         Public Sub ClearCalculatedProps()
-            Me.PropertyPackage.CurrentMaterialStream = Me
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Vapor)
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid)
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid1)
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid2)
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid3)
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Aqueous)
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Solid)
-            Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Mixture, True)
-            Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Vapor)
-            Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid)
-            Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid1)
-            Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid2)
-            Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid3)
-            Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Aqueous)
-            Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Solid)
-            AtEquilibrium = False
+            Try
+                Me.PropertyPackage.CurrentMaterialStream = Me
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Vapor)
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid)
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid1)
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid2)
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Liquid3)
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Aqueous)
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Solid)
+                Me.PropertyPackage.DW_ZerarPhaseProps(PropertyPackages.Phase.Mixture, True)
+                Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Vapor)
+                Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid)
+                Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid1)
+                Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid2)
+                Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Liquid3)
+                Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Aqueous)
+                Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Solid)
+            Catch ex As Exception
+                FlowSheet?.ShowMessage("Error: " + ex.Message, IFlowsheet.MessageType.GeneralError)
+            Finally
+                AtEquilibrium = False
+                MaximumAllowableDynamicMassFlowRate = Nothing
+            End Try
         End Sub
 
 
@@ -2219,6 +2270,8 @@ Namespace Streams
 
             Dim basecol = MyBase.GetProperties(proptype)
 
+            Dim comps = Phases(0).Compounds.Keys.ToList()
+
             If basecol.Length > 0 Then proplist.AddRange(basecol)
 
             Select Case proptype
@@ -2227,8 +2280,8 @@ Namespace Streams
                         proplist.Add("PROP_MS_" + CStr(i))
                     Next
                     For i = 102 To 105
-                        For Each subst As ConstantProperties In FlowSheet.SelectedCompounds.Values
-                            proplist.Add("PROP_MS_" + CStr(i) + "/" + subst.Name)
+                        For Each subst In comps
+                            proplist.Add("PROP_MS_" + CStr(i) + "/" + subst)
                         Next
                     Next
                 Case PropertyType.RO
@@ -2238,35 +2291,35 @@ Namespace Streams
                     For i = 131 To 148
                         proplist.Add("PROP_MS_" + CStr(i))
                     Next
-                    For Each subst As ConstantProperties In FlowSheet.SelectedCompounds.Values
-                        proplist.Add("PROP_MS_102" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_103" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_104" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_105" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_106" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_107" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_108" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_109" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_110" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_111" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_112" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_113" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_114" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_115" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_116" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_117" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_118" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_119" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_120" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_121" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_122" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_123" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_124" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_125" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_149" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_150" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_151" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_152" + "/" + subst.Name)
+                    For Each subst In comps
+                        proplist.Add("PROP_MS_102" + "/" + subst)
+                        proplist.Add("PROP_MS_103" + "/" + subst)
+                        proplist.Add("PROP_MS_104" + "/" + subst)
+                        proplist.Add("PROP_MS_105" + "/" + subst)
+                        proplist.Add("PROP_MS_106" + "/" + subst)
+                        proplist.Add("PROP_MS_107" + "/" + subst)
+                        proplist.Add("PROP_MS_108" + "/" + subst)
+                        proplist.Add("PROP_MS_109" + "/" + subst)
+                        proplist.Add("PROP_MS_110" + "/" + subst)
+                        proplist.Add("PROP_MS_111" + "/" + subst)
+                        proplist.Add("PROP_MS_112" + "/" + subst)
+                        proplist.Add("PROP_MS_113" + "/" + subst)
+                        proplist.Add("PROP_MS_114" + "/" + subst)
+                        proplist.Add("PROP_MS_115" + "/" + subst)
+                        proplist.Add("PROP_MS_116" + "/" + subst)
+                        proplist.Add("PROP_MS_117" + "/" + subst)
+                        proplist.Add("PROP_MS_118" + "/" + subst)
+                        proplist.Add("PROP_MS_119" + "/" + subst)
+                        proplist.Add("PROP_MS_120" + "/" + subst)
+                        proplist.Add("PROP_MS_121" + "/" + subst)
+                        proplist.Add("PROP_MS_122" + "/" + subst)
+                        proplist.Add("PROP_MS_123" + "/" + subst)
+                        proplist.Add("PROP_MS_124" + "/" + subst)
+                        proplist.Add("PROP_MS_125" + "/" + subst)
+                        proplist.Add("PROP_MS_149" + "/" + subst)
+                        proplist.Add("PROP_MS_150" + "/" + subst)
+                        proplist.Add("PROP_MS_151" + "/" + subst)
+                        proplist.Add("PROP_MS_152" + "/" + subst)
                     Next
                     For i = 126 To 130
                         proplist.Add("PROP_MS_" + CStr(i))
@@ -2279,31 +2332,31 @@ Namespace Streams
                     For i = 155 To 231
                         proplist.Add("PROP_MS_" + CStr(i))
                     Next
-                    For Each subst As ConstantProperties In FlowSheet.SelectedCompounds.Values
-                        proplist.Add("PROP_MS_232" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_233" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_234" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_235" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_236" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_238" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_239" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_240" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_241" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_242" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_243" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_244" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_245" + "/" + subst.Name)
+                    For Each subst In comps
+                        proplist.Add("PROP_MS_232" + "/" + subst)
+                        proplist.Add("PROP_MS_233" + "/" + subst)
+                        proplist.Add("PROP_MS_234" + "/" + subst)
+                        proplist.Add("PROP_MS_235" + "/" + subst)
+                        proplist.Add("PROP_MS_236" + "/" + subst)
+                        proplist.Add("PROP_MS_238" + "/" + subst)
+                        proplist.Add("PROP_MS_239" + "/" + subst)
+                        proplist.Add("PROP_MS_240" + "/" + subst)
+                        proplist.Add("PROP_MS_241" + "/" + subst)
+                        proplist.Add("PROP_MS_242" + "/" + subst)
+                        proplist.Add("PROP_MS_243" + "/" + subst)
+                        proplist.Add("PROP_MS_244" + "/" + subst)
+                        proplist.Add("PROP_MS_245" + "/" + subst)
                     Next
                     proplist.Add("PROP_MS_154")
-                    For Each subst As ConstantProperties In FlowSheet.SelectedCompounds.Values
-                        proplist.Add("Activity Coefficient, Liquid Phase 1 / " + subst.Name)
-                        proplist.Add("Activity Coefficient, Liquid Phase 2 / " + subst.Name)
-                        proplist.Add("Fugacity Coefficient, Vapor Phase / " + subst.Name)
-                        proplist.Add("Fugacity Coefficient, Liquid Phase 1 / " + subst.Name)
-                        proplist.Add("Fugacity Coefficient, Liquid Phase 2 / " + subst.Name)
-                        proplist.Add("Diffusion Coefficient, Vapor Phase / " + subst.Name)
-                        proplist.Add("Diffusion Coefficient, Liquid Phase 1 / " + subst.Name)
-                        proplist.Add("Diffusion Coefficient, Liquid Phase 2 / " + subst.Name)
+                    For Each subst In comps
+                        proplist.Add("Activity Coefficient, Liquid Phase 1 / " + subst)
+                        proplist.Add("Activity Coefficient, Liquid Phase 2 / " + subst)
+                        proplist.Add("Fugacity Coefficient, Vapor Phase / " + subst)
+                        proplist.Add("Fugacity Coefficient, Liquid Phase 1 / " + subst)
+                        proplist.Add("Fugacity Coefficient, Liquid Phase 2 / " + subst)
+                        proplist.Add("Diffusion Coefficient, Vapor Phase / " + subst)
+                        proplist.Add("Diffusion Coefficient, Liquid Phase 1 / " + subst)
+                        proplist.Add("Diffusion Coefficient, Liquid Phase 2 / " + subst)
                     Next
                     For i = 250 To 259
                         proplist.Add("PROP_MS_" + CStr(i))
@@ -2320,8 +2373,8 @@ Namespace Streams
                     proplist.Add("PROP_MS_8")
                     proplist.Add("PROP_MS_27")
                     For i = 102 To 105
-                        For Each subst As Compound In Me.Phases(0).Compounds.Values
-                            proplist.Add("PROP_MS_" + CStr(i) + "/" + subst.Name)
+                        For Each subst In comps
+                            proplist.Add("PROP_MS_" + CStr(i) + "/" + subst)
                         Next
                     Next
                 Case PropertyType.ALL
@@ -2331,35 +2384,35 @@ Namespace Streams
                     For i = 131 To 148
                         proplist.Add("PROP_MS_" + CStr(i))
                     Next
-                    For Each subst As ConstantProperties In Me.FlowSheet.SelectedCompounds.Values
-                        proplist.Add("PROP_MS_102" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_103" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_104" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_105" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_106" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_107" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_108" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_109" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_110" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_111" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_112" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_113" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_114" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_115" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_116" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_117" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_118" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_119" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_120" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_121" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_122" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_123" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_124" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_125" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_149" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_150" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_151" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_152" + "/" + subst.Name)
+                    For Each subst In comps
+                        proplist.Add("PROP_MS_102" + "/" + subst)
+                        proplist.Add("PROP_MS_103" + "/" + subst)
+                        proplist.Add("PROP_MS_104" + "/" + subst)
+                        proplist.Add("PROP_MS_105" + "/" + subst)
+                        proplist.Add("PROP_MS_106" + "/" + subst)
+                        proplist.Add("PROP_MS_107" + "/" + subst)
+                        proplist.Add("PROP_MS_108" + "/" + subst)
+                        proplist.Add("PROP_MS_109" + "/" + subst)
+                        proplist.Add("PROP_MS_110" + "/" + subst)
+                        proplist.Add("PROP_MS_111" + "/" + subst)
+                        proplist.Add("PROP_MS_112" + "/" + subst)
+                        proplist.Add("PROP_MS_113" + "/" + subst)
+                        proplist.Add("PROP_MS_114" + "/" + subst)
+                        proplist.Add("PROP_MS_115" + "/" + subst)
+                        proplist.Add("PROP_MS_116" + "/" + subst)
+                        proplist.Add("PROP_MS_117" + "/" + subst)
+                        proplist.Add("PROP_MS_118" + "/" + subst)
+                        proplist.Add("PROP_MS_119" + "/" + subst)
+                        proplist.Add("PROP_MS_120" + "/" + subst)
+                        proplist.Add("PROP_MS_121" + "/" + subst)
+                        proplist.Add("PROP_MS_122" + "/" + subst)
+                        proplist.Add("PROP_MS_123" + "/" + subst)
+                        proplist.Add("PROP_MS_124" + "/" + subst)
+                        proplist.Add("PROP_MS_125" + "/" + subst)
+                        proplist.Add("PROP_MS_149" + "/" + subst)
+                        proplist.Add("PROP_MS_150" + "/" + subst)
+                        proplist.Add("PROP_MS_151" + "/" + subst)
+                        proplist.Add("PROP_MS_152" + "/" + subst)
                     Next
                     For i = 126 To 130
                         proplist.Add("PROP_MS_" + CStr(i))
@@ -2372,31 +2425,31 @@ Namespace Streams
                     For i = 155 To 231
                         proplist.Add("PROP_MS_" + CStr(i))
                     Next
-                    For Each subst As ConstantProperties In FlowSheet.SelectedCompounds.Values
-                        proplist.Add("PROP_MS_232" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_233" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_234" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_235" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_236" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_238" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_239" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_240" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_241" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_242" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_243" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_244" + "/" + subst.Name)
-                        proplist.Add("PROP_MS_245" + "/" + subst.Name)
+                    For Each subst In comps
+                        proplist.Add("PROP_MS_232" + "/" + subst)
+                        proplist.Add("PROP_MS_233" + "/" + subst)
+                        proplist.Add("PROP_MS_234" + "/" + subst)
+                        proplist.Add("PROP_MS_235" + "/" + subst)
+                        proplist.Add("PROP_MS_236" + "/" + subst)
+                        proplist.Add("PROP_MS_238" + "/" + subst)
+                        proplist.Add("PROP_MS_239" + "/" + subst)
+                        proplist.Add("PROP_MS_240" + "/" + subst)
+                        proplist.Add("PROP_MS_241" + "/" + subst)
+                        proplist.Add("PROP_MS_242" + "/" + subst)
+                        proplist.Add("PROP_MS_243" + "/" + subst)
+                        proplist.Add("PROP_MS_244" + "/" + subst)
+                        proplist.Add("PROP_MS_245" + "/" + subst)
                     Next
                     proplist.Add("PROP_MS_154")
-                    For Each subst As ConstantProperties In FlowSheet.SelectedCompounds.Values
-                        proplist.Add("Activity Coefficient, Liquid Phase 1 / " + subst.Name)
-                        proplist.Add("Activity Coefficient, Liquid Phase 2 / " + subst.Name)
-                        proplist.Add("Fugacity Coefficient, Vapor Phase / " + subst.Name)
-                        proplist.Add("Fugacity Coefficient, Liquid Phase 1 / " + subst.Name)
-                        proplist.Add("Fugacity Coefficient, Liquid Phase 2 / " + subst.Name)
-                        proplist.Add("Diffusion Coefficient, Vapor Phase / " + subst.Name)
-                        proplist.Add("Diffusion Coefficient, Liquid Phase 1 / " + subst.Name)
-                        proplist.Add("Diffusion Coefficient, Liquid Phase 2 / " + subst.Name)
+                    For Each subst In comps
+                        proplist.Add("Activity Coefficient, Liquid Phase 1 / " + subst)
+                        proplist.Add("Activity Coefficient, Liquid Phase 2 / " + subst)
+                        proplist.Add("Fugacity Coefficient, Vapor Phase / " + subst)
+                        proplist.Add("Fugacity Coefficient, Liquid Phase 1 / " + subst)
+                        proplist.Add("Fugacity Coefficient, Liquid Phase 2 / " + subst)
+                        proplist.Add("Diffusion Coefficient, Vapor Phase / " + subst)
+                        proplist.Add("Diffusion Coefficient, Liquid Phase 1 / " + subst)
+                        proplist.Add("Diffusion Coefficient, Liquid Phase 2 / " + subst)
                     Next
                     For i = 250 To 259
                         proplist.Add("PROP_MS_" + CStr(i))
@@ -4473,6 +4526,7 @@ Namespace Streams
             Me.PropertyPackage.DW_ZerarComposicoes(PropertyPackages.Phase.Mixture)
             Me.PropertyPackage.CurrentMaterialStream = Nothing
             AtEquilibrium = False
+            MaximumAllowableDynamicMassFlowRate = Nothing
         End Sub
 
         ''' <summary>
@@ -6433,8 +6487,15 @@ Namespace Streams
             Next
             ms.Assign(Me)
             ms.AssignProps(Me)
+
             ms.TotalEnergyFlow = TotalEnergyFlow
             ms.AtEquilibrium = False
+
+            ms.ForcePhase = ForcePhase
+            ms.OverrideSingleCompoundFlashBehavior = OverrideSingleCompoundFlashBehavior
+            ms.OverrideCalculationRoutine = OverrideCalculationRoutine
+            ms.DefinedFlow = DefinedFlow
+            ms.FloatingTableAmountBasis = FloatingTableAmountBasis
 
             Return ms
 
@@ -8032,7 +8093,18 @@ Namespace Streams
         Public Function SetMassFlow(value As Double) As String Implements IMaterialStream.SetMassFlow
             Phases(0).Properties.massflow = value
             Phases(0).Properties.molarflow = value / Phases(0).Properties.molecularWeight * 1000
-            Phases(0).Properties.volumetric_flow = value / Phases(0).Properties.density.GetValueOrDefault
+            Dim mixdens = Phases(0).Properties.density.GetValueOrDefault()
+            If Not Double.IsNaN(mixdens) And Not Double.IsInfinity(mixdens) Then
+                Phases(0).Properties.volumetric_flow = value / Phases(0).Properties.density.GetValueOrDefault
+            Else
+                Phases(0).Properties.volumetric_flow = 0.0#
+            End If
+            For Each comp In Phases(0).Compounds.Values
+                comp.MassFlow = value * comp.MassFraction.GetValueOrDefault()
+            Next
+            For Each comp In Phases(0).Compounds.Values
+                comp.MolarFlow = Phases(0).Properties.molarflow * comp.MoleFraction.GetValueOrDefault()
+            Next
             DefinedFlow = FlowSpec.Mass
             AtEquilibrium = False
             If GraphicObject IsNot Nothing Then
@@ -8053,6 +8125,12 @@ Namespace Streams
             Phases(0).Properties.massflow = value
             Phases(0).Properties.molarflow = value / Phases(0).Properties.molecularWeight * 1000
             Phases(0).Properties.volumetric_flow = value / Phases(0).Properties.density.GetValueOrDefault
+            For Each comp In Phases(0).Compounds.Values
+                comp.MassFlow = value * comp.MassFraction.GetValueOrDefault()
+            Next
+            For Each comp In Phases(0).Compounds.Values
+                comp.MolarFlow = Phases(0).Properties.molarflow * comp.MoleFraction.GetValueOrDefault()
+            Next
             DefinedFlow = FlowSpec.Mass
             AtEquilibrium = False
             If GraphicObject IsNot Nothing Then
@@ -8283,7 +8361,18 @@ Namespace Streams
         Public Function SetMolarFlow(value As Double) As String Implements IMaterialStream.SetMolarFlow
             Phases(0).Properties.massflow = value * Phases(0).Properties.molecularWeight / 1000
             Phases(0).Properties.molarflow = value
-            Phases(0).Properties.volumetric_flow = value * Phases(0).Properties.molecularWeight / 1000 / Phases(0).Properties.density.GetValueOrDefault
+            Dim mixdens = Phases(0).Properties.density.GetValueOrDefault()
+            If Not Double.IsNaN(mixdens) And Not Double.IsInfinity(mixdens) Then
+                Phases(0).Properties.volumetric_flow = value * Phases(0).Properties.molecularWeight / 1000 / Phases(0).Properties.density.GetValueOrDefault
+            Else
+                Phases(0).Properties.volumetric_flow = 0.0#
+            End If
+            For Each comp In Phases(0).Compounds.Values
+                comp.MolarFlow = value * comp.MolarFlow.GetValueOrDefault()
+            Next
+            For Each comp In Phases(0).Compounds.Values
+                comp.MassFlow = Phases(0).Properties.massflow * comp.MassFraction.GetValueOrDefault()
+            Next
             DefinedFlow = FlowSpec.Mole
             AtEquilibrium = False
             If GraphicObject IsNot Nothing Then
@@ -8305,6 +8394,12 @@ Namespace Streams
             Phases(0).Properties.molarflow = value
             Phases(0).Properties.volumetric_flow = value * Phases(0).Properties.molecularWeight / 1000 / Phases(0).Properties.density.GetValueOrDefault
             DefinedFlow = FlowSpec.Mole
+            For Each comp In Phases(0).Compounds.Values
+                comp.MolarFlow = value * comp.MolarFlow.GetValueOrDefault()
+            Next
+            For Each comp In Phases(0).Compounds.Values
+                comp.MassFlow = Phases(0).Properties.massflow * comp.MassFraction.GetValueOrDefault()
+            Next
             AtEquilibrium = False
             If GraphicObject IsNot Nothing Then
                 Return String.Format("{0}: molar flow set to {1} mol/s", GraphicObject.Tag, value)
@@ -8535,7 +8630,7 @@ Namespace Streams
                 Next
                 .Phases(0).Properties.massflow = total
                 .Phases(0).Properties.molarflow = totalm
-                .SetMassEnthalpy((H0 * W0 + H1 * W1) / total)
+                .SetMassEnthalpy((H0 * W0 + H1 * Factor * W1) / total)
                 .SpecType = StreamSpec.Pressure_and_Enthalpy
             End With
 
@@ -8674,7 +8769,14 @@ Namespace Streams
 
                     If Not SetW Then W = prevW
                     SetMassFlow(W * wfrac)
-                    SetMassEnthalpy(stream.Phases(2).Properties.enthalpy.GetValueOrDefault)
+
+                    Dim Hv = stream.Phases(2).Properties.enthalpy
+
+                    If Hv.HasValue Then
+                        SetMassEnthalpy(Hv.Value)
+                    Else
+                        SetMassEnthalpy(H)
+                    End If
 
                     For Each sub1 In Me.Phases(0).Compounds.Values
                         sub1.MoleFraction = stream.Phases(2).Compounds(sub1.Name).MoleFraction.GetValueOrDefault
@@ -8690,7 +8792,14 @@ Namespace Streams
 
                     If Not SetW Then W = prevW
                     SetMassFlow(W * wfrac)
-                    SetMassEnthalpy(stream.Phases(1).Properties.enthalpy.GetValueOrDefault)
+
+                    Dim Hl = stream.Phases(1).Properties.enthalpy
+
+                    If Hl.HasValue Then
+                        SetMassEnthalpy(Hl.Value)
+                    Else
+                        SetMassEnthalpy(H)
+                    End If
 
                     For Each sub1 In Me.Phases(0).Compounds.Values
                         sub1.MoleFraction = stream.Phases(1).Compounds(sub1.Name).MoleFraction.GetValueOrDefault
@@ -8706,7 +8815,14 @@ Namespace Streams
 
                     If Not SetW Then W = prevW
                     SetMassFlow(W * wfrac)
-                    SetMassEnthalpy(stream.Phases(3).Properties.enthalpy.GetValueOrDefault)
+
+                    Dim Hl = stream.Phases(3).Properties.enthalpy
+
+                    If Hl.HasValue Then
+                        SetMassEnthalpy(Hl.Value)
+                    Else
+                        SetMassEnthalpy(H)
+                    End If
 
                     For Each sub1 In Me.Phases(0).Compounds.Values
                         sub1.MoleFraction = stream.Phases(3).Compounds(sub1.Name).MoleFraction.GetValueOrDefault
@@ -8722,7 +8838,14 @@ Namespace Streams
 
                     If Not SetW Then W = prevW
                     SetMassFlow(W * wfrac)
-                    SetMassEnthalpy(stream.Phases(4).Properties.enthalpy.GetValueOrDefault)
+
+                    Dim Hl = stream.Phases(4).Properties.enthalpy
+
+                    If Hl.HasValue Then
+                        SetMassEnthalpy(Hl.Value)
+                    Else
+                        SetMassEnthalpy(H)
+                    End If
 
                     For Each sub1 In Me.Phases(0).Compounds.Values
                         sub1.MoleFraction = stream.Phases(4).Compounds(sub1.Name).MoleFraction.GetValueOrDefault
@@ -8738,7 +8861,14 @@ Namespace Streams
 
                     If Not SetW Then W = prevW
                     SetMassFlow(W * wfrac)
-                    SetMassEnthalpy(stream.Phases(7).Properties.enthalpy.GetValueOrDefault)
+
+                    Dim Hs = stream.Phases(7).Properties.enthalpy
+
+                    If Hs.HasValue Then
+                        SetMassEnthalpy(Hs.Value)
+                    Else
+                        SetMassEnthalpy(H)
+                    End If
 
                     For Each sub1 In Me.Phases(0).Compounds.Values
                         sub1.MoleFraction = stream.Phases(7).Compounds(sub1.Name).MoleFraction.GetValueOrDefault
@@ -8837,9 +8967,9 @@ Namespace Streams
 
             Dim text As String
             If GraphicObject IsNot Nothing Then
-                text = GraphicObject.Tag + String.Format(": T = {0} K, P = {1} Pa, W = {2} kg/s, M = {3} mol/s, Q = {4} m3/s, EF = {5} kW", GetTemperature, GetPressure, GetMassFlow, GetMolarFlow, GetVolumetricFlow, TotalEnergyFlow)
+                text = GraphicObject.Tag + String.Format(": T = {0} K, P = {1} Pa, W = {2} kg/s, M = {3} mol/s, Q = {4} m3/s, VF = {5}, EF = {6} kW, ", GetTemperature, GetPressure, GetMassFlow, GetMolarFlow, GetVolumetricFlow, Phases(2).Properties.molarfraction.GetValueOrDefault(), TotalEnergyFlow)
             Else
-                text = String.Format("Material Stream: T = {0} K, P = {1} Pa, W = {2} kg/s, M = {3} mol/s, Q = {4} m3/s, EF = {5} kW", GetTemperature, GetPressure, GetMassFlow, GetMolarFlow, GetVolumetricFlow, TotalEnergyFlow)
+                text = String.Format("Material Stream: T = {0} K, P = {1} Pa, W = {2} kg/s, M = {3} mol/s, Q = {4} m3/s, VF = {5}, EF = {6} kW, ", GetTemperature, GetPressure, GetMassFlow, GetMolarFlow, GetVolumetricFlow, Phases(2).Properties.molarfraction.GetValueOrDefault(), TotalEnergyFlow)
             End If
             If Phases.Count > 0 Then
                 text += vbCrLf + "Compound Mole Fractions:" + vbCrLf

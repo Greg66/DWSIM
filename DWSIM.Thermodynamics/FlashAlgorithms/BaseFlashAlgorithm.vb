@@ -26,6 +26,7 @@ Imports System.Runtime.Serialization.Formatters.Binary
 Imports System.Runtime.Serialization
 Imports IronPython.Runtime.Operations
 Imports DWSIM.SharedClasses
+Imports DWSIM.Interfaces
 
 Namespace PropertyPackages.Auxiliary.FlashAlgorithms
 
@@ -1488,6 +1489,17 @@ will converge to this solution.")
                         End If
                     Next
                 End If
+            ElseIf names.Contains("water") And props.Where(Function(x) x.IsBlackOil Or x.IsHYPO Or x.IsPF).Count > 0 Then
+                'Water + Hydrocarbons
+                If Vz(names.IndexOf("water")) > 0.01 And Vz(names.IndexOf("water")) < 1.0 Then
+                    Dim hcs = props.Where(Function(x) x.IsBlackOil Or x.IsHYPO Or x.IsPF).ToList()
+                    For Each hc In hcs
+                        If Vz(props.IndexOf(hc)) > 0.000001 And hc.Critical_Temperature > T Then
+                            hres.LiquidPhaseSplit = True
+                            Exit For
+                        End If
+                    Next
+                End If
             ElseIf names.Where(Function(x) x.EndsWith("al")).Count > 0 And names.Where(Function(x) x.Contains("ane") Or x.Contains("ene") Or x.Contains("ine")).Count > 0 Then
                 'Aldehydes + Hydrocarbons
                 Dim alds = names.Where(Function(x) x.EndsWith("al")).ToList()
@@ -1631,6 +1643,12 @@ will converge to this solution.")
                 clonedobj.FlashSettings.Add(item.Key, item.Value)
             Next
             Return clonedobj
+
+        End Function
+
+        Public Overridable Function GetNewInstance() As IFlashAlgorithm Implements IFlashAlgorithm.GetNewInstance
+
+            Return Nothing
 
         End Function
 
