@@ -38,8 +38,6 @@ Partial Class FormMain
         Me.NovoRegressaoUNIFACIPs = New System.Windows.Forms.ToolStripMenuItem()
         Me.OpenToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.AbrirDoDashboardToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.tsmiFOSSEE = New System.Windows.Forms.ToolStripMenuItem()
-        Me.tsmiSamples = New System.Windows.Forms.ToolStripMenuItem()
         Me.toolStripSeparator = New System.Windows.Forms.ToolStripSeparator()
         Me.SaveToDashboardTSMI = New System.Windows.Forms.ToolStripMenuItem()
         Me.SaveToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -47,6 +45,8 @@ Partial Class FormMain
         Me.ToolStripSeparator2 = New System.Windows.Forms.ToolStripSeparator()
         Me.CloseAllToolstripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.toolStripSeparator1 = New System.Windows.Forms.ToolStripSeparator()
+        Me.tsmiFOSSEE = New System.Windows.Forms.ToolStripMenuItem()
+        Me.tsmiSamples = New System.Windows.Forms.ToolStripMenuItem()
         Me.tsFileSeparator = New System.Windows.Forms.ToolStripSeparator()
         Me.ExitToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.EditTSMI = New System.Windows.Forms.ToolStripMenuItem()
@@ -102,6 +102,7 @@ Partial Class FormMain
         Me.DashboardToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.LoggedInS365Button = New System.Windows.Forms.ToolStripMenuItem()
         Me.LogoutToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.CheckingCredentialsLabel = New System.Windows.Forms.ToolStripLabel()
         Me.BgLoadComp = New System.ComponentModel.BackgroundWorker()
         Me.bgLoadFile = New System.ComponentModel.BackgroundWorker()
         Me.bgSaveFile = New System.ComponentModel.BackgroundWorker()
@@ -184,18 +185,6 @@ Partial Class FormMain
         Me.AbrirDoDashboardToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.s365_logo_login
         Me.AbrirDoDashboardToolStripMenuItem.Name = "AbrirDoDashboardToolStripMenuItem"
         '
-        'tsmiFOSSEE
-        '
-        resources.ApplyResources(Me.tsmiFOSSEE, "tsmiFOSSEE")
-        Me.tsmiFOSSEE.Image = Global.DWSIM.My.Resources.Resources.icons8_live_folder
-        Me.tsmiFOSSEE.Name = "tsmiFOSSEE"
-        '
-        'tsmiSamples
-        '
-        resources.ApplyResources(Me.tsmiSamples, "tsmiSamples")
-        Me.tsmiSamples.Image = Global.DWSIM.My.Resources.Resources.icons8_live_folder
-        Me.tsmiSamples.Name = "tsmiSamples"
-        '
         'toolStripSeparator
         '
         resources.ApplyResources(Me.toolStripSeparator, "toolStripSeparator")
@@ -234,6 +223,18 @@ Partial Class FormMain
         '
         resources.ApplyResources(Me.toolStripSeparator1, "toolStripSeparator1")
         Me.toolStripSeparator1.Name = "toolStripSeparator1"
+        '
+        'tsmiFOSSEE
+        '
+        resources.ApplyResources(Me.tsmiFOSSEE, "tsmiFOSSEE")
+        Me.tsmiFOSSEE.Image = Global.DWSIM.My.Resources.Resources.icons8_live_folder
+        Me.tsmiFOSSEE.Name = "tsmiFOSSEE"
+        '
+        'tsmiSamples
+        '
+        resources.ApplyResources(Me.tsmiSamples, "tsmiSamples")
+        Me.tsmiSamples.Image = Global.DWSIM.My.Resources.Resources.icons8_live_folder
+        Me.tsmiSamples.Name = "tsmiSamples"
         '
         'tsFileSeparator
         '
@@ -448,7 +449,7 @@ Partial Class FormMain
         resources.ApplyResources(Me.ToolStrip1, "ToolStrip1")
         Me.ToolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden
         Me.ToolStrip1.ImageScalingSize = New System.Drawing.Size(20, 20)
-        Me.ToolStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripButton, Me.OpenToolStripButton, Me.OpenFileS365, Me.SaveToolStripButton, Me.SaveFileS365, Me.ToolStripButton1, Me.ToolStripSeparator3, Me.ToolStripButton2, Me.tsbInspector, Me.ToolStripSeparator4, Me.ToolStripButton3, Me.ToolStripButton5, Me.ToolStripButton4, Me.ToolStripSeparator6, Me.tsbRegCO, Me.ToolStripSeparator8, Me.LoginButton, Me.LogoutDropdown})
+        Me.ToolStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripButton, Me.OpenToolStripButton, Me.OpenFileS365, Me.SaveToolStripButton, Me.SaveFileS365, Me.ToolStripButton1, Me.ToolStripSeparator3, Me.ToolStripButton2, Me.tsbInspector, Me.ToolStripSeparator4, Me.ToolStripButton3, Me.ToolStripButton5, Me.ToolStripButton4, Me.ToolStripSeparator6, Me.tsbRegCO, Me.ToolStripSeparator8, Me.LoginButton, Me.LogoutDropdown, Me.CheckingCredentialsLabel})
         Me.ToolStrip1.Name = "ToolStrip1"
         Me.ToolStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional
         '
@@ -588,6 +589,12 @@ Partial Class FormMain
         resources.ApplyResources(Me.LogoutToolStripMenuItem, "LogoutToolStripMenuItem")
         Me.LogoutToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.Logout_Rounded_96px
         Me.LogoutToolStripMenuItem.Name = "LogoutToolStripMenuItem"
+        '
+        'CheckingCredentialsLabel
+        '
+        resources.ApplyResources(Me.CheckingCredentialsLabel, "CheckingCredentialsLabel")
+        Me.CheckingCredentialsLabel.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right
+        Me.CheckingCredentialsLabel.Name = "CheckingCredentialsLabel"
         '
         'BgLoadComp
         '
@@ -974,4 +981,5 @@ Partial Class FormMain
     Friend WithEvents UsersGuideToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents tsmiProUG As ToolStripMenuItem
     Friend WithEvents tsmiNewCompoundWizard As ToolStripMenuItem
+    Friend WithEvents CheckingCredentialsLabel As ToolStripLabel
 End Class
