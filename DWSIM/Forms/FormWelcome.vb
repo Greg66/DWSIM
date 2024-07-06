@@ -4,6 +4,7 @@ Imports System.Linq
 Imports System.Threading.Tasks
 Imports System.Text
 Imports DWSIM.SharedClassesCSharp.FilePicker.Windows
+Imports DWSIM.Simulate365.Services
 
 '    Copyright 2008 Daniel Wagner O. de Medeiros
 '
@@ -163,91 +164,7 @@ Public Class FormWelcome
 
             Dim handler = New WindowsFile(lview.SelectedItems(0).Tag)
 
-            Dim floading As New FormLoadingSimulation
-
-            floading.Text = DWSIM.App.GetLocalString("Loading") + " '" + Path.GetFileNameWithoutExtension(lview.SelectedItems(0).Tag.ToString) + "'..."
-            floading.Show()
-
-            Application.DoEvents()
-
-            'My.Application.MainWindowForm.filename = lview.SelectedItems(0).Tag
-            Select Case Path.GetExtension(lview.SelectedItems(0).Tag).ToLower
-                Case ".dwxml"
-                    Application.DoEvents()
-                    Application.DoEvents()
-                    My.Application.MainWindowForm.LoadXML(handler, Sub(x)
-                                                                       Me.Invoke(Sub()
-                                                                                     floading.ProgressBar1.Value = x
-                                                                                     floading.Refresh()
-                                                                                 End Sub)
-                                                                   End Sub)
-                Case ".dwxmz"
-                    Application.DoEvents()
-                    Application.DoEvents()
-                    My.Application.MainWindowForm.LoadAndExtractXMLZIP(handler, Sub(x)
-                                                                                    Me.Invoke(Sub()
-                                                                                                  floading.ProgressBar1.Value = x
-                                                                                                  floading.Refresh()
-                                                                                              End Sub)
-                                                                                End Sub)
-                Case ".xml"
-                    Application.DoEvents()
-                    Application.DoEvents()
-                    My.Application.MainWindowForm.LoadMobileXML(handler)
-                Case ".dwcsd"
-                    Dim NewMDIChild As New FormCompoundCreator()
-                    NewMDIChild.MdiParent = My.Application.MainWindowForm
-                    NewMDIChild.Show()
-                    Dim objStreamReader As New FileStream(lview.SelectedItems(0).Tag, FileMode.Open, FileAccess.Read)
-                    Dim x As New BinaryFormatter()
-                    x.Binder = New VersionDeserializationBinder
-                    NewMDIChild.mycase = x.Deserialize(objStreamReader)
-                    NewMDIChild.mycase.Filename = lview.SelectedItems(0).Tag
-                    objStreamReader.Close()
-                    NewMDIChild.WriteData()
-                    NewMDIChild.Activate()
-                Case ".dwcsd2"
-                    Dim NewMDIChild As New FormCompoundCreator()
-                    NewMDIChild.MdiParent = My.Application.MainWindowForm
-                    NewMDIChild.Show()
-                    NewMDIChild.mycase = Newtonsoft.Json.JsonConvert.DeserializeObject(Of CompoundGeneratorCase)(File.ReadAllText(lview.SelectedItems(0).Tag))
-                    NewMDIChild.WriteData()
-                    NewMDIChild.Activate()
-                Case ".dwrsd"
-                    Dim NewMDIChild As New FormDataRegression()
-                    NewMDIChild.MdiParent = Me.Owner
-                    NewMDIChild.Show()
-                    Dim objStreamReader As New FileStream(lview.SelectedItems(0).Tag, FileMode.Open, FileAccess.Read)
-                    Dim x As New BinaryFormatter()
-                    x.Binder = New VersionDeserializationBinder
-                    NewMDIChild.currcase = x.Deserialize(objStreamReader)
-                    NewMDIChild.currcase.filename = lview.SelectedItems(0).Tag
-                    objStreamReader.Close()
-                    NewMDIChild.LoadCase(NewMDIChild.currcase, False)
-                    NewMDIChild.Activate()
-                Case ".dwrsd2"
-                    Dim NewMDIChild As New FormDataRegression()
-                    NewMDIChild.MdiParent = Me.Owner
-                    NewMDIChild.Show()
-                    NewMDIChild.currcase = Newtonsoft.Json.JsonConvert.DeserializeObject(Of DWSIM.Optimization.DatRegression.RegressionCase)(File.ReadAllText(lview.SelectedItems(0).Tag))
-                    NewMDIChild.currcase.filename = lview.SelectedItems(0).Tag
-                    NewMDIChild.LoadCase(NewMDIChild.currcase, False)
-                    NewMDIChild.Activate()
-                Case ".dwruf"
-                    Dim NewMDIChild As New FormUNIFACRegression()
-                    NewMDIChild.MdiParent = Me.Owner
-                    NewMDIChild.Show()
-                    Dim objStreamReader As New FileStream(lview.SelectedItems(0).Tag, FileMode.Open, FileAccess.Read)
-                    Dim x As New BinaryFormatter()
-                    x.Binder = New VersionDeserializationBinder
-                    NewMDIChild.mycase = x.Deserialize(objStreamReader)
-                    NewMDIChild.mycase.Filename = lview.SelectedItems(0).Tag
-                    objStreamReader.Close()
-                    NewMDIChild.LoadCase(NewMDIChild.mycase, False)
-                    NewMDIChild.Activate()
-            End Select
-
-            floading.Close()
+            My.Application.MainWindowForm.LoadFile(handler)
 
         Else
 
@@ -488,7 +405,7 @@ Public Class FormWelcome
     End Sub
 
     Private Sub LinkLabel7_LinkClicked_1(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel7.LinkClicked
-        Process.Start("https://simulate365.com/dwsim-pro/")
+        Process.Start("https://simulate365.com/landing-pages/dwsim-pro/")
     End Sub
 
     Private Sub LinkLabel12_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel12.LinkClicked
@@ -500,7 +417,15 @@ Public Class FormWelcome
     End Sub
 
     Private Sub LinkLabel14_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel14.LinkClicked
-        Process.Start("https://dwsim.org/index.php/dwsim-pro/")
+        Dim userService As UserService = UserService.GetInstance()
+        Dim isLoggedIn As Boolean = userService._IsLoggedIn()
+        If (isLoggedIn = False) Then
+            Dim loginForm As Simulate365.FormFactories.LoginForm = New Simulate365.FormFactories.LoginForm
+            loginForm.ShowDialog()
+        Else
+            Process.Start("https://dashboard.simulate365.com")
+        End If
+
     End Sub
 
     Private Sub LinkLabel15_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs)

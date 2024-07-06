@@ -240,7 +240,7 @@ Namespace DWSIM.Flowsheet
 
         Public Property LabelFontSize As Double = 10.0 Implements IFlowsheetOptions.LabelFontSize
 
-        Public Property FlowsheetColorTheme As Integer = 2 Implements IFlowsheetOptions.FlowsheetColorTheme
+        Public Property FlowsheetColorTheme As Integer = 0 Implements IFlowsheetOptions.FlowsheetColorTheme
 
         Public Property RegularFontName As String = "OpenSans_SemiCondensed-Regular" Implements IFlowsheetOptions.RegularFontName
 
@@ -290,6 +290,8 @@ Namespace DWSIM.Flowsheet
         Public Property EnabledUndoRedo As Boolean = False Implements IFlowsheetOptions.EnabledUndoRedo
 
         Public Property EnableGHGEmissionsSubsystem As Boolean = False Implements IFlowsheetOptions.EnableGHGEmissionsSubsystem
+
+        Public Property FlowsheetTransitionObject As IFlowsheetTransitionRestore = New FlowsheetTransitionRestore() Implements IFlowsheetOptions.FlowsheetTransitionObject
 
     End Class
 
@@ -351,6 +353,31 @@ Namespace DWSIM.Flowsheet
 
             Return True
 
+        End Function
+
+    End Class
+
+    <System.Serializable()> Public Class FlowsheetTransitionRestore
+
+        Implements IFlowsheetTransitionRestore, ICustomXMLSerialization
+
+        Public Property FeatureName As String = "" Implements IFlowsheetTransitionRestore.FeatureName
+
+        Public Property FeatureType As String = "" Implements IFlowsheetTransitionRestore.FeatureType
+
+        Public Property Action As String = "" Implements IFlowsheetTransitionRestore.Action
+
+        Public Property Location As String = "" Implements IFlowsheetTransitionRestore.Location
+
+        Public Property Position As List(Of Double) = New List(Of Double)() Implements IFlowsheetTransitionRestore.Position
+
+        Public Function SaveData() As List(Of XElement) Implements ICustomXMLSerialization.SaveData
+            Return XMLSerializer.XMLSerializer.Serialize(Me)
+        End Function
+
+        Public Function LoadData(data As List(Of XElement)) As Boolean Implements ICustomXMLSerialization.LoadData
+            XMLSerializer.XMLSerializer.Deserialize(Me, data)
+            Return True
         End Function
 
     End Class

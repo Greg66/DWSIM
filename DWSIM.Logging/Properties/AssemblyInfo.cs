@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("DWSIM Project")]
 [assembly: AssemblyProduct("DWSIM")]
-[assembly: AssemblyCopyright("Copyright © 2021 Daniel Medeiros")]
+[assembly: AssemblyCopyright("Copyright © 2021 Daniel Wagner")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("8.7.0.0")]
-[assembly: AssemblyFileVersion("8.7.0.0")]
+[assembly: AssemblyVersion("8.7.1.0")]
+[assembly: AssemblyFileVersion("8.7.1.0")]

@@ -27,6 +27,8 @@ Public Class FlowsheetSurface_SkiaSharp
 
     Public SimObjPanel As SimulationObjectsPanel
 
+    Public FormObjects As New FormObjectList
+
     Public FlowsheetSurface As Drawing.SkiaSharp.GraphicsSurface
 
     Public FControl As FlowsheetSurfaceControl
@@ -137,6 +139,10 @@ Public Class FlowsheetSurface_SkiaSharp
                 End If
             End Sub
 
+        FormObjects.Dock = DockStyle.Fill
+
+        SimObjPanel.TabControl1.TabPages(1).Controls.Add(FormObjects)
+
         SplitContainerVertical.Panel2.Controls.Add(SimObjPanel)
 
         If GlobalSettings.Settings.DpiScale > 1.0 Then
@@ -208,6 +214,9 @@ Public Class FlowsheetSurface_SkiaSharp
             CopiarComoImagem300ToolStripMenuItem.Visible = False
             CopiarDadosParaareaDeTransferenciaToolStripMenuItem.Visible = False
             CopyAsImageToolStripMenuItem.Visible = False
+            tsbPrint.Visible = False
+            tsbConfigPage.Visible = False
+            tsbConfigPrinter.Visible = False
         End If
 
         AddHandler AnimationTimer.Elapsed, Sub(s2, e2)
@@ -538,6 +547,8 @@ Public Class FlowsheetSurface_SkiaSharp
                 End Try
             End If
         Next
+
+        Flowsheet.UpdateObjectListPanel()
 
     End Sub
 
@@ -2687,6 +2698,8 @@ Public Class FlowsheetSurface_SkiaSharp
             End Try
         End If
 
+        Flowsheet.UpdateObjectListPanel()
+
         Return gObj.Name
 
     End Function
@@ -3415,6 +3428,9 @@ Public Class FlowsheetSurface_SkiaSharp
 
         SplitContainerVertical.SplitterDistance = SplitContainerVertical.Width - 350 * Settings.DpiScale
 
+        FormObjects.Flowsheet = Flowsheet
+        FormObjects.UpdateData()
+
         FormMain.TranslateFormFunction?.Invoke(Me)
 
     End Sub
@@ -3988,12 +4004,12 @@ Public Class FlowsheetSurface_SkiaSharp
     End Sub
 
     Private Sub tsmiHeatMap_Click(sender As Object, e As EventArgs) Handles tsmiHeatMap.Click
-        Dim fhm As New FormHeatMaps()
+        Dim fhm As New FormHeatMaps() With {.CurrentFlowsheet = Flowsheet}
         fhm.ShowDialog(Me)
     End Sub
 
     Private Sub tsmiLiveFlow_Click(sender As Object, e As EventArgs) Handles tsmiLiveFlow.Click
-        Dim flf As New FormLiveFlows()
+        Dim flf As New FormLiveFlows() With {.CurrentFlowsheet = Flowsheet}
         flf.ShowDialog(Me)
     End Sub
 
@@ -4112,7 +4128,7 @@ Public Class FlowsheetSurface_SkiaSharp
             btnRight.Height = 24
             btnLeft.Height = 24
             FlowsheetSurface.ControlPanelMode = True
-            SplitContainerHorizontal.Panel2Collapsed = True
+            SplitContainerVertical.Panel2Collapsed = True
         Else
             btnDown.Visible = False
             btnUp.Visible = False
@@ -4123,7 +4139,7 @@ Public Class FlowsheetSurface_SkiaSharp
             btnRight.Height = 1
             btnLeft.Height = 1
             FlowsheetSurface.ControlPanelMode = False
-            SplitContainerHorizontal.Panel2Collapsed = False
+            SplitContainerVertical.Panel2Collapsed = False
         End If
         FControl.Invalidate()
 

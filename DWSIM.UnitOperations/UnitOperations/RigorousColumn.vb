@@ -2255,6 +2255,75 @@ Namespace UnitOperations
 
         End Sub
 
+        Public Sub ResetInitialEstimates()
+
+            InitialEstimates = New InitialEstimates()
+
+        End Sub
+
+        Public Sub SetInitialTemperatureEstimates(values As Double())
+
+            If values.Count <> NumberOfStages Then Throw New Exception(String.Format("value vector needs to have {0} elements", NumberOfStages))
+
+            UseTemperatureEstimates = True
+            InitialEstimates.StageTemps.Clear()
+            For Each v In values
+                InitialEstimates.StageTemps.Add(New Parameter() With {.Value = v, .ParamType = Parameter.ParameterType.Fixed})
+            Next
+
+        End Sub
+
+        Public Sub SetInitialLiquidMolarFlowEstimates(values As Double())
+
+            If values.Count <> NumberOfStages Then Throw New Exception(String.Format("value vector needs to have {0} elements", NumberOfStages))
+
+            UseLiquidFlowEstimates = True
+            InitialEstimates.LiqMolarFlows.Clear()
+            For Each v In values
+                InitialEstimates.LiqMolarFlows.Add(New Parameter() With {.Value = v, .ParamType = Parameter.ParameterType.Fixed})
+            Next
+
+        End Sub
+
+        Public Sub SetInitialVaporMolarFlowEstimates(values As Double())
+
+            If values.Count <> NumberOfStages Then Throw New Exception(String.Format("value vector needs to have {0} elements", NumberOfStages))
+
+            UseVaporFlowEstimates = True
+            InitialEstimates.VapMolarFlows.Clear()
+            For Each v In values
+                InitialEstimates.VapMolarFlows.Add(New Parameter() With {.Value = v, .ParamType = Parameter.ParameterType.Fixed})
+            Next
+
+        End Sub
+
+        Public Sub SetInitialMolarCompositionEstimates(liqmolarfracs As Double()(), vapmolarfracs As Double()())
+
+            If liqmolarfracs.Count <> NumberOfStages Then Throw New Exception(String.Format("liquid molar fraction value vectors needs to have {0} elements", NumberOfStages))
+            If liqmolarfracs(0).Count <> FlowSheet.SelectedCompounds.Count Then Throw New Exception(String.Format("liquid composition vectors needs to have {0} elements", FlowSheet.SelectedCompounds.Count))
+            If vapmolarfracs.Count <> NumberOfStages Then Throw New Exception(String.Format("vapor molar fraction value vectors needs to have {0} elements", NumberOfStages))
+            If vapmolarfracs(0).Count <> FlowSheet.SelectedCompounds.Count Then Throw New Exception(String.Format("vapor composition vectors needs to have {0} elements", FlowSheet.SelectedCompounds.Count))
+
+            UseCompositionEstimates = True
+            For i = 0 To liqmolarfracs.Count - 1
+                Dim d As New Dictionary(Of String, Parameter)
+                Dim j = 0
+                For Each cp As BaseClasses.ConstantProperties In FlowSheet.SelectedCompounds.Values
+                    d.Add(cp.Name, New Parameter With {.Value = liqmolarfracs(i)(j)})
+                    j += 1
+                Next
+                InitialEstimates.LiqCompositions.Add(d)
+                Dim d2 As New Dictionary(Of String, Parameter)
+                j = 0
+                For Each cp As BaseClasses.ConstantProperties In FlowSheet.SelectedCompounds.Values
+                    d2.Add(cp.Name, New Parameter With {.Value = vapmolarfracs(i)(j)})
+                    j += 1
+                Next
+                InitialEstimates.VapCompositions.Add(d2)
+            Next
+
+        End Sub
+
         Public Function RebuildEstimates() As InitialEstimates
 
             Dim iest As New InitialEstimates
@@ -4733,7 +4802,7 @@ Namespace UnitOperations
                     If Column.ExternalColumnSolvers.ContainsKey(SolvingMethodName) Then
                         so = Column.ExternalColumnSolvers(SolvingMethodName).SolveColumn(Me, inputdata)
                     Else
-                        Throw New Exception("Unable to find the selected column solver")
+                        Throw New Exception($"Unable to find column solver with name '{SolvingMethodName}'.")
                     End If
                 End If
             ElseIf TypeOf Me Is AbsorptionColumn Then
@@ -5103,7 +5172,7 @@ Namespace UnitOperations
                     compound_balances(c) = compound_balances(c) / (compound_feeds(c) + 1.0E-20)
                 Next
 
-                Dim mintol = tol.MinY_NonZero() * 100
+                Dim mintol = tol.MinY_NonZero() * 10
 
                 If compound_balances.Values.Where(Function(b) Math.Abs(b) > mintol).Count > 0 Then
                     Dim mbal = compound_balances.Where(Function(b) Math.Abs(b.Value) > mintol).FirstOrDefault

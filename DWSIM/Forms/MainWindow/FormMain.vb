@@ -43,6 +43,8 @@ Imports DWSIM.Simulate365.Models
 Imports DWSIM.Simulate365.Services
 Imports DWSIM.Simulate365.FormFactories
 Imports Microsoft.VisualBasic.ApplicationServices
+Imports DWSIM.ProFeatures
+Imports DWSIM.SharedClassesCSharp.FilePicker.Windows
 
 Public Class FormMain
 
@@ -202,6 +204,8 @@ Public Class FormMain
                 DashboardToolStripMenuItem.Visible = False
                 tsmiProUG.Visible = False
                 DatabaseManagerToolStripMenuItem.Visible = False
+                ZedGraph.Variables.IsDWSIMPro = True
+                ZedGraph.Variables.IsDWSIMPro = True
             End If
 #End If
 
@@ -254,6 +258,7 @@ Public Class FormMain
         AddHandler UserService.GetInstance().AutoLoginInProgressChanged, AddressOf UserService_AutoLoginInProgress
         AddHandler UserService.GetInstance().UserLoggedOut, AddressOf UserService_UserLoggedOut
         AddHandler UserService.GetInstance().ShowLoginForm, AddressOf UserService_ShowLoginForm
+        AddHandler FileManagementService.GetInstance().OnSaveFileToDashboard, AddressOf FileManagementService_SaveFileToDashboard
 
 #If Not WINE32 Then
 
@@ -352,6 +357,11 @@ Public Class FormMain
         Next
 
 #End If
+
+    End Sub
+
+    Private Sub FileManagementService_SaveFileToDashboard(sender As Object, e As EventArgs)
+        Me.SaveFile(True, True)
 
     End Sub
 
@@ -464,8 +474,13 @@ Public Class FormMain
 
         If Me.MdiChildren.Length > 0 And Not Me.CancelClosing Then
             Me.CancelClosing = False
-            Dim ms As MsgBoxResult = MessageBox.Show(DWSIM.App.GetLocalString("Existemsimulaesabert"), DWSIM.App.GetLocalString("Ateno"), MessageBoxButtons.YesNo, MessageBoxIcon.Question)
-            If ms = MsgBoxResult.No Then e.Cancel = True
+            If Not IsPro Then
+                Dim ms As MsgBoxResult = MessageBox.Show(DWSIM.App.GetLocalString("Existemsimulaesabert"), DWSIM.App.GetLocalString("Ateno"), MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                If ms = MsgBoxResult.No Then e.Cancel = True
+            Else
+                Dim ms As MsgBoxResult = MessageBox.Show("There are opened windows, are you sure you want to close DWSIM Pro?", "DWSIM Pro", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                If ms = MsgBoxResult.No Then e.Cancel = True
+            End If
         End If
 
         If Not e.Cancel Then
@@ -1327,10 +1342,35 @@ Public Class FormMain
     End Sub
 
     Public Sub LoadAdditionalCompounds()
+
         Dim comps = UserDB.LoadAdditionalCompounds()
+
+        If My.Settings.UserCompounds Is Nothing Then My.Settings.UserCompounds = New Specialized.StringCollection()
+
+        For Each cpath In My.Settings.UserCompounds
+            Try
+                Dim comp As ConstantProperties = Nothing
+                If cpath.StartsWith("//Simulate 365 Dashboard") Then
+                    Using fileStream As Stream = FileDownloadService.GetFileBySimulatePath(cpath)
+                        Using reader As New StreamReader(fileStream)
+                            Dim contents = reader.ReadToEnd()
+                            comp = Newtonsoft.Json.JsonConvert.DeserializeObject(Of BaseClasses.ConstantProperties)(contents)
+                        End Using
+                    End Using
+                Else
+                    comp = Newtonsoft.Json.JsonConvert.DeserializeObject(Of BaseClasses.ConstantProperties)(File.ReadAllText(cpath))
+                End If
+                comp.CurrentDB = "User"
+                comp.OriginalDB = "User"
+                comps.Add(comp)
+            Catch ex As Exception
+            End Try
+        Next
+
         For Each cp As BaseClasses.ConstantProperties In comps
             If Not Me.AvailableComponents.ContainsKey(cp.Name) Then Me.AvailableComponents.Add(cp.Name, cp)
         Next
+
     End Sub
 
     Public Sub LoadFoodPropCompounds()
@@ -2317,8 +2357,8 @@ Public Class FormMain
 
         If simulationfilename <> "" Then filename = simulationfilename Else filename = handler.FullPath
 
-        form.FilePath = handler.FullPath
-        form.Options.FilePath = handler.FullPath
+        form.FilePath = filename
+        form.Options.FilePath = filename
 
         data = xdoc.Element("DWSIM_Simulation_Data").Element("GraphicObjects").Elements.ToList
 
@@ -4204,6 +4244,7 @@ Label_00CC:
             Dim form2 As FormFlowsheet = Me.ActiveMdiChild
 
             Dim filename = form2.Options.FilePath
+            Dim shouldOverwriteFile As Boolean = False
 
             Dim filePickerForm As IFilePicker
 
@@ -4212,7 +4253,17 @@ Label_00CC:
                 Try
                     Dim fname = Path.GetFileNameWithoutExtension(form2.Options.FilePath)
                     filePickerForm.SuggestedFilename = fname
-                    filePickerForm.SuggestedDirectory = form2.Options.VirtualFile.ParentUniqueIdentifier
+                    If form2.Options.VirtualFile IsNot Nothing Then
+                        Dim shouldOverwriteExistingFileResult As DialogResult = MessageBox.Show("Do you want to overwrite the existing file?", "Save file", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+
+                        If (shouldOverwriteExistingFileResult = DialogResult.Yes) Then
+                            shouldOverwriteFile = True
+                        End If
+
+
+                        filePickerForm.SuggestedDirectory = form2.Options.VirtualFile.ParentUniqueIdentifier
+                    End If
+
                 Catch ex As Exception
                 End Try
             Else
@@ -4229,14 +4280,20 @@ Label_00CC:
                 End Try
             End If
 
-            Dim handler As IVirtualFile = filePickerForm.ShowSaveDialog(
-            New List(Of SharedClassesCSharp.FilePicker.FilePickerAllowedType) From
-            {New SharedClassesCSharp.FilePicker.FilePickerAllowedType("Compressed XML Simulation File", "*.dwxmz"),
-            New SharedClassesCSharp.FilePicker.FilePickerAllowedType("XML Simulation File", "*.dwxml"),
-            New SharedClassesCSharp.FilePicker.FilePickerAllowedType("Interchangeable PFD Simulation File", "*.pfdx"),
-            New SharedClassesCSharp.FilePicker.FilePickerAllowedType("Mobile XML Simulation File", "*.xml")})
+            Dim handler As IVirtualFile = Nothing
+            If shouldOverwriteFile Then
+                handler = form2.Options.VirtualFile
+            Else
+                handler = filePickerForm.ShowSaveDialog(
+                New List(Of SharedClassesCSharp.FilePicker.FilePickerAllowedType) From
+                {New SharedClassesCSharp.FilePicker.FilePickerAllowedType("Compressed XML Simulation File", "*.dwxmz"),
+                New SharedClassesCSharp.FilePicker.FilePickerAllowedType("XML Simulation File", "*.dwxml"),
+                New SharedClassesCSharp.FilePicker.FilePickerAllowedType("Interchangeable PFD Simulation File", "*.pfdx"),
+                New SharedClassesCSharp.FilePicker.FilePickerAllowedType("Mobile XML Simulation File", "*.xml")})
+            End If
 
             If handler IsNot Nothing Then
+
                 If SavingSimulation IsNot Nothing Then
                     If SavingSimulation.Invoke(form2) = False Then Exit Sub
                 End If
@@ -4264,6 +4321,9 @@ Label_00CC:
                     SaveJSON(handler, Me.ActiveMdiChild)
                 Else
                     Me.bgSaveFile.RunWorkerAsync()
+                End If
+                If TypeOf Me.ActiveMdiChild Is FormFlowsheet Then
+                    DirectCast(ActiveMdiChild, FormFlowsheet).FlowsheetOptions.VirtualFile = handler
                 End If
             End If
         Else
@@ -4473,13 +4533,29 @@ Label_00CC:
 
     End Sub
 
-    Public Function SaveFile(ByVal saveasync As Boolean, Optional dashboardpicker As Boolean = False) As String
+    'Make sure that IVirtualFile is not WindowsFile if shouldSaveToDashboard, because Save causes it to save it to file system
+    Function IsCorrectVirtualFile(ByVal shouldSaveToDashboard As Boolean, ByVal file As IVirtualFile) As Boolean
+        If shouldSaveToDashboard = True Then
+            If TypeOf file Is WindowsFile Then
+                Return False
+            End If
+        End If
+        Return True
+    End Function
+
+    Public Function SaveFile(ByVal saveasync As Boolean, Optional saveToDashboard As Boolean = False) As String
 
         If My.Computer.Keyboard.ShiftKeyDown Then saveasync = False
 
-        Dim filename As String
         Dim filePickerForm As IFilePicker = SharedClassesCSharp.FilePicker.FilePickerService.GetInstance().GetFilePicker()
-        dashboardpicker = TypeOf filePickerForm Is S365FilePickerForm
+
+        If saveToDashboard Then
+            filePickerForm = New Simulate365.FormFactories.S365FilePickerForm()
+        End If
+
+        Dim filename As String
+
+        saveToDashboard = saveToDashboard Or TypeOf filePickerForm Is S365FilePickerForm
 
         If Not Me.ActiveMdiChild Is Nothing Then
             If TypeOf Me.ActiveMdiChild Is FormFlowsheet Then
@@ -4490,7 +4566,7 @@ Label_00CC:
                 End If
 
                 ' save window file to existing location
-                If File.Exists(form2.Options.FilePath) And dashboardpicker = False Then
+                If File.Exists(form2.Options.FilePath) And saveToDashboard = False Then
                     Dim handler = New SharedClassesCSharp.FilePicker.Windows.WindowsFile(form2.Options.FilePath)
                     ' If file exists, save to same location
                     'Application.DoEvents()
@@ -4524,13 +4600,14 @@ Label_00CC:
                     Catch ex As Exception
                     End Try
                     Dim handler As IVirtualFile = Nothing
-                    If (form2.Options.VirtualFile IsNot Nothing) Then
+                    If (form2.Options.VirtualFile IsNot Nothing And IsCorrectVirtualFile(saveToDashboard, form2.Options.VirtualFile)) Then
                         handler = form2.Options.VirtualFile
                     Else
                         handler = filePickerForm.ShowSaveDialog(
                                   New List(Of SharedClassesCSharp.FilePicker.FilePickerAllowedType) From
                                     {New SharedClassesCSharp.FilePicker.FilePickerAllowedType("Simulation File", New String() {"*.dwxmz", "*.dwxml", "*.xml", ".pfdx"})
                                   })
+                        form2.Options.VirtualFile = handler
                     End If
                     If handler IsNot Nothing Then
                         SaveBackup(handler)
@@ -4785,10 +4862,8 @@ Label_00CC:
 
         RaiseEvent ToolOpened("View General Settings", New EventArgs())
 
-        If Settings.DpiScale > 1.0 Then
-            Me.SettingsPanel.Width = 500 * Settings.DpiScale
-        End If
-        Me.SettingsPanel.Visible = True
+        SettingsPanel.Width = 500 * Settings.DpiScale
+        SettingsPanel.Visible = True
 
     End Sub
 
@@ -4889,20 +4964,22 @@ Label_00CC:
         If IsPro Then
             Dim fb As New FormBrowser()
             fb.Show()
-            fb.DisplayURL("https://simulate365.com", "Simulate365")
+            fb.DisplayURL("https://simulate365.com", "Simulate 365")
         Else
             Process.Start("https://simulate365.com")
         End If
     End Sub
 
     Private Sub ToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles tsmiFreeProTrial.Click
-        If IsPro Then
-            Dim fb As New FormBrowser()
-            fb.Show()
-            fb.DisplayURL("https://simulate365.com/registration/", "Simulate365 Registration")
+        Dim userService As UserService = UserService.GetInstance()
+        Dim isLoggedIn As Boolean = userService._IsLoggedIn()
+        If isLoggedIn Then
+            ProFeatures.Functions.DisplayTransitionForm(Me.AnalyticsProvider, Nothing, "Access DWSIM Pro Now")
         Else
-            Process.Start("https://simulate365.com/registration/")
+            Dim loginForm = New LoginForm()
+            loginForm.ShowDialog()
         End If
+
     End Sub
 
     Private Sub AbrirDoDashboardToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AbrirDoDashboardToolStripMenuItem.Click
@@ -4925,7 +5002,7 @@ Label_00CC:
         If IsPro Then
             Dim fb As New FormBrowser()
             fb.Show()
-            fb.DisplayURL("https://dashboard.simulate365.com", "Simulate365 Dashboard")
+            fb.DisplayURL("https://dashboard.simulate365.com", "Simulate 365 Dashboard")
         Else
             Process.Start("https://dashboard.simulate365.com")
         End If
@@ -5017,6 +5094,12 @@ Label_00CC:
 
         Dim wform As New UI.Desktop.Editors.CompoundCreatorWizard(Nothing)
         wform.SetupAndDisplayPage(1)
+
+    End Sub
+
+    Private Sub ToolStripDropDownButton1_Click_2(sender As Object, e As EventArgs) Handles ToolStripDropDownButton1.Click
+
+        Process.Start("https://www.patreon.com/dwsim/shop")
 
     End Sub
 

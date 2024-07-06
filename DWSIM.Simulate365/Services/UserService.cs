@@ -208,19 +208,30 @@ namespace DWSIM.Simulate365.Services
             ShowLoginForm?.Invoke(this, new EventArgs());
         }
 
-        public async Task RefreshToken()
+        public async Task<bool> RefreshToken()
         {
-            if (!_userProviders.ContainsKey(_accessTokenType))
-                throw new Exception($"User provider not registered for type {_accessTokenType}.");
+            try
+            {
+                if (!_userProviders.ContainsKey(_accessTokenType))
+                    throw new Exception($"User provider not registered for type {_accessTokenType}.");
 
-            // Deserialize
-            var userProvider = _userProviders[_accessTokenType];
+                // Deserialize
+                var userProvider = _userProviders[_accessTokenType];
 
-            var tokenResp = await userProvider.RefreshTokenAsync(_refreshToken);
-            if (tokenResp == null)
-                return;
+                var tokenResp = await userProvider.RefreshTokenAsync(_refreshToken);
+                if (tokenResp == null)
+                    return false;
 
-            SetAccessToken(tokenResp.AccessTokenType, tokenResp.AccessToken, tokenResp.RefreshToken, DateTime.Now.AddSeconds(tokenResp.ExpiresIn - 30));
+                SetAccessToken(tokenResp.AccessTokenType, tokenResp.AccessToken, tokenResp.RefreshToken, DateTime.Now.AddSeconds(tokenResp.ExpiresIn - 30));
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+
+               return false;
+            }
+            
         }
 
     }

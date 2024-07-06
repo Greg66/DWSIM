@@ -123,7 +123,7 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="Label1.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 9.75pt, style=Bold</value>
+    <value>Microsoft Sans Serif, 12pt, style=Bold</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="Label1.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
@@ -133,7 +133,7 @@
     <value>98, 8</value>
   </data>
   <data name="Label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>489, 16</value>
+    <value>571, 20</value>
   </data>
   <data name="Label1.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -1639,29 +1639,31 @@ Public License instead of this License.  But first, please read
   <data name="&gt;&gt;FaTabStripItem3.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
-  <data name="TextBox2.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+  <data name="tbAcknowledgements.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
   </data>
-  <data name="TextBox2.Font" type="System.Drawing.Font, System.Drawing">
+  <data name="tbAcknowledgements.Font" type="System.Drawing.Font, System.Drawing">
     <value>Consolas, 9pt</value>
   </data>
-  <data name="TextBox2.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="tbAcknowledgements.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
   </data>
-  <data name="TextBox2.Multiline" type="System.Boolean, mscorlib">
+  <data name="tbAcknowledgements.Multiline" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="TextBox2.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
+  <data name="tbAcknowledgements.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
     <value>Vertical</value>
   </data>
-  <data name="TextBox2.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="tbAcknowledgements.Size" type="System.Drawing.Size, System.Drawing">
     <value>795, 459</value>
   </data>
-  <data name="TextBox2.TabIndex" type="System.Int32, mscorlib">
+  <data name="tbAcknowledgements.TabIndex" type="System.Int32, mscorlib">
     <value>14</value>
   </data>
-  <data name="TextBox2.Text" xml:space="preserve">
+  <data name="tbAcknowledgements.Text" xml:space="preserve">
     <value>Some icons created by Freepik -  https://www.flaticon.com/authors/freepik, https://www.flaticon.com/free-icons.
+
+Some images from Freepik - https://br.freepik.com/fotos-gratis/pesquisadores-em-busca-de-fontes-alternativas-de-energia_23668250.htm
 
 Reaktoro Gibbs Reactor icons created by Nhor Phai - Flaticon (https://www.flaticon.com/free-icons/reactor).
 
@@ -1672,20 +1674,18 @@ Journal of Open Source Software, 3(27), 676, https://doi.org/10.21105/joss.00676
 
 Reaktoro Gibbs Reactor is based on Reaktoro v1. https://reaktoro.org/v1/ © Copyright 2021, Allan Leal and Reaktoro contributors
  
-Weather conditions are provided by Azure Maps Weather Service.
-
-</value>
+Weather conditions are provided by Azure Maps Weather Service.</value>
   </data>
-  <data name="&gt;&gt;TextBox2.Name" xml:space="preserve">
-    <value>TextBox2</value>
+  <data name="&gt;&gt;tbAcknowledgements.Name" xml:space="preserve">
+    <value>tbAcknowledgements</value>
   </data>
-  <data name="&gt;&gt;TextBox2.Type" xml:space="preserve">
+  <data name="&gt;&gt;tbAcknowledgements.Type" xml:space="preserve">
     <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;TextBox2.Parent" xml:space="preserve">
+  <data name="&gt;&gt;tbAcknowledgements.Parent" xml:space="preserve">
     <value>FaTabStripItem7</value>
   </data>
-  <data name="&gt;&gt;TextBox2.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;tbAcknowledgements.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <data name="FaTabStripItem7.Size" type="System.Drawing.Size, System.Drawing">

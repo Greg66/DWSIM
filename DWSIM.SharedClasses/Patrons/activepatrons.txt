@@ -6,40 +6,46 @@
 🥈 Jane Ferris
 🌟 Adam Kovalovszki
 🌟 Alberto Marzi
-🌟 Alfred Gongaware
-🌟 Alberto Baumeister
 🌟 Bernhard Seyfang
 🌟 Bryan Evans
-🌟 Cameron Paul Ward
+🌟 Cameron Ward
 🌟 Casey Houston
-🌟 Chris Hart
 🌟 Christian Hornhofer
-🌟 Dave Carpency
 🌟 Domenico Marchese
-🌟 Edson Zaparoli
 🌟 Fernando Lino
+🌟 Gawayne Escalona
 🌟 George Brindle
 🌟 Gerry Agnew
+🌟 Gregory Marks
 🌟 Helena Thogersen
 🌟 Henk Fikkert
 🌟 H-Tec Systems GmbH
+🌟 Izabela Alves
 🌟 Javier Fontalvo
 🌟 Jens Greimeier
-🌟 Jonathan Reichelt
 🌟 José Marques
+🌟 Justin Parrot
 🌟 Leonard Seed
-🌟 Lorenzo Giuseppe Montani
+🌟 Lorenzo Montani
+🌟 Magnus Carlsen
+🌟 Marcos Guimarães
 🌟 Martin Heiser
 🌟 Michael Papantoniou
 🌟 Michael Saucier
+🌟 Nicholas Canabarro
+🌟 Nicolas Spogis
+🌟 Pablo Jimenez
 🌟 Pawel Zjezdzalka
 🌟 Richard Huntington
 🌟 Roland Berger
 🌟 Ronald J. Dunbar
 🌟 Ronald Visness
+🌟 Rubens Oliveira
+🌟 Ryan Smith
 🌟 Simone Vidille
 🌟 Tech-Rudra
 Alberto Baumeister
+Alex Fells
 Alex Michinel
 Alex Platon
 Andras Nady
@@ -48,44 +54,52 @@ Andrew Dickson
 Antony Loane
 Bednarz Marc
 Bruce Bishkin
-Carlos Eduardo Pantoja
+Carlos Pantoja
 Christian Jordan
 Christian Pedersen
 CollectiveObjective
-Daniel Bajolet
 David Miller
 David Whitlock
 Denislav Zdravkov
-Dorivaldo Junior
 Doug Palfreyman
 Eugenio León
+Fabiano Scheufele
 Fernando Almeida
 Frans Le Roux
+Gabriel Álvares
+Gabriel Carvalho
 Guenther Holzer
+Harry Levinson
 Hep Ingham
 Hurudza
+Jay Hunter
+John Eamon
 John Kossik
-Joseph Attia
 Kenneth Troldal
+Leandro Favaretto
 Les Waymont
 Lewis Estall
-Luca Finardi
+Maša Novaković
 Marcos Silva
+Mario Farley
 Masahiro Sakai
 Mohan Vaze
-Nicolas Spogis
-Pablo Jimenez
-Paulo Bernardo
-Pedro Sabóia
+Nathan Schuh
+Peter Nordquist
 Petroconsulting LLC
 Protherm Systems
 Rainer Scheuring
-Renato Corrêa Arrieche
+Rashad Ahmadov
+Renato Arrieche
+Robert Gerard
+Robert Gulotty
 Rupert Easter
 Ryszard Sadowski
-Satinder Singh Virdi
-Shankar Ananth
+Satinder Virdi
 Shubham Wankhede
+SP&&POS Engenharia
 Tetsuo Fuchino
+Thomas Baur
 Tibor Lányi
+Vladislav Živanović
 Will Flores

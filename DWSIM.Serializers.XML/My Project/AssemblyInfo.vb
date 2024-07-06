@@ -12,7 +12,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("DWSIM Simulator Custom XML Serializer Library")>
 <Assembly: AssemblyCompany("")> 
 <Assembly: AssemblyProduct("CustomXMLSerializer")>
-<Assembly: AssemblyCopyright("Copyright © 2012-2019 Daniel Medeiros")>
+<Assembly: AssemblyCopyright("Copyright © 2012-2019 Daniel Wagner")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>
@@ -31,4 +31,4 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("8.7.0.0")>
+<Assembly: AssemblyVersion("8.7.1.0")>

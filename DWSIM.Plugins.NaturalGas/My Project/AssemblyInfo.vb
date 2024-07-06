@@ -10,9 +10,9 @@ Imports System.Runtime.InteropServices
 
 <Assembly: AssemblyTitle("NaturalGas")> 
 <Assembly: AssemblyDescription("Natural Gas Properties Plugin for DWSIM")> 
-<Assembly: AssemblyCompany("Daniel Medeiros")> 
+<Assembly: AssemblyCompany("Daniel Wagner")> 
 <Assembly: AssemblyProduct("NaturalGas")>
-<Assembly: AssemblyCopyright("Copyright © 2010-2024 Daniel Medeiros")>
+<Assembly: AssemblyCopyright("Copyright © 2010-2024 Daniel Wagner")>
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)> 
@@ -31,4 +31,4 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("8.7.0.0")>
+<Assembly: AssemblyVersion("8.7.1.0")>
