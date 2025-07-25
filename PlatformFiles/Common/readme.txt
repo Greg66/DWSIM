@@ -1,7 +1,7 @@
 ﻿==================================================
 DWSIM - Open Source Process Simulator
-Version 8.7.1
-Copyright (c) 2017-2024 Daniel Wagner and contributors
+Version 9.0.3
+Copyright (c) 2017-2025 Daniel Wagner and contributors
 Copyright (c) 2008-2016 Daniel Wagner, Gregor Reichert, Gustavo Leon
 ==================================================
 
@@ -27,14 +27,14 @@ SYSTEM REQUIREMENTS
 
 OS:             
 
-Windows: 32/64-bit 7/8/10
-Linux: 32/64-bit Wine-supported (https://www.winehq.org)
+Windows: 64-bit 7/8/10
+Linux: 64-bit Debian distro or equivalent
 macOS: 10.7 (OS X Lion) or newer
 
 Software:
 
 Microsoft .NET Framework 4.6.2 or newer (Windows) 
-Wine 3.0.3 or newer (Linux)
+Microsoft .NET 8 and IPOPT (Linux)
 
 CPU:			
 
@@ -61,6 +61,161 @@ VERSION HISTORY / CHANGELOG
 ==================================================
 
 The full changelog including souce code changes can be viewed at https://github.com/DanWBR/dwsim/commits/windows
+
+Version 9.0.3
+
+- Added Shortcut column Height and Diameter calculation
+- Distribute waste heat proportionally on water electrolyzer outlet streams (#838)
+- Added missing Object Layout undo/redo
+- Exposed outlet temperature on PFR (#806)
+- Updated translations
+- Fixed CAPE-OPEN UO crash on Linux/macOS (#837)
+- Fixed issue #833 (wrong unit for condenser spec)
+- Fixed issue #834 (PVF Flash spec issue/bug)
+- Fixed issue #831 (Dynamic control Tank Level missing liquid level property)
+- Fixed Dynamic Integrator input issue (Classic UI)
+- Fixed PFR profile exporting
+- Fixed issue with mass balance in compound separator
+- Fixed single-phase Flash
+- Fixed image export scaling (CPUI)
+- Fixed issue with Sensitivity Analysis utility (Classic UI)
+- Fixed Flowsheet UO not stopping solver on errors
+
+Version 9.0.2
+
+- New: User-defined Systems of Units can be now renamed in Simulation Settings panel (Classic UI)
+- New: Implemented new calculation modes for vessel unit op
+- New: Expose PFR integration step
+- New: Display NPSH Available for Pumps
+- New: Material Stream list order by (Classic UI)
+- New: Five-point stencil numerical derivatives for NL PV flash
+- Changed: Property table UI redesign  (Cross-Platform UI) #752
+- Changed: Remove backup files on user closing recovery window
+- Changed: Redesigned layout of Kin/HetCat reaction editors (Classic UI)
+- Changed: Flowsheet busy message; added TR as power unit
+- Bugfix: Classic UI: Material Stream Component Results Transposed #761
+- Bugfix: Need convert to SI for TC, PC and fix overriding MW calculation in Form FormBulkAddPseudos #764
+- Bugfix: Cross Plateform UI Crash on no schedule launch #779
+- Bugfix: Hot Fluid Flow Conductance in Heat Exchanger Dynamic Mode Properties #772
+- Bugfix: Conversion reactor - output energy stream is editable #783
+- Bugfix: Fixed issue with Spreadsheet solving
+
+Version 9.0.1
+
+- Bugfix: Crash then NRTL added as second properties package #751
+- Bugfix: New floating windows placement on multi-monitor setup #747
+- Bugfix: No conversion table after running the simulation  #746
+- Bugfix: Crash the application when you click Help #745
+- Bugfix: App crash right click on rectangle #742
+- Bugfix: Can't select and open last opened file from recent list #741
+- Bugfix: No cyrrilic fonts available #740
+- Bugfix: Crash on Click Object Pallette Apple Silicon #739
+- Bugfix: WPF rendering should be disabled in linux builds #737
+- Bugfix: Cannot select an objects on flowchart #736
+
+Version 9.0.0
+
+- New: Cross-Platform UI overhaul + GTK 3 and .NET 8 support for Linux
+- New: Pipe Segment model updates: added wall and insulation temperatures, absorbed radiation
+- New: Import json compounds from File load items
+- New: Implemented fixed chart limits for dynamic integrators (#697)
+- New: Added CPUI editor for PID Controller #715
+- New: Added CPUI editor for Input objects #715
+- Changed: Optimized memory consumption
+- Changed: Reworked Rigorous Column initial estimates editor controls (Classic UI)
+- Changed: Recycle Op now defaults to legacy mode solving
+- Bugfix: Nested Loops flash
+- Bugfix: Rigorous Column stage naming
+- Bugfix: Solver busy message
+- Bugfix: Zedgraph file saving
+- Bugfix: Thermal conductivity does not accept copy paste from excel #695
+- Bugfix: Fixed issue with CO2 equilibrium calculations
+- Bugfix: Fixed chemeo error message
+- Bugfix: Mass Flow Rates Mismatch in PFR -Inlet and Outlet Mass Flow Rates are Different #726
+- Bugfix: Copying Element in the flowsheet #698
+- Bugfix: Fitting Loss for Elbows/Bends #708
+- Bugfix: Carbon Dioxide Bug and JT data #717
+- Bugfix: Compound separator produces negative molar flow #713
+- Bugfix: Excel Add-In: Can't select a Flash Algorithm / Can't configure flash algorithms settings #700
+
+Version 8.9.0
+
+- Cross-Platform UI overhaul + added GTK 3 and .NET 8 support for Linux
+- Fixed a bug in Nested Loops flash
+- Recycle Op now defaults to legacy mode solving
+- Fixed solver busy message
+- Reworked Rigorous Column initial estimates editor controls (Classic UI)
+- Fixed zedgraph file saving
+- Fixed rigorous column stage naming
+
+Version 8.8.3
+
+- Added spreadsheet object to Automation3 API
+- Added MJ/h to heat flow units (#675)
+- Updated IronPython version to v3.4.1
+- Fixed Cantera Interop sample
+- Fixed Biodiesel Combustion (Cantera) sample
+- Fixed issue with Sensitivity Analysis utility (Classic UI) (#684)
+- Fixed issue with Optimization utility (Classic UI) (#688)
+- Fixed enthalpy and entropy calculation for Seawater Property Package (#682)
+- Fixed Pipe Segment external diameter calculation
+- Fixed issue with loading reaction sets for internal flowsheets in Flowsheet UO
+- Fixed issue with CAPE-OPEN Property Package equilibrium calculations
+- Missing compound parameter warnings are now optional
+
+Version 8.8.2
+
+- Optimized memory consumption and CPU usage
+- Added mass balance residual and total energy balance to flowsheet results
+- Added phase volumetric fractions
+- Set default System of Units  (Classic UI) 
+- Fixed issues with Sensitivity Analysis (Classic UI)
+- Fixed ironpython script debugging
+- Fixed/disabled display of dynamic properties in steady state
+- Tentative fix for Excel.exe not closing in Spreadsheet UO after calculation
+- Fixed memory leaks
+- Fixed issue with Heat Exchanger UO
+- Other fixes and enhancements
+
+Version 8.8.1
+
+- Control Panel for Controller Logical Block in Cross-Platform UI (CPUI)
+- Added an option to use legacy convergence mode for Recycle blocks (#667)
+- Improved CPUI initialization and loading times
+- Fixed Dynamics Integrator not working in CPUI
+- Fixed Reaktoro Property Package
+- Fixed issue with reactor models
+- Fixed Heat of Combustion plugin
+- Fixed solid density calculation
+- Fixed issue #669 (single compound partial sublimation when Tfus > Tsat)
+- Fixed issue with rigorous column
+- Fixed issue #656 (Crashing when using Simulation setup wizard)
+- Fixed issue #657 (Faulty unit for Cp in compound creator wizard)
+- Fixed issue #664: memory leak in automation mode
+- Fixed issue with property package missing BIPs after calculating a binary envelope (Classic UI)
+
+Version 8.8.0
+
+- New search functionality to Property Table editors (Classic UI)
+- New Object List Panel (classic ui)
+- New Step feature in Dynamic Mode (Classic UI)
+- New Recycle Smoothing Factor to improve convergence
+- Implemented item ordering for Flowsheet Property Tables
+- New Load Compound JSON files on startup (Classic UI)
+- Implemented #630: User selected solver for PFR reactor (DotNumerics)
+- Implemented #631: Compound Properties: Add 'Export to JSON' button
+- Improved Azeotropic temperature calculation
+- Workaround for invalid SSL Certificate at cheric.org
+- Fixed Surface Tension calculation
+- Fixed issue with Compound Creator Wizard
+- Fixed issues with Data regression tool
+- Added tabular t-dep data to compound constant properties
+- Fixed issue with PFD designer
+- Fixed issue #628: Native save dialog for Compound creator
+- Fixed issue #649: Water electrolyzer results not updating
+- Fixed issue #652: Compound separator generates mass
+- Fixed issue #628: Utilities running
+- Fixed issue #627: Delete or update user compound
 
 Version 8.7.1
 

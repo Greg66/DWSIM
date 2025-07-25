@@ -87,6 +87,12 @@ Namespace Streams
 
         Public Property LastSolutionInputData As MaterialStreamInputData
 
+        Public Shared PostCreationAction1 As Action(Of MaterialStream)
+
+        Public Shared PostCreationAction2 As Action(Of MaterialStream)
+
+        Public Shared PostCreationAction3 As Action(Of MaterialStream)
+
 #Region "    XML serialization"
 
         Public Overrides Function LoadData(data As System.Collections.Generic.List(Of System.Xml.Linq.XElement)) As Boolean
@@ -278,20 +284,24 @@ Namespace Streams
                 If _ppid Is Nothing Then _ppid = ""
                 If _pp IsNot Nothing And _ppwasset Then
                     Return _pp
-                ElseIf _pp IsNot Nothing AndAlso FlowSheet.PropertyPackages.ContainsKey(_pp.UniqueID) Then
-                    Return FlowSheet.PropertyPackages(_pp.UniqueID)
-                Else
-                    If FlowSheet.PropertyPackages.ContainsKey(_ppid) Then
-                        Return FlowSheet.PropertyPackages(_ppid)
+                ElseIf FlowSheet IsNot Nothing Then
+                    If _pp IsNot Nothing AndAlso FlowSheet.PropertyPackages.ContainsKey(_pp.UniqueID) Then
+                        Return FlowSheet.PropertyPackages(_pp.UniqueID)
                     Else
-                        Dim firstpp = FlowSheet.PropertyPackages.Values.FirstOrDefault()
-                        If firstpp Is Nothing Then
-                            Return Nothing
+                        If FlowSheet.PropertyPackages.ContainsKey(_ppid) Then
+                            Return FlowSheet.PropertyPackages(_ppid)
                         Else
-                            _ppid = firstpp.UniqueID
-                            Return firstpp
+                            Dim firstpp = FlowSheet.PropertyPackages.Values.FirstOrDefault()
+                            If firstpp Is Nothing Then
+                                Return Nothing
+                            Else
+                                _ppid = firstpp.UniqueID
+                                Return firstpp
+                            End If
                         End If
                     End If
+                Else
+                    Return Nothing
                 End If
             End Get
             Set(ByVal value As PropertyPackage)
@@ -333,6 +343,10 @@ Namespace Streams
             Me.Phases(0).Properties.pressure = 101325
             Me.Phases(0).Properties.massflow = 1
 
+            PostCreationAction1?.Invoke(Me)
+            PostCreationAction2?.Invoke(Me)
+            PostCreationAction3?.Invoke(Me)
+
         End Sub
         Function EmptyPropertyPackage() As Boolean
             Return String.IsNullOrEmpty(Me._ppid) And _pp Is Nothing
@@ -365,6 +379,10 @@ Namespace Streams
             Me.Phases(0).Properties.pressure = 101325
             Me.Phases(0).Properties.massflow = 1
 
+            PostCreationAction1?.Invoke(Me)
+            PostCreationAction2?.Invoke(Me)
+            PostCreationAction3?.Invoke(Me)
+
         End Sub
 
         Public Sub New(ByVal name As String, ByVal description As String)
@@ -387,6 +405,10 @@ Namespace Streams
             Me.Phases(0).Properties.temperature = 298.15
             Me.Phases(0).Properties.pressure = 101325
             Me.Phases(0).Properties.massflow = 1
+
+            PostCreationAction1?.Invoke(Me)
+            PostCreationAction2?.Invoke(Me)
+            PostCreationAction3?.Invoke(Me)
 
         End Sub
 
@@ -456,6 +478,7 @@ Namespace Streams
         End Sub
 
         Public Overrides Sub Calculate(Optional ByVal args As Object = Nothing)
+            UpdateStreamType()
             If FlowSheet IsNot Nothing Then
                 If AtEquilibrium And Not FlowSheet.DynamicMode And
                     FlowSheet.FlowsheetOptions.SkipEquilibriumCalculationOnDefinedStreams And
@@ -885,6 +908,25 @@ Namespace Streams
                     Dim hf = GetMassFlow() * PropertyPackage.RET_VMAS(PropertyPackages.Phase.Mixture).MultiplyY(PropertyPackage.RET_VDHF).SumY()
                     TotalEnergyFlow = hf + GetMassEnthalpy() * GetMassFlow() 'kW
 
+                    'volumetric fractions
+
+                    Dim vv = Phases(2).Properties.massflow.GetValueOrDefault() / Phases(2).Properties.density.GetValueOrDefault()
+                    Dim vl1 = Phases(3).Properties.massflow.GetValueOrDefault() / Phases(3).Properties.density.GetValueOrDefault()
+                    Dim vl2 = Phases(4).Properties.massflow.GetValueOrDefault() / Phases(4).Properties.density.GetValueOrDefault()
+                    Dim vs = Phases(7).Properties.massflow.GetValueOrDefault() / Phases(7).Properties.density.GetValueOrDefault()
+
+                    If Double.IsInfinity(vv) Or Double.IsNaN(vv) Then vv = 0.0
+                    If Double.IsInfinity(vl1) Or Double.IsNaN(vl1) Then vl1 = 0.0
+                    If Double.IsInfinity(vl2) Or Double.IsNaN(vl2) Then vl2 = 0.0
+                    If Double.IsInfinity(vs) Or Double.IsNaN(vs) Then vs = 0.0
+
+                    Phases(2).Properties.volumetricFraction = vv / (vv + vl1 + vl2 + vs)
+                    Phases(3).Properties.volumetricFraction = vl1 / (vv + vl1 + vl2 + vs)
+                    Phases(4).Properties.volumetricFraction = vl2 / (vv + vl1 + vl2 + vs)
+                    Phases(7).Properties.volumetricFraction = vs / (vv + vl1 + vl2 + vs)
+
+                    Phases(1).Properties.volumetricFraction = (vl1 + vl2) / (vv + vl1 + vl2 + vs)
+
                     If DebugMode Then AppendDebugLine(String.Format("Material Stream calculated successfully."))
 
                 End If
@@ -1275,6 +1317,14 @@ Namespace Streams
                 ElseIf prop.Equals("H2S Partial Pressure") Then
 
                     Return Phases(2).Properties.H2Spartialpressure.GetValueOrDefault().ConvertFromSI(su.pressure)
+
+                ElseIf prop.Equals("Mean Particle Size (Solid)") Then
+
+                    Return Phases(7).Properties.particleSize_Mean.GetValueOrDefault().ConvertFromSI(su.diameter)
+
+                ElseIf prop.Equals("Particle Size Standard Deviation (Solid)") Then
+
+                    Return Phases(7).Properties.particleSize_StdDev.GetValueOrDefault().ConvertFromSI(su.diameter)
 
                 ElseIf prop.StartsWith("Activity Coefficient") Then
 
@@ -2245,6 +2295,16 @@ Namespace Streams
                             value = cv.ConvertFromSI(su.enthalpy, Phases(1).Properties.idealGasHeatCapacityRatio.GetValueOrDefault)
                         Case 259
                             value = cv.ConvertFromSI(su.enthalpy, Phases(7).Properties.idealGasHeatCapacityRatio.GetValueOrDefault)
+                        Case 260
+                            value = Phases(2).Properties.volumetricFraction.GetValueOrDefault
+                        Case 261
+                            value = Phases(1).Properties.volumetricFraction.GetValueOrDefault
+                        Case 262
+                            value = Phases(3).Properties.volumetricFraction.GetValueOrDefault
+                        Case 263
+                            value = Phases(4).Properties.volumetricFraction.GetValueOrDefault
+                        Case 264
+                            value = Phases(7).Properties.volumetricFraction.GetValueOrDefault
                     End Select
 
                     Return value
@@ -2365,6 +2425,9 @@ Namespace Streams
                     proplist.Add("CO2 Partial Pressure")
                     proplist.Add("H2S Loading")
                     proplist.Add("H2S Partial Pressure")
+                    For i = 260 To 264
+                        proplist.Add("PROP_MS_" + CStr(i))
+                    Next
                 Case PropertyType.WR
                     For i = 0 To 4
                         proplist.Add("PROP_MS_" + CStr(i))
@@ -2458,6 +2521,11 @@ Namespace Streams
                     proplist.Add("CO2 Partial Pressure")
                     proplist.Add("H2S Loading")
                     proplist.Add("H2S Partial Pressure")
+                    proplist.Add("Mean Particle Size (Solid)")
+                    proplist.Add("Particle Size Standard Deviation (Solid)")
+                    For i = 260 To 264
+                        proplist.Add("PROP_MS_" + CStr(i))
+                    Next
             End Select
 
             'proplist.AddRange(MyBase.GetProperties(proptype))
@@ -2624,6 +2692,14 @@ Namespace Streams
                 ElseIf prop.Equals("H2S Partial Pressure") Then
 
                     Return su.pressure
+
+                ElseIf prop.Equals("Mean Particle Size (Solid)") Then
+
+                    Return su.diameter
+
+                ElseIf prop.Equals("Particle Size Standard Deviation (Solid)") Then
+
+                    Return su.diameter
 
                 ElseIf prop.StartsWith("Activity Coefficient") Then
 
@@ -6499,6 +6575,9 @@ Namespace Streams
             ms.DefinedFlow = DefinedFlow
             ms.FloatingTableAmountBasis = FloatingTableAmountBasis
 
+            ms.AdditionalSolidPhaseProperties = AdditionalSolidPhaseProperties?.Clone()
+            ms.SolidParticleData = SolidParticleData?.Clone()
+
             Return ms
 
         End Function
@@ -6546,6 +6625,12 @@ Namespace Streams
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.material_stream
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.Thermodynamics.material_stream.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String
@@ -6651,6 +6736,8 @@ Namespace Streams
             ms.Assign(Me)
             ms.AssignProps(Me)
             ms.AtEquilibrium = False
+            ms.AdditionalSolidPhaseProperties = AdditionalSolidPhaseProperties?.Clone()
+            ms.SolidParticleData = SolidParticleData?.Clone()
             Return ms
         End Function
 
@@ -6673,6 +6760,38 @@ Namespace Streams
                 Return Phases.Values.ToArray
             End Get
         End Property
+
+        Public Property SolidParticleData As ISolidParticleData Implements IMaterialStream.SolidParticleData
+
+        Public Property AdditionalSolidPhaseProperties As IAdditionalSolidPhaseProperties Implements IMaterialStream.AdditionalSolidPhaseProperties
+
+        Public Property StreamType As StreamType = StreamType.Undefined Implements IMaterialStream.StreamType
+
+        Public Sub UpdateStreamType() Implements IMaterialStream.UpdateStreamType
+
+            If GraphicObject IsNot Nothing Then
+
+                With GraphicObject
+
+                    If .InputConnectors(0).IsAttached And Not .OutputConnectors(0).IsAttached Then
+                        StreamType = StreamType.Product
+                    ElseIf Not .InputConnectors(0).IsAttached And .OutputConnectors(0).IsAttached Then
+                        StreamType = StreamType.Feed
+                    ElseIf .InputConnectors(0).IsAttached And .OutputConnectors(0).IsAttached Then
+                        If .InputConnectors(0).AttachedConnector.AttachedFrom.ObjectType = ObjectType.OT_Recycle Then
+                            StreamType = StreamType.Recycle_Out
+                        ElseIf .OutputConnectors(0).AttachedConnector.AttachedTo.ObjectType = ObjectType.OT_Recycle Then
+                            StreamType = StreamType.Recycle_In
+                        Else
+                            StreamType = StreamType.Inner
+                        End If
+                    End If
+
+                End With
+
+            End If
+
+        End Sub
 
         Public Overrides Function GetReport(su As IUnitsOfMeasure, ci As Globalization.CultureInfo, numberformat As String) As String
 
@@ -6777,6 +6896,8 @@ Namespace Streams
                 results.DataUnits.Add("[Vapor Phase] Phase Mole Fraction", "")
                 results.Data.Add("[Vapor Phase] Phase Mass Fraction", GetSinglePhaseProp2("phasefraction", "mass", "Vapor"))
                 results.DataUnits.Add("[Vapor Phase] Phase Mass Fraction", "")
+                results.Data.Add("[Vapor Phase] Phase Volumetric Fraction", New List(Of Double) From {Phases(2).Properties.volumetricFraction.GetValueOrDefault()})
+                results.DataUnits.Add("[Vapor Phase] Phase Volumetric Fraction", "")
 
                 vz = GetSinglePhaseProp2("fraction", "mole", "Vapor").ToArray
                 wz = GetSinglePhaseProp2("fraction", "mass", "Vapor").ToArray
@@ -6831,6 +6952,8 @@ Namespace Streams
                 results.DataUnits.Add("[Liquid Phase] Phase Mole Fraction", "")
                 results.Data.Add("[Liquid Phase] Phase Mass Fraction", GetSinglePhaseProp2("phasefraction", "mass", "Liquid"))
                 results.DataUnits.Add("[Liquid Phase] Phase Mass Fraction", "")
+                results.Data.Add("[Liquid Phase] Phase Volumetric Fraction", New List(Of Double) From {Phases(3).Properties.volumetricFraction.GetValueOrDefault()})
+                results.DataUnits.Add("[Liquid Phase] Phase Volumetric Fraction", "")
 
                 vz = GetSinglePhaseProp2("fraction", "mole", "Liquid").ToArray
                 wz = GetSinglePhaseProp2("fraction", "mass", "Liquid").ToArray
@@ -6886,6 +7009,8 @@ Namespace Streams
                 results.DataUnits.Add("[Liquid Phase 2] Phase Mole Fraction", "")
                 results.Data.Add("[Liquid Phase 2] Phase Mass Fraction", GetSinglePhaseProp2("phasefraction", "mass", "Liquid2"))
                 results.DataUnits.Add("[Liquid Phase 2] Phase Mass Fraction", "")
+                results.Data.Add("[Liquid Phase 2] Phase Volumetric Fraction", New List(Of Double) From {Phases(4).Properties.volumetricFraction.GetValueOrDefault()})
+                results.DataUnits.Add("[Liquid Phase 2] Phase Volumetric Fraction", "")
 
                 vz = GetSinglePhaseProp2("fraction", "mole", "Liquid2").ToArray
                 wz = GetSinglePhaseProp2("fraction", "mass", "Liquid2").ToArray
@@ -6940,6 +7065,8 @@ Namespace Streams
                 results.DataUnits.Add("[Solid Phase] Phase Mole Fraction", "")
                 results.Data.Add("[Solid Phase] Phase Mass Fraction", GetSinglePhaseProp2("phasefraction", "mass", "Solid"))
                 results.DataUnits.Add("[Solid Phase] Phase Mass Fraction", "")
+                results.Data.Add("[Solid Phase] Phase Volumetric Fraction", New List(Of Double) From {Phases(7).Properties.volumetricFraction.GetValueOrDefault()})
+                results.DataUnits.Add("[Solid Phase] Phase Volumetric Fraction", "")
 
                 vz = GetSinglePhaseProp2("fraction", "mole", "Solid").ToArray
                 wz = GetSinglePhaseProp2("fraction", "mass", "Solid").ToArray
@@ -7062,12 +7189,22 @@ Namespace Streams
 
             list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.SingleColumn, New String() {"Property Package: " & Me.PropertyPackage.ComponentName}))
 
-            Dim ny, nl1, nl2, ns, vz(), wz(), vnz(), wnz() As Double, i As Integer
+            Dim ny, nl1, nl2, ns, wy, wl1, wl2, ws, vy, vl1, vl2, vs, vz(), wz(), vnz(), wnz() As Double, i As Integer
 
             ny = Phases(2).Properties.molarfraction.GetValueOrDefault
             nl1 = Phases(3).Properties.molarfraction.GetValueOrDefault
             nl2 = Phases(4).Properties.molarfraction.GetValueOrDefault
             ns = Phases(7).Properties.molarfraction.GetValueOrDefault
+
+            wy = Phases(2).Properties.massfraction.GetValueOrDefault
+            wl1 = Phases(3).Properties.massfraction.GetValueOrDefault
+            wl2 = Phases(4).Properties.massfraction.GetValueOrDefault
+            ws = Phases(7).Properties.massfraction.GetValueOrDefault
+
+            vy = Phases(2).Properties.volumetricFraction.GetValueOrDefault
+            vl1 = Phases(3).Properties.volumetricFraction.GetValueOrDefault
+            vl2 = Phases(4).Properties.volumetricFraction.GetValueOrDefault
+            vs = Phases(7).Properties.volumetricFraction.GetValueOrDefault
 
             list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.Label, New String() {"Main Properties"}))
             list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
@@ -7106,6 +7243,40 @@ Namespace Streams
             list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
                      New String() {"Solid",
                      ns.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.Label, New String() {"Phase Mass Fractions"}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Vapor",
+                     wy.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Liquid 1",
+                     wl1.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Liquid 2",
+                     wl2.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Solid",
+                     ws.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.Label, New String() {"Phase Volumetric Fractions"}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Vapor",
+                     vy.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Liquid 1",
+                     vl1.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Liquid 2",
+                     vl2.ToString(nf),
+                     ""}))
+            list.Add(New Tuple(Of ReportItemType, String())(ReportItemType.TripleColumn,
+                     New String() {"Solid",
+                     vs.ToString(nf),
                      ""}))
 
             If (ny > 0.0000000001# And ny < 0.9999999999#) OrElse nl2 > 0.000000001# OrElse ns > 0.0# Then
@@ -8725,6 +8896,13 @@ Namespace Streams
             Return newstream
 
         End Function
+
+        Public Sub AssignSolidData(source As MaterialStream)
+
+            AdditionalSolidPhaseProperties = source.AdditionalSolidPhaseProperties?.Clone()
+            SolidParticleData = source.SolidParticleData?.Clone()
+
+        End Sub
 
         ''' <summary>
         ''' Assign properties from another phase in another stream.

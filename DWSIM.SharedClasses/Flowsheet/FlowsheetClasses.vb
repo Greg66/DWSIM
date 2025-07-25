@@ -31,6 +31,24 @@ Namespace DWSIM.Flowsheet
         Tip
     End Enum
 
+    <System.Serializable()> Public Class NewDataLoadedEventArgs
+
+        Implements INewDataLoadedEventArgs
+
+        Public Property ID As String = Guid.NewGuid().ToString() Implements INewDataLoadedEventArgs.ID
+
+        Public Property Tag As String = "" Implements INewDataLoadedEventArgs.Tag
+
+        Public Property TimeStamp As Date = Date.Now Implements INewDataLoadedEventArgs.TimeStamp
+
+        Public Property DataType As SnapshotType = SnapshotType.All Implements INewDataLoadedEventArgs.DataType
+
+        Public Property SimulationObject As ISimulationObject Implements INewDataLoadedEventArgs.SimulationObject
+
+        Public Property ShouldResetWindows As Boolean = False Implements INewDataLoadedEventArgs.ShouldResetWindows
+
+    End Class
+
     <System.Serializable()> Public Class ObjectCollection
 
         Public GraphicObjectCollection As Dictionary(Of String, IGraphicObject)
@@ -69,10 +87,6 @@ Namespace DWSIM.Flowsheet
 
         Public ReadOnly Property SelectedPropertyPackage() As IPropertyPackage
             Get
-                For Each pp2 As IPropertyPackage In PropertyPackages.Values
-                    Return pp2
-                    Exit For
-                Next
                 Return Nothing
             End Get
         End Property
@@ -293,6 +307,8 @@ Namespace DWSIM.Flowsheet
 
         Public Property FlowsheetTransitionObject As IFlowsheetTransitionRestore = New FlowsheetTransitionRestore() Implements IFlowsheetOptions.FlowsheetTransitionObject
 
+        Public ReadOnly Property UniqueID As String = Guid.NewGuid().ToString() Implements IFlowsheetOptions.UniqueID
+
     End Class
 
     <System.Serializable()> Public Class FlowsheetResults
@@ -306,6 +322,10 @@ Namespace DWSIM.Flowsheet
         Public Property TotalOPEX As Double Implements IFlowsheetResults.TotalOPEX
 
         Public Property Additional As ExpandoObject = New ExpandoObject() Implements IFlowsheetResults.Additional
+
+        Public Property ResidualMassBalance As Double Implements IFlowsheetResults.ResidualMassBalance
+
+        Public Property TotalEnergyBalance As Double Implements IFlowsheetResults.TotalEnergyBalance
 
         Public Function SaveData() As List(Of XElement) Implements ICustomXMLSerialization.SaveData
 

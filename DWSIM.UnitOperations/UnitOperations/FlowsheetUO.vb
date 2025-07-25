@@ -385,6 +385,7 @@ Label_00CC:
 
             data = xdoc.Element("DWSIM_Simulation_Data").Element("ReactionSets").Elements.ToList
 
+            fs.ReactionSets.Clear()
             For Each xel As XElement In data
                 Try
                     Dim obj As New ReactionSet()
@@ -837,13 +838,14 @@ Label_00CC:
 
             'GlobalSettings.Settings.CalculatorBusy = False
 
-            IObj?.SetCurrent()
-            Select Case Settings.SolverMode
-                Case 0, 3, 4
-                   exclist= DWSIM.FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Fsheet, 0, Settings.TaskCancellationTokenSource)
-                Case 1, 2
-                    exclist = DWSIM.FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Fsheet, 1, Settings.TaskCancellationTokenSource)
-            End Select
+            exclist = Fsheet.RequestCalculationAndWait()
+
+            If exclist.Count > 0 Then
+                For Each ex In exclist
+                    FlowSheet.ShowMessage(String.Format("{0}: {1}", GraphicObject?.Tag, ex.Message), IFlowsheet.MessageType.GeneralError)
+                Next
+                Throw New Exception("error calculating internal flowsheet. Please check the previous error messages for more details.")
+            End If
 
             wout = 0.0#
             For Each c In Me.GraphicObject.OutputConnectors
@@ -1188,6 +1190,12 @@ Label_00CC:
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.flowsheet_block
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.flowsheet_block.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

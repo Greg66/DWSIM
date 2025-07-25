@@ -177,7 +177,9 @@ Namespace SystemsOfUnits
 
         Public Property mole As String = "" Implements IUnitsOfMeasure.mole
 
-		Public Property emission_factor As String = "[kg/s]/kW" Implements IUnitsOfMeasure.emission_factor
+        Public Property emission_factor As String = "[kg/s]/kW" Implements IUnitsOfMeasure.emission_factor
+
+        Public Property specific_power As String = "kW/[kg/s]" Implements IUnitsOfMeasure.specific_power
 
         Public Function GetUnitSet(measureID As Enums.UnitOfMeasure) As List(Of String) Implements IUnitsOfMeasure.GetUnitSet
 
@@ -202,9 +204,11 @@ Namespace SystemsOfUnits
                 Case Enums.UnitOfMeasure.volumetricFlow
                     units.AddRange(New String() {"m3/s", "ft3/s", "cm3/s", "m3/h", "m3/d", "bbl/h", "bbl/d", "ft3/min", "ft3/d", "gal[UK]/h", "gal[UK]/min", "gal[UK]/s", "gal[US]/h", "gal[US]/min", "gal[US]/s", "L/h", "L/min", "L/s"})
                 Case Enums.UnitOfMeasure.enthalpy
-                    units.AddRange(New String() {"kJ/kg", "cal/g", "BTU/lbm", "kcal/kg"})
+                    units.AddRange(New String() {"kJ/kg", "cal/s/[g/s]", "BTU/lbm", "kcal/kg"})
                 Case Enums.UnitOfMeasure.entropy
                     units.AddRange(New String() {"kJ/[kg.K]", "cal/[g.C]", "BTU/[lbm.R]"})
+                Case Enums.UnitOfMeasure.specificpower
+                    units.AddRange(New String() {"kW/[kg/s]", "kW/[ton/h]", "cal/g", "BTU/h/[lbm/h]", "kcal/h/[kg/h]"})
                 Case Enums.UnitOfMeasure.molecularWeight
                     units.AddRange(New String() {"kg/kmol", "g/mol", "lbm/lbmol"})
                 Case Enums.UnitOfMeasure.surfaceTension
@@ -226,8 +230,8 @@ Namespace SystemsOfUnits
                 Case Enums.UnitOfMeasure.distance
                     units.AddRange(New String() {"m", "ft", "cm"})
                 Case Enums.UnitOfMeasure.heatflow
-                    units.AddRange(New String() {"kW", "kcal/h", "BTU/h", "BTU/s", "cal/s", "HP", "kJ/h", "kJ/d", "MW", "W",
-                                   "BTU/d", "MMBTU/d", "MMBTU/h", "kcal/s", "kcal/h", "kcal/d"})
+                    units.AddRange(New String() {"kW", "kcal/h", "BTU/h", "BTU/s", "cal/s", "HP", "kJ/h", "MJ/h", "kJ/d", "MW", "W",
+                                   "BTU/d", "MMBTU/d", "MMBTU/h", "kcal/s", "kcal/h", "kcal/d", "TR"})
                 Case Enums.UnitOfMeasure.heat
                     units.AddRange(New String() {"kJ", "J", "kcal", "BTU", "MMBTU", "cal"})
                 Case Enums.UnitOfMeasure.time
@@ -241,7 +245,7 @@ Namespace SystemsOfUnits
                 Case Enums.UnitOfMeasure.head
                     units.AddRange(New String() {"m", "ft", "cm"})
                 Case Enums.UnitOfMeasure.diameter
-                    units.AddRange(New String() {"mm", "in"})
+                    units.AddRange(New String() {"mm", "um", "in"})
                 Case Enums.UnitOfMeasure.force
                     units.AddRange(New String() {"N", "dyn", "kgf", "lbf"})
                 Case Enums.UnitOfMeasure.heat_transf_coeff
@@ -280,9 +284,9 @@ Namespace SystemsOfUnits
                     units.AddRange(New String() {"kmol/[kg.s]", "kmol/[kg.min.]", "kmol/[kg.h]", "mol/[kg.s]", "mol/[kg.min.]", "mol/[kg.h]", "lbmol/[lbm.h]"})
                 Case Enums.UnitOfMeasure.conductance
                     units.AddRange(New String() {"[kg/s]/[Pa^0.5]", "[lbm/h]/[psi^0.5]", "[kg/h]/[atm^0.5]", "[kg/h]/[bar^0.5]", "[kg/h]/[[kgf/cm2]^0.5]"})
-      			Case Enums.UnitOfMeasure.emission_factor
+                Case Enums.UnitOfMeasure.emission_factor
                     units.AddRange(New String() {"[kg/s]/kW", "g/cal", "g/kcal", "lbm/BTU", "lbm/MMBTU", "[kg/h]/MW", "[kg/d]/MW", "[t/s]/kW", "[t/s]/MW", "[t/h]/kW", "[t/h]/MW", "[t/d]/kW", "[t/d]/MW"})
-                End Select
+            End Select
 
             Return units
 
@@ -310,10 +314,12 @@ Namespace SystemsOfUnits
                     Return Enums.UnitOfMeasure.volumetricFlow
                 Case "kJ", "J", "kcal", "BTU", "MMBTU", "cal"
                     Return Enums.UnitOfMeasure.heat
-                Case "kJ/kg", "cal/g", "BTU/lbm", "kcal/kg"
+                Case "kJ/kg", "cal/s/[g/s]", "BTU/lbm", "kcal/kg"
                     Return Enums.UnitOfMeasure.enthalpy
                 Case "kJ/[kg.K]", "cal/[g.C]", "BTU/[lbm.R]"
                     Return Enums.UnitOfMeasure.entropy
+                Case "kW/[kg/s]", "kW/[ton/h]", "cal/g", "BTU/h/[lbm/h]", "kcal/h/[kg/h]"
+                    Return Enums.UnitOfMeasure.specificpower
                 Case "kg/kmol", "g/mol", "lbm/lbmol"
                     Return Enums.UnitOfMeasure.molecularWeight
                 Case "N/m", "dyn/cm", "lbf/in"
@@ -334,8 +340,8 @@ Namespace SystemsOfUnits
                     Return Enums.UnitOfMeasure.deltaT
                 Case "m", "ft", "cm"
                     Return Enums.UnitOfMeasure.distance
-                Case "kW", "kcal/h", "BTU/h", "BTU/s", "cal/s", "HP", "kJ/h", "kJ/d", "MW", "W",
-                     "BTU/d", "MMBTU/d", "MMBTU/h", "kcal/s", "kcal/h", "kcal/d"
+                Case "kW", "kcal/h", "BTU/h", "BTU/s", "cal/s", "HP", "kJ/h", "MJ/h", "kJ/d", "MW", "W",
+                     "BTU/d", "MMBTU/d", "MMBTU/h", "kcal/s", "kcal/h", "kcal/d", "TR"
                     Return Enums.UnitOfMeasure.heatflow
                 Case "ms", "s", "min.", "h"
                     Return Enums.UnitOfMeasure.time
@@ -345,7 +351,7 @@ Namespace SystemsOfUnits
                     Return Enums.UnitOfMeasure.molar_volume
                 Case "m2", "cm2", "ft2"
                     Return Enums.UnitOfMeasure.area
-                Case "mm", "in"
+                Case "mm", "um", "in"
                     Return Enums.UnitOfMeasure.diameter
                 Case "N", "dyn", "kgf", "lbf"
                     Return Enums.UnitOfMeasure.force
@@ -482,6 +488,8 @@ Namespace SystemsOfUnits
                     Return reac_rate_heterog
                 Case Enums.UnitOfMeasure.conductance
                     Return conductance
+                Case Enums.UnitOfMeasure.specificpower
+                    Return specific_power
                 Case Else
                     Return ""
             End Select
@@ -665,6 +673,8 @@ Namespace SystemsOfUnits
                 .heat = "kJ"
                 .mole = "kmol"
                 .emission_factor = "[kg/s]/kW"
+                .specific_power = "kW/[ton/h]"
+
             End With
 
         End Sub
@@ -754,6 +764,7 @@ Namespace SystemsOfUnits
                 .heat = "kJ"
                 .mole = "kmol"
                 .emission_factor = "[kg/s]/kW"
+                .specific_power = "kW/[kg/s]"
             End With
 
         End Sub
@@ -843,6 +854,7 @@ Namespace SystemsOfUnits
                 .heat = "kJ"
                 .mole = "kmol"
                 .emission_factor = "[kg/s]/kW"
+                .specific_power = "kW/[kg/s]"
             End With
 
         End Sub
@@ -932,6 +944,7 @@ Namespace SystemsOfUnits
                 .heat = "kJ"
                 .mole = "kmol"
                 .emission_factor = "[kg/s]/kW"
+                .specific_power = "kW/[kg/s]"
             End With
 
         End Sub
@@ -1021,6 +1034,7 @@ Namespace SystemsOfUnits
                 .heat = "kJ"
                 .mole = "kmol"
                 .emission_factor = "[kg/s]/kW"
+                .specific_power = "kW/[kg/s]"
             End With
 
         End Sub
@@ -1110,6 +1124,7 @@ Namespace SystemsOfUnits
                 .heat = "kJ"
                 .mole = "kmol"
                 .emission_factor = "[kg/s]/kW"
+                .specific_power = "kW/[kg/s]"
             End With
 
         End Sub
@@ -1201,6 +1216,7 @@ Namespace SystemsOfUnits
                 .heat = "BTU"
                 .mole = "lbmol"
                 .emission_factor = "lbm/BTU"
+                .specific_power = "BTU/h/[lbm/h]"
             End With
 
         End Sub
@@ -1290,6 +1306,7 @@ Namespace SystemsOfUnits
                 .heat = "kcal"
                 .mole = "mol"
                 .emission_factor = "g/kcal"
+                .specific_power = "kcal/h/[kg/h]"
             End With
 
         End Sub
@@ -1432,32 +1449,43 @@ Namespace SystemsOfUnits
                 Case "lbmol"
                     Return value / 2.20462
 
-                Case "[kg/s]/kW"
+                Case "[kg/s]/kw"
                     Return value
                 Case "g/cal"
                     Return value / 1000.0 * 238.85
                 Case "g/kcal"
                     Return value / 1000.0 * 0.23885
-                Case "lbm/BTU"
+                Case "lbm/btu"
                     Return value / 2.20462 * 0.947817
-                Case "lbm/MMBTU"
+                Case "lbm/mmbtu"
                     Return value / 2.20462 * 0.947817 / 1000000.0
-                Case "[kg/h]/MW"
+                Case "[kg/h]/mw"
                     Return value / 3600.0 / 1000.0
-                Case "[kg/d]/MW"
+                Case "[kg/d]/mw"
                     Return value / 24 / 3600.0 / 1000.0
-                Case "[t/s]/kW"
+                Case "[t/s]/kw"
                     Return value * 1000.0
-                Case "[t/s]/MW"
+                Case "[t/s]/mw"
                     Return value
-                Case "[t/h]/kW"
+                Case "[t/h]/kw"
                     Return value * 1000.0 / 3600.0
-                Case "[t/h]/MW"
+                Case "[t/h]/mw"
                     Return value / 3600.0
-                Case "[t/d]/kW"
+                Case "[t/d]/kw"
                     Return value * 1000.0 / 3600.0 / 24
-                Case "[t/d]/MW"
+                Case "[t/d]/mw"
                     Return value / 3600.0 / 24
+
+                Case "kw/[kg/s]"
+                    Return value
+                Case "kw/[ton/h]"
+                    Return value * 3600.0 / 1000.0
+                Case "cal/s/[g/s]"
+                    Return value * 1000.0 / 238.85
+                Case "btu/h/[lbm/h]"
+                    Return value * 2.20462 / 0.947817
+                Case "kcal/h/[kg/h]"
+                    Return value * 1000.0 / 238.85
 
 
                 Case "mol/h"
@@ -1529,6 +1557,8 @@ Namespace SystemsOfUnits
                     Return value / 859.845
                 Case "kj/h"
                     Return value / 3600
+                Case "mj/h"
+                    Return value / 3600 * 1000
                 Case "kj/d"
                     Return value / 3600 / 24
                 Case "mw"
@@ -1537,6 +1567,8 @@ Namespace SystemsOfUnits
                     Return value / 1000
                 Case "mj/h"
                     Return value * 1000.0 / 3600.0
+                Case "tr"
+                    Return value / 3.5
 
 
                 Case "btu"
@@ -1553,7 +1585,7 @@ Namespace SystemsOfUnits
                     Return value / 1000
 
 
-                Case "btu/lb"
+                Case "btu/lb", "btu/lbm"
                     Return value / 0.429923
                 Case "cal/g"
                     Return value / 0.238846
@@ -1635,6 +1667,8 @@ Namespace SystemsOfUnits
 
                 Case "mm"                               'comprimento'
                     Return value / 1000
+                Case "um"                               'comprimento'
+                    Return value / 1000000
                 Case "in.", "in"
                     Return value / 39.3701
 
@@ -2004,32 +2038,44 @@ Namespace SystemsOfUnits
                     Return value * 2.20462
 
 
-                Case "[kg/s]/kW"
+                Case "[kg/s]/kw"
                     Return value
                 Case "g/cal"
                     Return value / 1000.0 * 238.85
                 Case "g/kcal"
                     Return value / 1000.0 * 0.23885
-                Case "lbm/BTU"
+                Case "lbm/btu"
                     Return value / 2.20462 * 0.947817
-                Case "lbm/MMBTU"
+                Case "lbm/mmbtu"
                     Return value / 2.20462 * 0.947817 / 1000000.0
-                Case "[kg/h]/MW"
+                Case "[kg/h]/mw"
                     Return value / 3600.0 / 1000.0
-                Case "[kg/d]/MW"
+                Case "[kg/d]/mw"
                     Return value / 24 / 3600.0 / 1000.0
-                Case "[t/s]/kW"
+                Case "[t/s]/kw"
                     Return value * 1000.0
-                Case "[t/s]/MW"
+                Case "[t/s]/mw"
                     Return value
-                Case "[t/h]/kW"
+                Case "[t/h]/kw"
                     Return value * 1000.0 / 3600.0
-                Case "[t/h]/MW"
+                Case "[t/h]/mw"
                     Return value / 3600.0
-                Case "[t/d]/kW"
+                Case "[t/d]/kw"
                     Return value * 1000.0 / 3600.0 / 24
-                Case "[t/d]/MW"
+                Case "[t/d]/mw"
                     Return value / 3600.0 / 24
+
+
+                Case "kw/[kg/s]"
+                    Return value
+                Case "kw/[ton/h]"
+                    Return value / 3600.0 * 1000.0
+                Case "cal/s/[g/s]"
+                    Return value / 1000.0 * 238.85
+                Case "btu/h/[lbm/h]"
+                    Return value / 2.20462 * 0.947817
+                Case "kcal/h/[kg/h]"
+                    Return value / 1000.0 * 238.85
 
 
                 Case "bbl/h"
@@ -2101,6 +2147,8 @@ Namespace SystemsOfUnits
                     Return value * 859.845
                 Case "kj/h"
                     Return value * 3600
+                Case "mj/h"
+                    Return value * 3600 / 1000
                 Case "kj/d"
                     Return value * 3600 * 24
                 Case "mw"
@@ -2109,7 +2157,8 @@ Namespace SystemsOfUnits
                     Return value * 1000
                 Case "mj/h"
                     Return value / 1000.0 * 3600.0
-
+                Case "tr"
+                    Return value * 3.5
 
                 Case "btu"
                     Return value * 0.947817
@@ -2210,6 +2259,8 @@ Namespace SystemsOfUnits
 
                 Case "mm"                               'comprimento'
                     Return value * 1000
+                Case "mm"                               'comprimento'
+                    Return value * 1000000
                 Case "in.", "in"
                     Return value * 39.3701
 

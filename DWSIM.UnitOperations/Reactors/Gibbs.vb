@@ -30,6 +30,7 @@ Imports DWSIM.Thermodynamics.Streams
 Imports DWSIM.Thermodynamics
 Imports scaler = DotNumerics.Scaling.Scaler
 Imports DWSIM.MathOps
+Imports System.Globalization
 
 Namespace Reactors
 
@@ -1043,7 +1044,6 @@ Namespace Reactors
 
         End Sub
 
-
         Private LagrangeFactor As Double = 1000.0
 
         Public Overrides Sub Calculate(Optional ByVal args As Object = Nothing)
@@ -1282,6 +1282,39 @@ Namespace Reactors
                 If ival(i) < 0.000000001 Then ival(i) = 0.000000001
             Next
 
+            Dim estimate As Interfaces.IConvergenceHelperResponse = Nothing
+
+            If Settings.AIAssistedConvergenceLevel > 0 Then
+
+                estimate = DWSIM.SharedClasses.AI.ConvergenceAssistant.SolutionProvider?.GetSolutionEstimate(
+                   New DWSIM.AI.ConvergenceAssistant.Classes.ConvergenceHelperRequest With {
+                   .CompoundNames = keys,
+                   .NumberOfCompounds = keys.Count,
+                   .MixtureMolarFlows = N.Values.ToArray(),
+                   .ModelName = pp.ComponentName,
+                   .Pressure = P,
+                   .Temperature = T,
+                   .RequestType = If(ReactorOperationMode = OperationMode.Isothermic,
+                                    Interfaces.ConvergenceHelperRequestType.GibbsReactorIsothermic,
+                                    Interfaces.ConvergenceHelperRequestType.GibbsReactorAdiabatic)
+               })
+
+                If estimate IsNot Nothing And (Settings.AIAssistedConvergenceLevel = Settings.AIAssistedConvergenceMode.Provide_Initial_Estimates Or
+                    Settings.AIAssistedConvergenceLevel = Settings.AIAssistedConvergenceMode.Provide_Initial_Estimates_and_Solutions Or
+                    Settings.AIAssistedConvergenceLevel = Settings.AIAssistedConvergenceMode.Provide_Initial_Estimates_and_Solutions_2Pass) Then
+
+                    If ReactorOperationMode = OperationMode.Adiabatic Then
+                        T = estimate.Temperature2
+                        ims.SetTemperature(T)
+                        tms.SetTemperature(T)
+                    End If
+
+                    ival = estimate.MixtureMolarFlows2
+
+                End If
+
+            End If
+
             Dim ipo As New Optimization.IPOPTSolver
             ipo.MaxIterations = MaximumInternalIterations
             ipo.Tolerance = InternalTolerance
@@ -1339,84 +1372,106 @@ Namespace Reactors
 
                             DelGF = delgfl.ToArray()
 
-                            If esolv IsNot Nothing Then
+                            Try
 
-                                NFv = esolv.Solve(Function(xn)
-                                                      Dim gval = FunctionValue2G2(xn, T)
-                                                      Dim ebal_i As Double
-                                                      ebal = 0.0
-                                                      For i = 0 To els
-                                                          ebal_i = 0
-                                                          For j = 0 To c
-                                                              ebal_i += xn(j) * Me.ElementMatrix(i, j)
+                                If esolv IsNot Nothing Then
+
+                                    NFv = esolv.Solve(Function(xn)
+                                                          Dim gval = FunctionValue2G2(xn, T)
+                                                          Dim ebal_i As Double
+                                                          ebal = 0.0
+                                                          For i = 0 To els
+                                                              ebal_i = 0
+                                                              For j = 0 To c
+                                                                  ebal_i += xn(j) * Me.ElementMatrix(i, j)
+                                                              Next
+                                                              ebal += ((TotalElements(i) - ebal_i) / TotalElements(i)) ^ 2
                                                           Next
-                                                          ebal += ((TotalElements(i) - ebal_i) / TotalElements(i)) ^ 2
-                                                      Next
-                                                      icount += 1
-                                                      wbal = ((tms.GetMassFlow() - W0tot) / W0tot) ^ 2
-                                                      errval = Exp(gval) + wbal * 100 + ebal * 100
-                                                      IObj?.SetCurrent()
-                                                      IObj?.Paragraphs.Add(String.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
+                                                          icount += 1
+                                                          wbal = ((tms.GetMassFlow() - W0tot) / W0tot) ^ 2
+                                                          errval = Exp(gval) + wbal * 100 + ebal * 100
+                                                          IObj?.SetCurrent()
+                                                          IObj?.Paragraphs.Add(String.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
                                                                             icount, errval, ebal, wbal))
-                                                      Return errval
-                                                  End Function, Nothing, Nothing,
+                                                          Return errval
+                                                      End Function, Nothing, Nothing,
                                                           ival, lbo, ubo, MaximumInternalIterations, InternalTolerance)
-
-                            Else
-
-                                If UseIPOPTSolver Then
-
-                                    NFv = ipo.Solve(Function(xn)
-                                                        Dim gval = FunctionValue2G2(xn, T)
-                                                        Dim ebal_i As Double
-                                                        ebal = 0.0
-                                                        For i = 0 To els
-                                                            ebal_i = 0
-                                                            For j = 0 To c
-                                                                ebal_i += xn(j) * Me.ElementMatrix(i, j)
-                                                            Next
-                                                            ebal += ((TotalElements(i) - ebal_i) / TotalElements(i)) ^ 2
-                                                        Next
-                                                        icount += 1
-                                                        wbal = ((tms.GetMassFlow() - W0tot) / W0tot) ^ 2
-                                                        errval = Exp(gval) + wbal * 100 + ebal * 100
-                                                        IObj?.SetCurrent()
-                                                        IObj?.Paragraphs.Add(String.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
-                                                                            icount, errval, ebal, wbal))
-                                                        Return errval
-                                                    End Function, Nothing, ival, lbo, ubo)
 
                                 Else
 
-                                    Dim slv As New BFGSBMinimizer
-                                    slv.MaxIterations = MaximumInternalIterations
-                                    slv.Tolerance = InternalTolerance
+                                    If UseIPOPTSolver Then
 
-                                    NFv = slv.Solve(Function(xn)
-                                                        Dim gval = FunctionValue2G2(xn, T)
-                                                        Dim ebal_i As Double
-                                                        ebal = 0.0
-                                                        For i = 0 To els
-                                                            ebal_i = 0
-                                                            For j = 0 To c
-                                                                ebal_i += xn(j) * Me.ElementMatrix(i, j)
+                                        NFv = ipo.Solve(Function(xn)
+                                                            Dim gval = FunctionValue2G2(xn, T)
+                                                            Dim ebal_i As Double
+                                                            ebal = 0.0
+                                                            For i = 0 To els
+                                                                ebal_i = 0
+                                                                For j = 0 To c
+                                                                    ebal_i += xn(j) * Me.ElementMatrix(i, j)
+                                                                Next
+                                                                ebal += ((TotalElements(i) - ebal_i) / TotalElements(i)) ^ 2
                                                             Next
-                                                            ebal += ((TotalElements(i) - ebal_i) / TotalElements(i)) ^ 2
-                                                        Next
-                                                        icount += 1
-                                                        wbal = ((tms.GetMassFlow() - W0tot) / W0tot) ^ 2
-                                                        errval = Exp(gval) + wbal * 100 + ebal * 100
-                                                        IObj?.SetCurrent()
-                                                        IObj?.Paragraphs.Add(String.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
+                                                            icount += 1
+                                                            wbal = ((tms.GetMassFlow() - W0tot) / W0tot) ^ 2
+                                                            errval = Exp(gval) + wbal * 100 + ebal * 100
+                                                            IObj?.SetCurrent()
+                                                            IObj?.Paragraphs.Add(String.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
                                                                             icount, errval, ebal, wbal))
-                                                        Return errval
-                                                    End Function, Nothing, ival, lbo, ubo)
+                                                            Return errval
+                                                        End Function, Nothing, ival, lbo, ubo)
+
+                                    Else
+
+                                        Dim slv As New BFGSBMinimizer
+                                        slv.MaxIterations = MaximumInternalIterations
+                                        slv.Tolerance = InternalTolerance
+
+                                        NFv = slv.Solve(Function(xn)
+                                                            Dim gval = FunctionValue2G2(xn, T)
+                                                            Dim ebal_i As Double
+                                                            ebal = 0.0
+                                                            For i = 0 To els
+                                                                ebal_i = 0
+                                                                For j = 0 To c
+                                                                    ebal_i += xn(j) * Me.ElementMatrix(i, j)
+                                                                Next
+                                                                ebal += ((TotalElements(i) - ebal_i) / TotalElements(i)) ^ 2
+                                                            Next
+                                                            icount += 1
+                                                            wbal = ((tms.GetMassFlow() - W0tot) / W0tot) ^ 2
+                                                            errval = Exp(gval) + wbal * 100 + ebal * 100
+                                                            IObj?.SetCurrent()
+                                                            IObj?.Paragraphs.Add(String.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
+                                                                            icount, errval, ebal, wbal))
+                                                            Return errval
+                                                        End Function, Nothing, ival, lbo, ubo)
+
+
+                                    End If
 
 
                                 End If
 
+                            Catch ex As Exception
 
-                            End If
+                                If Settings.AIAssistedConvergenceLevel = Settings.AIAssistedConvergenceMode.Provide_Initial_Estimates_and_Solutions Or
+                                    Settings.AIAssistedConvergenceLevel = Settings.AIAssistedConvergenceMode.Provide_Solutions Or
+                                    Settings.AIAssistedConvergenceLevel = Settings.AIAssistedConvergenceMode.Provide_Initial_Estimates_and_Solutions_2Pass Then
+
+                                    If estimate IsNot Nothing Then
+
+                                        NFv = estimate.MixtureMolarFlows2
+
+                                    Else
+
+                                        Throw ex
+
+                                    End If
+
+                                End If
+
+                            End Try
 
                             IObj?.Paragraphs.Add("</table>")
 
@@ -1591,6 +1646,32 @@ Namespace Reactors
 
             OutletTemperature = T
 
+            If SharedClasses.AI.ConvergenceAssistant.Manager IsNot Nothing Then
+                If ReactorOperationMode = OperationMode.Adiabatic Then
+                    DWSIM.SharedClasses.AI.ConvergenceAssistant.Manager?.StoreData(
+                    New AI.ConvergenceAssistant.Classes.ConvergenceHelperTrainingData With {
+                        .CompoundNames = keys, .ModelName = pp.ComponentName,
+                        .NumberOfCompounds = Ki.Count,
+                        .Temperature = T0.ToString("F4", CultureInfo.InvariantCulture),
+                        .Temperature2 = T.ToString("F4", CultureInfo.InvariantCulture),
+                        .Pressure = P.ToString("F4", CultureInfo.InvariantCulture),
+                        .MixtureMolarFlows = N0.Values.ToArray().ToString("F4"),
+                        .MixtureMolarFlows2 = N.Values.ToArray().ToString("F4"),
+                        .RequestType = Interfaces.ConvergenceHelperRequestType.GibbsReactorAdiabatic})
+                Else
+                    DWSIM.SharedClasses.AI.ConvergenceAssistant.Manager?.StoreData(
+                      New AI.ConvergenceAssistant.Classes.ConvergenceHelperTrainingData With {
+                        .CompoundNames = keys, .ModelName = pp.ComponentName,
+                        .NumberOfCompounds = Ki.Count,
+                        .Temperature = T0.ToString("F4", CultureInfo.InvariantCulture),
+                        .Temperature2 = T.ToString("F4", CultureInfo.InvariantCulture),
+                        .Pressure = P.ToString("F4", CultureInfo.InvariantCulture),
+                        .MixtureMolarFlows = N0.Values.ToArray().ToString("F4"),
+                        .MixtureMolarFlows2 = N.Values.ToArray().ToString("F4"),
+                        .RequestType = Interfaces.ConvergenceHelperRequestType.GibbsReactorIsothermic})
+                End If
+            End If
+
             Dim ms As MaterialStream
             Dim cp As IConnectionPoint
 
@@ -1620,6 +1701,7 @@ Namespace Reactors
                     Hv = .PropertyPackage.DW_CalcEnthalpy(ms.GetOverallComposition(), T, P, PropertyPackages.State.Vapor)
                     .Phases(0).Properties.enthalpy = Hv
                     .Phases(0).Properties.massflow = W * wv
+                    .DefinedFlow = FlowSpec.Mass
                 End With
             End If
 
@@ -1644,6 +1726,7 @@ Namespace Reactors
                     Next
                     .Phases(0).Properties.enthalpy = (H - Hv * wv) / (1 - wv)
                     .Phases(0).Properties.massflow = W * (1 - wv)
+                    .DefinedFlow = FlowSpec.Mass
                 End With
             End If
 
@@ -2430,9 +2513,37 @@ Namespace Reactors
 
             IObj?.SetCurrent
 
-            Dim W As Double = ims.Phases(0).Properties.massflow.GetValueOrDefault
-
             pp.CurrentMaterialStream = ims
+
+            If SharedClasses.AI.ConvergenceAssistant.Manager IsNot Nothing Then
+                If ReactorOperationMode = OperationMode.Adiabatic Then
+                    DWSIM.SharedClasses.AI.ConvergenceAssistant.Manager?.StoreData(
+                    New AI.ConvergenceAssistant.Classes.ConvergenceHelperTrainingData With {
+                        .CompoundNames = pp.RET_VNAMES(),
+                        .ModelName = pp.ComponentName,
+                        .NumberOfCompounds = N.Count,
+                        .Temperature = T0.ToString("F4", CultureInfo.InvariantCulture),
+                        .Temperature2 = T.ToString("F4", CultureInfo.InvariantCulture),
+                        .Pressure = P.ToString("F4", CultureInfo.InvariantCulture),
+                        .MixtureMolarFlows = N0.Values.ToArray().ToString("F4"),
+                        .MixtureMolarFlows2 = N.Values.ToArray().ToString("F4"),
+                        .RequestType = Interfaces.ConvergenceHelperRequestType.GibbsReactorAdiabatic})
+                Else
+                    DWSIM.SharedClasses.AI.ConvergenceAssistant.Manager?.StoreData(
+                      New AI.ConvergenceAssistant.Classes.ConvergenceHelperTrainingData With {
+                        .CompoundNames = pp.RET_VNAMES(),
+                        .ModelName = pp.ComponentName,
+                        .NumberOfCompounds = N.Count,
+                        .Temperature = T0.ToString("F4", CultureInfo.InvariantCulture),
+                        .Temperature2 = T.ToString("F4", CultureInfo.InvariantCulture),
+                        .Pressure = P.ToString("F4", CultureInfo.InvariantCulture),
+                        .MixtureMolarFlows = N0.Values.ToArray().ToString("F4"),
+                        .MixtureMolarFlows2 = N.Values.ToArray().ToString("F4"),
+                        .RequestType = Interfaces.ConvergenceHelperRequestType.GibbsReactorIsothermic})
+                End If
+            End If
+
+            Dim W As Double = ims.Phases(0).Properties.massflow.GetValueOrDefault
 
             'do a flash calc (calculate final temperature/enthalpy)
             tmp = pp.CalculateEquilibrium2(FlashCalculationType.PressureTemperature, ims.Phases(0).Properties.pressure.GetValueOrDefault, ims.Phases(0).Properties.temperature.GetValueOrDefault, 0)
@@ -2772,6 +2883,12 @@ Namespace Reactors
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.reactor_gibbs
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.reactor_gibbs.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

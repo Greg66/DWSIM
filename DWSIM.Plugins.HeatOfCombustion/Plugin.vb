@@ -71,7 +71,7 @@ Imports DWSIM.Interfaces
 
     Public ReadOnly Property WebSite() As String Implements DWSIM.Interfaces.IUtilityPlugin.WebSite, IUtilityPlugin5.WebSite
         Get
-            Return "http://dwsim.inforside.com.br"
+            Return "https://dwsim.org"
         End Get
     End Property
 

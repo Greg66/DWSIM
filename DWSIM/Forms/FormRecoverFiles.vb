@@ -29,16 +29,17 @@ Public Class FormRecoverFiles
         Dim data, nomearquivo As String
         For Each str As String In My.Settings.BackupFiles
             If File.Exists(str) Then
-                nomearquivo = str
+                nomearquivo = Path.GetFileName(str)
                 data = File.GetLastWriteTime(str).ToString
-                Me.Grid1.Rows.Add(New Object() {1, nomearquivo, data})
+                Me.Grid1.Rows.Add(New Object() {str, True, nomearquivo, data})
             End If
         Next
+        If Grid1.Rows.Count = 0 Then Close()
     End Sub
 
     Private Sub KryptonButton2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles KryptonButton2.Click
         My.Settings.BackupFiles.Clear()
-        If Not DWSIM.App.IsRunningOnMono Then My.Settings.Save()
+        My.Settings.Save()
         Me.Close()
     End Sub
 
@@ -49,9 +50,9 @@ Public Class FormRecoverFiles
 
         For Each row As DataGridViewRow In Me.Grid1.SelectedRows
             Try
-                If row.Cells(0).Value = 1 Then
+                If row.Cells(1).Value = 1 Then
                     Application.DoEvents()
-                    FormMain.LoadAndExtractXMLZIP(New SharedClassesCSharp.FilePicker.Windows.WindowsFile(row.Cells(1).Value), Nothing)
+                    FormMain.LoadAndExtractXMLZIP(New SharedClassesCSharp.FilePicker.Windows.WindowsFile(row.Cells(0).Value), Nothing)
                 End If
             Catch ex As Exception
                 MessageBox.Show(ex.Message, DWSIM.App.GetLocalString("Erroaoabrircpiadeseg"), MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -59,12 +60,19 @@ Public Class FormRecoverFiles
         Next
 
         My.Settings.BackupFiles.Clear()
-        If Not DWSIM.App.IsRunningOnMono Then My.Settings.Save()
+        My.Settings.Save()
         Me.Close()
 
     End Sub
 
     Private Sub FormRecoverFiles_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         FormMain.TranslateFormFunction?.Invoke(Me)
+    End Sub
+
+    Private Sub FormRecoverFiles_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+        If e.CloseReason = CloseReason.UserClosing Then
+            My.Settings.BackupFiles.Clear()
+            My.Settings.Save()
+        End If
     End Sub
 End Class

@@ -36,6 +36,25 @@ Namespace UnitOperations
 
         Public Overrides ReadOnly Property HasPropertiesForDynamicMode As Boolean = True
 
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Vertical", "Horizontal"}
+            End Get
+        End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Volume, .IsUserDefined = False})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+            Dimensions(0).Value = Volume
+
+        End Sub
+
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public f As EditingForm_Tank
 
         Protected m_dp As Nullable(Of Double)
@@ -160,8 +179,20 @@ Namespace UnitOperations
                                           .Text = Me.GraphicObject.Tag + ": " + FlowSheet.GetTranslatedString("AccumulationStream")}
                                           FlowSheet.DisplayForm(fms)
                                       End Sub
+            Dim button2 As New Button With {.Text = FlowSheet.GetTranslatedString("Fill With Inlet Stream"),
+              .Dock = DockStyle.Bottom, .AutoSize = True, .AutoSizeMode = AutoSizeMode.GrowAndShrink}
+            AddHandler button2.Click, Sub(s, e)
+                                          Dim Height As Double = GetDynamicProperty("Height")
+                                          Dim LiquidHeight As Double = GetDynamicProperty("Liquid Level")
+                                          AccumulationStream.SetFlowsheet(FlowSheet)
+                                          AccumulationStream.AssignFromPhase(PhaseLabel.Mixture, GetInletMaterialStream(0), False)
+                                          AccumulationStream.SetVolumetricFlow(LiquidHeight / Height * Volume)
+                                          AccumulationStream.Calculate()
+                                          FlowSheet.ShowMessage("Tank contents successfully defined from inlet stream.", IFlowsheet.MessageType.Information)
+                                      End Sub
 
             table.Controls.Add(button1)
+            table.Controls.Add(button2)
             table.Controls.Add(New Panel())
 
         End Sub
@@ -499,6 +530,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.tank
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.tank.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

@@ -29,17 +29,6 @@ namespace DWSIM.UI.Forms.Forms
         public void Init()
         {
 
-            int w = (int)(sf * 640);
-            int h = (int)(sf * 480);
-
-            var center = Screen.PrimaryScreen.WorkingArea.Center;
-            center.X -= w / 2;
-            center.Y -= h / 2;
-
-            Location = new Point(center);
-
-            ClientSize = new Size(w, h);
-            
             Maximizable = false;
 
             Minimizable = false;
@@ -104,7 +93,7 @@ namespace DWSIM.UI.Forms.Forms
                     case "18.5.0.0": osinfo = "macOS Mojave (v10.14.4)"; break;
                     case "18.6.0.0": osinfo = "macOS Mojave (v10.14.5)"; break;
                     case "18.7.1.1": osinfo = "macOS Mojave (v10.14.6)"; break;
-                    case "19.0.0.0": osinfo = "macOS Catalina (v10.15)"; break;
+                    case "19.0.3.0": osinfo = "macOS Catalina (v10.15)"; break;
                     case "19.2.0.0": osinfo = "macOS Catalina (v10.15.2)"; break;
                     case "19.3.0.0": osinfo = "macOS Catalina (v10.15.3)"; break;
                     case "19.4.0.0": osinfo = "macOS Catalina (v10.15.4)"; break;
@@ -235,6 +224,13 @@ namespace DWSIM.UI.Forms.Forms
             tablecontainer.Rows.Add(new TableRow(tabc));
 
             Content = tablecontainer;
+
+            int w = (int)(sf * 640);
+            int h = (int)(sf * 480);
+
+            Size = new Size(w, h);
+
+            DWSIM.UI.Shared.Common.Center(this);
 
         }
 

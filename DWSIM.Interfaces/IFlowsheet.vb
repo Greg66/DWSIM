@@ -20,7 +20,8 @@
 ''' The IFlowsheet interface is the main interface which should be implemented by the Flowsheet class. 
 ''' It provides direct access to the various flowsheet components and helper functions to manipulate objects.
 ''' </summary>
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface IFlowsheet
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface IFlowsheet
 
     Enum MessageType
         Information
@@ -265,7 +266,7 @@
     ''' <param name="reactionphase">Reaction phase ('Mixture', 'Vapor', 'Liquid' or 'Solid')</param>
     ''' <param name="basis">Reaction basis ('Activity', 'Fugacity', 'Molar Concentration', 'Molar Fraction', 'Mass Concentration', 'Mass Fraction' or 'Partial Pressure')</param>
     ''' <param name="amountunits">Amount units. See the list of <see cref="SharedClasses.SystemsOfUnits.Units.GetUnitSet()">supported units</see></param>
-    ''' <param name="rateunits">Rate units. See the list of <see cref="SharedClasses.SystemsOfUnits.Units.GetUnitSet()">supported units</see</param>
+    ''' <param name="rateunits">Rate units. See the list of <see cref="SharedClasses.SystemsOfUnits.Units.GetUnitSet()">supported units</see></param>
     ''' <param name="Aforward">Arrhenius forward reaction's A parameter. Ignored if Expr_forward is not empty.</param>
     ''' <param name="Eforward">Arrhenius forward reaction's E parameter. Ignored if Expr_forward is not empty.</param>
     ''' <param name="Areverse">Arrhenius reverse reaction's A parameter. Ignored if Expr_reverse is not empty.</param>
@@ -313,13 +314,13 @@
     ''' <summary>
     ''' Add a reaction to the flowsheet.
     ''' </summary>
-    ''' <param name="reactionSet">reaction object</param>
+    ''' <param name="reaction">reaction object</param>
     Sub AddReaction(reaction As IReaction)
 
     ''' <summary>
     ''' Add a reaction set to the flowsheet.
     ''' </summary>
-    ''' <param name="reaction">reaction set object</param>
+    ''' <param name="reactionSet">reaction set object</param>
     Sub AddReactionSet(reactionSet As IReactionSet)
 
     ''' <summary>
@@ -372,9 +373,13 @@
 
     Sub RequestCalculation3(obj As ISimulationObject, Wait As Boolean)
 
+    Function RequestCalculationAndWait() As List(Of Exception)
+
     Property MessagesLog As List(Of String)
 
     Property AvailableExternalUnitOperations As Dictionary(Of String, IExternalUnitOperation)
+
+    Property AvailableSimulationObjects As Dictionary(Of String, ISimulationObject)
 
     Function GetSnapshot(type As Enums.SnapshotType, Optional obj As ISimulationObject = Nothing) As XDocument
 
@@ -398,12 +403,21 @@
 
     Function GetResultUnits(id As String) As String
 
+    Property ParticleSizeDistributions As List(Of ISolidParticleSizeDistribution)
+
+    Sub ReleaseResources()
+
+    Sub UpdateMassAndEnergyBalance()
+
+    Sub TriggerNewDataLoadedEvent(sender As Object, e As INewDataLoadedEventArgs)
+
 End Interface
 
 ''' <summary>
 ''' This is an interface which provides direct access to collections of flowsheet objects.
 ''' </summary>
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface IFlowsheetBag
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface IFlowsheetBag
 
     Property SimulationObjects As Dictionary(Of String, ISimulationObject)
 
@@ -442,7 +456,8 @@ End Interface
 ''' <summary>
 ''' This is an interface which defines helper functions to a Flowsheet GUI implementation.
 ''' </summary>
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface IFlowsheetGUI
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface IFlowsheetGUI
 
     Sub ShowMessage(ByVal text As String, ByVal mtype As IFlowsheet.MessageType, Optional ByVal exceptionID As String = "")
 
@@ -465,13 +480,15 @@ End Interface
 ''' <summary>
 ''' This interface defines the calculation queue to be used by the flowsheet solver.
 ''' </summary>
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface IFlowsheetCalculationQueue
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface IFlowsheetCalculationQueue
 
     Property CalculationQueue As Queue(Of ICalculationArgs)
 
 End Interface
 
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface ICalculationArgs
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface ICalculationArgs
 
     Property Sender As String
     Property Calculated As Boolean

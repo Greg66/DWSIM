@@ -26,6 +26,7 @@ Partial Class FlashAlgorithmConfig
         Me.TabControl1 = New System.Windows.Forms.TabControl()
         Me.TabPageGeneral = New System.Windows.Forms.TabPage()
         Me.GroupBox4 = New System.Windows.Forms.GroupBox()
+        Me.chkDisplayCompWarning = New System.Windows.Forms.CheckBox()
         Me.cbFSMethod = New System.Windows.Forms.ComboBox()
         Me.Label12 = New System.Windows.Forms.Label()
         Me.btnConfigExtSolver = New System.Windows.Forms.Button()
@@ -72,6 +73,7 @@ Partial Class FlashAlgorithmConfig
         Me.Label2 = New System.Windows.Forms.Label()
         Me.tbPTIntTol = New System.Windows.Forms.TextBox()
         Me.Label1 = New System.Windows.Forms.Label()
+        Me.chkPVstencil = New System.Windows.Forms.CheckBox()
         Me.TabControl1.SuspendLayout()
         Me.TabPageGeneral.SuspendLayout()
         Me.GroupBox4.SuspendLayout()
@@ -98,6 +100,7 @@ Partial Class FlashAlgorithmConfig
         'GroupBox4
         '
         resources.ApplyResources(Me.GroupBox4, "GroupBox4")
+        Me.GroupBox4.Controls.Add(Me.chkDisplayCompWarning)
         Me.GroupBox4.Controls.Add(Me.cbFSMethod)
         Me.GroupBox4.Controls.Add(Me.Label12)
         Me.GroupBox4.Controls.Add(Me.btnConfigExtSolver)
@@ -123,6 +126,11 @@ Partial Class FlashAlgorithmConfig
         Me.GroupBox4.Controls.Add(Me.Label24)
         Me.GroupBox4.Name = "GroupBox4"
         Me.GroupBox4.TabStop = False
+        '
+        'chkDisplayCompWarning
+        '
+        resources.ApplyResources(Me.chkDisplayCompWarning, "chkDisplayCompWarning")
+        Me.chkDisplayCompWarning.Name = "chkDisplayCompWarning"
         '
         'cbFSMethod
         '
@@ -159,6 +167,7 @@ Partial Class FlashAlgorithmConfig
         'gpNL
         '
         resources.ApplyResources(Me.gpNL, "gpNL")
+        Me.gpNL.Controls.Add(Me.chkPVstencil)
         Me.gpNL.Controls.Add(Me.chkIdealPVFlash)
         Me.gpNL.Controls.Add(Me.CheckBoxInterpTempPHFlash)
         Me.gpNL.Controls.Add(Me.chkHandleSolids)
@@ -395,6 +404,12 @@ Partial Class FlashAlgorithmConfig
         resources.ApplyResources(Me.Label1, "Label1")
         Me.Label1.Name = "Label1"
         '
+        'chkPVstencil
+        '
+        resources.ApplyResources(Me.chkPVstencil, "chkPVstencil")
+        Me.chkPVstencil.Name = "chkPVstencil"
+        Me.chkPVstencil.UseVisualStyleBackColor = True
+        '
         'FlashAlgorithmConfig
         '
         resources.ApplyResources(Me, "$this")
@@ -464,4 +479,6 @@ Partial Class FlashAlgorithmConfig
     Friend WithEvents chkIdealPVFlash As CheckBox
     Friend WithEvents cbFSMethod As ComboBox
     Friend WithEvents Label12 As Label
+    Public WithEvents chkDisplayCompWarning As CheckBox
+    Friend WithEvents chkPVstencil As CheckBox
 End Class

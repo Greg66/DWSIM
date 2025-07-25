@@ -224,6 +224,7 @@ Namespace Enums
         heat = 68
         mole = 69
         emission_factor = 70
+        specificpower = 71
 
     End Enum
 
@@ -329,6 +330,8 @@ Namespace Enums
         '0 = Rigorous VLE, 1 = Ideal VLE, 2 = NoFlash, 3 = throw error
         FailSafeCalculationMode = 33
 
+        PVFlash_FivePointStencilNumericalDerivative = 34
+
     End Enum
 
     Public Enum FlashCalculationType
@@ -365,6 +368,15 @@ Namespace Enums
         RW = 1
         WR = 2
         ALL = 3
+    End Enum
+
+    Public Enum StreamType
+        Feed = 0
+        Product = 1
+        Recycle_In = 2
+        Recycle_Out = 3
+        Inner = 4
+        Undefined = 5
     End Enum
 
     Public Enum StreamSpec
@@ -611,6 +623,30 @@ Namespace Enums
 
     End Enum
 
+    Public Enum DimensionName
+
+        NotDefined
+        Length
+        Diameter
+        Height
+        Area
+        Volume
+        Flow
+        MassFlow
+        Head
+        Efficiency
+        Power
+        HeatDuty
+        Pressure
+        PressureDifference
+        NumberOfTubes
+        NumberofPackings
+        NumberOfSections
+        NumberOfTrays
+        NumberOfCells
+
+    End Enum
+
 End Namespace
 
 Namespace Enums.GraphicObjects
@@ -717,6 +753,9 @@ Namespace Enums.GraphicObjects
 
         Dummy
 
+        SolidOps
+
+
     End Enum
 
     Public Enum ShapeIcon
@@ -774,6 +813,7 @@ Namespace Enums.GraphicObjects
         CompoundMolarFlow = 6
         CompoundMassFraction = 7
         CompoundMolarFraction = 8
+        MeanSolidParticleSize = 9
 
     End Enum
 

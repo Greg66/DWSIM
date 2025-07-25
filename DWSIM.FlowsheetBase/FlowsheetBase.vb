@@ -29,10 +29,15 @@ Imports DWSIM.Thermodynamics.AdvancedEOS
 Imports SkiaSharp
 Imports System.Text.RegularExpressions
 Imports System.Xml
+Imports DWSIM.ExtensionMethods
 
 <System.Runtime.InteropServices.ComVisible(True)> Public MustInherit Class FlowsheetBase
 
     Implements IFlowsheet, IFlowsheetCalculationQueue
+
+    Private Shared ObjectList As New Dictionary(Of String, Interfaces.ISimulationObject)
+
+    Public Property SupressDataLoading As Boolean = False
 
     Public Property WeatherProvider As IWeatherProvider = New SharedClasses.WeatherProvider() Implements IFlowsheet.WeatherProvider
 
@@ -70,6 +75,8 @@ Imports System.Xml
 
     Public Property ExternalUnitOperations As New Dictionary(Of String, IExternalUnitOperation)
 
+    Public Property InternalUnitOperations As New Dictionary(Of String, IUnitOperation)
+
     Public Property GHGEmissionCompositions As Dictionary(Of String, IGHGComposition) = New Dictionary(Of String, IGHGComposition) Implements IFlowsheet.GHGEmissionCompositions
 
     Private loaded As Boolean = False
@@ -89,6 +96,21 @@ Imports System.Xml
     Public Property ScriptKeywordsU As String = ""
 
     Protected _translatefunction As Func(Of String, String)
+
+    Public Sub TriggerNewDataLoadedEvent(sender As Object, e As INewDataLoadedEventArgs) Implements IFlowsheet.TriggerNewDataLoadedEvent
+
+
+
+    End Sub
+
+
+    Public Sub SetResourcesManager(_rm As Resources.ResourceManager)
+        rm = _rm
+    End Sub
+
+    Public Sub SetPropertyResourcesManager(_prm As Resources.ResourceManager)
+        prm = _prm
+    End Sub
 
     Public Sub AddCompoundsToMaterialStream(ms As IMaterialStream) Implements IFlowsheet.AddCompoundsToMaterialStream
         For Each phase As IPhase In ms.Phases.Values
@@ -311,7 +333,7 @@ Imports System.Xml
         End If
 
         If rm Is Nothing Then
-            rm = New Resources.ResourceManager("DWSIM.FlowsheetBase.Strings", MyBase.GetType.GetTypeInfo.BaseType.GetTypeInfo.Assembly)
+            rm = New Resources.ResourceManager("DWSIM.FlowsheetBase.Strings", Assembly.GetExecutingAssembly())
         End If
 
         Dim ttext As String = rm.GetString(text)
@@ -320,7 +342,7 @@ Imports System.Xml
             Return ttext
         Else
             If prm Is Nothing Then
-                prm = New Resources.ResourceManager("DWSIM.FlowsheetBase.Properties", MyBase.GetType.GetTypeInfo.BaseType.GetTypeInfo.Assembly)
+                prm = New Resources.ResourceManager("DWSIM.FlowsheetBase.Properties", Assembly.GetExecutingAssembly())
             End If
             Try
                 If text.Split("/"c).Length = 2 Then
@@ -409,7 +431,7 @@ Imports System.Xml
 
     Public Sub RequestCalculation2(Wait As Boolean) Implements IFlowsheet.RequestCalculation2
 
-        If Wait Then
+        If Not Wait Then
             Task.Factory.StartNew(Sub()
                                       FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Me, GlobalSettings.Settings.SolverMode)
                                   End Sub)
@@ -428,6 +450,12 @@ Imports System.Xml
         End If
 
     End Sub
+
+    Public Function RequestCalculationAndWait() As List(Of Exception) Implements IFlowsheet.RequestCalculationAndWait
+
+        Return FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(Me, GlobalSettings.Settings.SolverMode)
+
+    End Function
 
     Public Sub ResetCalculationStatus() Implements IFlowsheet.ResetCalculationStatus
 
@@ -2210,9 +2238,9 @@ Imports System.Xml
         End Try
 
         If sver < New Version("5.0.0.0") Then
-            Parallel.ForEach(xdoc.Descendants, Sub(xel1)
-                                                   SharedClasses.Utility.UpdateElement(xel1)
-                                               End Sub)
+            For Each xel1 In xdoc.Descendants
+                Utility.UpdateElement(xel1)
+            Next
         End If
 
         'check saved from Classic UI
@@ -2226,9 +2254,9 @@ Imports System.Xml
 
         If savedfromclui Then
             Try
-                Parallel.ForEach(xdoc.Descendants, Sub(xel1)
-                                                       SharedClasses.Utility.UpdateElementForNewUI(xel1)
-                                                   End Sub)
+                For Each xel1 In xdoc.Descendants
+                    Utility.UpdateElementForNewUI(xel1)
+                Next
             Catch ex As Exception
             End Try
         End If
@@ -2268,7 +2296,7 @@ Imports System.Xml
                             Dim propname = xel.Element("Name").Value
                             Dim proptype = xel.Element("PropertyType").Value
                             Dim assembly1 As Assembly = Nothing
-                            For Each assembly In My.Application.Info.LoadedAssemblies
+                            For Each assembly In AppDomain.CurrentDomain.GetAssemblies()
                                 If proptype.Contains(assembly.GetName().Name) Then
                                     assembly1 = assembly
                                     Exit For
@@ -2305,13 +2333,13 @@ Imports System.Xml
             Options.SelectedComponents.Add(obj.Name, obj)
         Next
 
-        Parallel.ForEach(data, Sub(xel)
-                                   Try
-                                       Options.SelectedComponents(xel.Element("Name").Value).LoadData(xel.Elements.ToList)
-                                   Catch ex As Exception
-                                       excs.Add(New Exception("Error Loading Compound Information", ex))
-                                   End Try
-                               End Sub)
+        Try
+            For Each xel In data
+                Options.SelectedComponents(xel.Element("Name").Value).LoadData(xel.Elements.ToList)
+            Next
+        Catch ex As Exception
+            excs.Add(New Exception("Error Loading Compound Information", ex))
+        End Try
 
         data = xdoc.Element("DWSIM_Simulation_Data").Element("PropertyPackages").Elements.ToList
 
@@ -2536,6 +2564,26 @@ Imports System.Xml
 
         End If
 
+        ParticleSizeDistributions = New List(Of ISolidParticleSizeDistribution)
+
+        If xdoc.Element("DWSIM_Simulation_Data").Element("ParticleSizeDistributions") IsNot Nothing Then
+
+            data = xdoc.Element("DWSIM_Simulation_Data").Element("ParticleSizeDistributions").Elements.ToList
+
+            Dim i As Integer = 0
+            For Each xel As XElement In data
+                Try
+                    Dim obj As New SharedClassesCSharp.Solids.SolidParticleSizeDistribution()
+                    obj.LoadData(xel.Elements.ToList)
+                    ParticleSizeDistributions.Add(obj)
+                Catch ex As Exception
+                    excs.Add(New Exception("Error Loading PSD Item Information", ex))
+                End Try
+                i += 1
+            Next
+
+        End If
+
         Results = New SharedClasses.DWSIM.Flowsheet.FlowsheetResults
 
         If xdoc.Element("DWSIM_Simulation_Data").Element("Results") IsNot Nothing Then
@@ -2548,25 +2596,7 @@ Imports System.Xml
 
         GHGEmissionCompositions = New Dictionary(Of String, IGHGComposition)()
 
-        If xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions") IsNot Nothing Then
-
-            data = xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions").Elements.ToList
-
-            For Each xel As XElement In data
-                Try
-                    Dim obj As New GHGEmissionComposition()
-                    obj.LoadData(xel.Elements.ToList)
-                    GHGEmissionCompositions.Add(obj.ID, obj)
-                Catch ex As Exception
-                    excs.Add(New Exception("Error Loading GHG Composition Item Information", ex))
-                End Try
-            Next
-
-        End If
-
-        If Not Settings.AutomationMode Then
-            If LoadSpreadsheetData IsNot Nothing Then LoadSpreadsheetData.Invoke(xdoc)
-        End If
+        If LoadSpreadsheetData IsNot Nothing Then LoadSpreadsheetData.Invoke(xdoc)
 
         ProcessScripts(Enums.Scripts.EventType.SimulationOpened, Enums.Scripts.ObjectType.Simulation, "")
 
@@ -2613,12 +2643,13 @@ Imports System.Xml
         xel = xdoc.Element("DWSIM_Simulation_Data").Element("GeneralInfo")
 
         If Not DWSIM.GlobalSettings.Settings.AutomationMode Then
-            xel.Add(New XElement("BuildVersion", My.Application.Info.Version.ToString))
-            xel.Add(New XElement("BuildDate", CType("01/01/2000", DateTime).AddDays(My.Application.Info.Version.Build).AddSeconds(My.Application.Info.Version.Revision * 2)))
+            Dim appver = Assembly.GetEntryAssembly().GetName().Version
+            xel.Add(New XElement("BuildVersion", appver.ToString))
+            xel.Add(New XElement("BuildDate", CType("01/01/2000", DateTime).AddDays(appver.Build).AddSeconds(appver.Revision * 2)))
             If GlobalSettings.Settings.RunningPlatform() = GlobalSettings.Settings.Platform.Mac Then
                 xel.Add(New XElement("OSInfo", "macOS " + Environment.OSVersion.ToString()))
             Else
-                xel.Add(New XElement("OSInfo", My.Computer.Info.OSFullName & ", Version " & My.Computer.Info.OSVersion & ", " & My.Computer.Info.OSPlatform & " Platform"))
+                xel.Add(New XElement("OSInfo", Environment.OSVersion.Platform.ToString() & ", Version " & Environment.OSVersion.Version.ToString()))
             End If
         End If
         xel.Add(New XElement("SavedOn", Date.Now))
@@ -2751,20 +2782,18 @@ Imports System.Xml
             xel.Add(New XElement("ChartItem", ch.SaveData().ToArray()))
         Next
 
+        xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("ParticleSizeDistributions"))
+        xel = xdoc.Element("DWSIM_Simulation_Data").Element("ParticleSizeDistributions")
+
+        For Each psd In ParticleSizeDistributions
+            xel.Add(New XElement("ParticleSizeDistribution", DirectCast(psd, ICustomXMLSerialization).SaveData().ToArray()))
+        Next
+
         xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("Results"))
         xel = xdoc.Element("DWSIM_Simulation_Data").Element("Results")
         xel.Add(DirectCast(Results, ICustomXMLSerialization).SaveData().ToArray())
 
-        xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("GHGCompositions"))
-        xel = xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions")
-
-        For Each ghgcomp In GHGEmissionCompositions.Values
-            xel.Add(New XElement("GHGComposition", DirectCast(ghgcomp, ICustomXMLSerialization).SaveData().ToArray()))
-        Next
-
-        If Not GlobalSettings.Settings.AutomationMode Then
-            If SaveSpreadsheetData IsNot Nothing Then SaveSpreadsheetData.Invoke(xdoc)
-        End If
+        If SaveSpreadsheetData IsNot Nothing Then SaveSpreadsheetData.Invoke(xdoc)
 
         Return xdoc
 
@@ -2822,7 +2851,7 @@ Imports System.Xml
     Sub AddGraphicObjects(data As List(Of XElement), excs As Concurrent.ConcurrentBag(Of Exception),
                       Optional ByVal pkey As String = "", Optional ByVal shift As Integer = 0, Optional ByVal reconnectinlets As Boolean = False)
 
-        Dim objcount As Integer, searchtext As String
+        Dim objcount As Integer
 
         For Each xel As XElement In data
             Try
@@ -2848,9 +2877,8 @@ Imports System.Xml
                     obj.X += shift
                     obj.Y += shift
                     If pkey <> "" Then
-                        searchtext = obj.Tag.Split("("c)(0).Trim()
                         objcount = (From go As IGraphicObject In FlowsheetSurface.DrawingObjects Select go Where go.Tag.Equals(obj.Tag)).Count
-                        If objcount > 0 Then obj.Tag = searchtext & " (" & (objcount + 1).ToString & ")"
+                        If objcount > 0 Then obj.Tag += "_copy"
                     End If
                     If TypeOf obj Is TableGraphic Then
                         DirectCast(obj, TableGraphic).Flowsheet = Me
@@ -3056,6 +3084,9 @@ Imports System.Xml
 
     Public Sub Initialize() Implements IFlowsheet.Initialize
 
+        Dim calculatorassembly = System.Reflection.Assembly.Load("DWSIM.Thermodynamics")
+        Dim unitopassembly = System.Reflection.Assembly.Load("DWSIM.UnitOperations")
+
         AddHandler AppDomain.CurrentDomain.AssemblyResolve, New ResolveEventHandler(AddressOf LoadFromExtensionsFolder)
 
         FileDatabaseProvider.CreateDatabase()
@@ -3070,72 +3101,110 @@ Imports System.Xml
 
         ReactionSets.Add("DefaultSet", New ReactionSet("DefaultSet", "Default Set", ""))
 
-        AddPropPacks()
+        'ghg compositions
+
+        GHGEmissionCompositions.Add("PureCO2", New GHGEmissionComposition With {.Name = "PureCO2", .CarbonDioxide = 1.0})
+        GHGEmissionCompositions.Add("FlueGas_NaturalGas", New GHGEmissionComposition With {.Name = "FlueGas_NaturalGas", .CarbonDioxide = 0.1, .Water = 0.2, .Inerts = 0.7})
+        GHGEmissionCompositions.Add("FlueGas_Coal", New GHGEmissionComposition With {.Name = "FlueGas_Coal", .CarbonDioxide = 0.14, .Water = 0.1, .Inerts = 0.76})
+
         AddExternalUOs()
+        AddSystemsOfUnits()
+        'AddDefaultProperties()
 
-        Dim addedcomps As New List(Of String)
-        Dim casnumbers As New List(Of String)
+        If ObjectList.Count = 0 Then
 
-        Dim tc = TaskHelper.Run(Sub()
-                                    Dim csdb As New Databases.ChemSep
-                                    Dim cpa() As ConstantProperties
-                                    csdb.Load()
-                                    cpa = csdb.Transfer()
-                                    For Each cp As ConstantProperties In cpa
-                                        If Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
-                                    Next
-                                    Dim cpdb As New Databases.CoolProp
-                                    cpdb.Load()
-                                    cpa = cpdb.Transfer()
-                                    addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
-                                    For Each cp As ConstantProperties In cpa
-                                        If Not addedcomps.Contains(cp.Name.ToLower) Then AvailableCompounds.Add(cp.Name, cp)
-                                    Next
-                                    Dim bddb As New Databases.Biodiesel
-                                    bddb.Load()
-                                    cpa = bddb.Transfer()
-                                    addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
-                                    For Each cp As ConstantProperties In cpa
-                                        If Not addedcomps.Contains(cp.Name.ToLower) Then AvailableCompounds.Add(cp.Name, cp)
-                                    Next
-                                    Dim chedl As New Databases.ChEDL_Thermo
-                                    chedl.Load()
-                                    cpa = chedl.Transfer().ToArray()
-                                    addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
-                                    casnumbers = AvailableCompounds.Values.Select(Function(x) x.CAS_Number).ToList()
-                                    For Each cp As ConstantProperties In cpa
-                                        If Not addedcomps.Contains(cp.Name.ToLower) And Not addedcomps.Contains(cp.Name) Then
-                                            If Not casnumbers.Contains(cp.CAS_Number) Then
-                                                If Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
-                                            End If
-                                        End If
-                                    Next
-                                    Dim elec As New Databases.Electrolyte
-                                    elec.Load()
-                                    cpa = elec.Transfer().ToArray()
-                                    addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
-                                    For Each cp As ConstantProperties In cpa
-                                        If Not addedcomps.Contains(cp.Name.ToLower) AndAlso Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
-                                    Next
-                                    Dim comps = Databases.UserDB.LoadAdditionalCompounds()
-                                    For Each cp As BaseClasses.ConstantProperties In comps
-                                        If Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
-                                    Next
-                                    Using filestr As Stream = Assembly.GetAssembly(elec.GetType).GetManifestResourceStream("DWSIM.Thermodynamics.FoodProp.xml")
-                                        Dim fcomps = Databases.UserDB.ReadComps(filestr)
-                                        For Each cp As BaseClasses.ConstantProperties In fcomps
-                                            cp.CurrentDB = "FoodProp"
+            Dim aTypeList As New List(Of Type)
+
+            If GlobalSettings.Settings.RunningPlatform() = Settings.Platform.Linux Then
+                aTypeList.AddRange(calculatorassembly.GetExportedTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing, True, False)))
+                aTypeList.AddRange(unitopassembly.GetExportedTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing And
+                                                                   Not x.IsAbstract And x.GetInterface("DWSIM.Interfaces.IExternalUnitOperation") Is Nothing, True, False)))
+            Else
+                aTypeList.AddRange(calculatorassembly.GetTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing, True, False)))
+                aTypeList.AddRange(unitopassembly.GetTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing And
+                                                                   Not x.IsAbstract And x.GetInterface("DWSIM.Interfaces.IExternalUnitOperation") Is Nothing, True, False)))
+            End If
+
+            For Each item In aTypeList.OrderBy(Function(x) x.Name)
+                If Not item.IsAbstract Then
+                    Dim obj = DirectCast(Activator.CreateInstance(item), Interfaces.ISimulationObject)
+                    ObjectList.Add(obj.GetDisplayName(), obj)
+                End If
+            Next
+
+            For Each item In ExternalUnitOperations.Values.OrderBy(Function(x) x.Name)
+                ObjectList.Add(item.Name, item)
+            Next
+
+        End If
+
+        If Not SupressDataLoading Then
+
+            AddPropPacks()
+
+            Dim addedcomps As New List(Of String)
+            Dim casnumbers As New List(Of String)
+
+            Dim tc = TaskHelper.Run(Sub()
+                                        Dim csdb As New Databases.ChemSep
+                                        Dim cpa() As ConstantProperties
+                                        csdb.Load()
+                                        cpa = csdb.Transfer()
+                                        For Each cp As ConstantProperties In cpa
                                             If Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
                                         Next
-                                    End Using
-                                    csdb.Dispose()
-                                    cpdb.Dispose()
-                                    chedl.Dispose()
-                                    AddSystemsOfUnits()
-                                    AddDefaultProperties()
-                                End Sub)
+                                        Dim cpdb As New Databases.CoolProp
+                                        cpdb.Load()
+                                        cpa = cpdb.Transfer()
+                                        addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
+                                        For Each cp As ConstantProperties In cpa
+                                            If Not addedcomps.Contains(cp.Name.ToLower) Then AvailableCompounds.Add(cp.Name, cp)
+                                        Next
+                                        Dim bddb As New Databases.Biodiesel
+                                        bddb.Load()
+                                        cpa = bddb.Transfer()
+                                        addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
+                                        For Each cp As ConstantProperties In cpa
+                                            If Not addedcomps.Contains(cp.Name.ToLower) Then AvailableCompounds.Add(cp.Name, cp)
+                                        Next
+                                        Dim chedl As New Databases.ChEDL_Thermo
+                                        chedl.Load()
+                                        cpa = chedl.Transfer().ToArray()
+                                        addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
+                                        casnumbers = AvailableCompounds.Values.Select(Function(x) x.CAS_Number).ToList()
+                                        For Each cp As ConstantProperties In cpa
+                                            If Not addedcomps.Contains(cp.Name.ToLower) And Not addedcomps.Contains(cp.Name) Then
+                                                If Not casnumbers.Contains(cp.CAS_Number) Then
+                                                    If Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
+                                                End If
+                                            End If
+                                        Next
+                                        Dim elec As New Databases.Electrolyte
+                                        elec.Load()
+                                        cpa = elec.Transfer().ToArray()
+                                        addedcomps = AvailableCompounds.Keys.Select(Function(x) x.ToLower).ToList()
+                                        For Each cp As ConstantProperties In cpa
+                                            If Not addedcomps.Contains(cp.Name.ToLower) AndAlso Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
+                                        Next
+                                        Dim comps = Databases.UserDB.LoadAdditionalCompounds()
+                                        For Each cp As BaseClasses.ConstantProperties In comps
+                                            If Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
+                                        Next
+                                        Using filestr As Stream = Assembly.GetAssembly(elec.GetType).GetManifestResourceStream("DWSIM.Thermodynamics.FoodProp.xml")
+                                            Dim fcomps = Databases.UserDB.ReadComps(filestr)
+                                            For Each cp As BaseClasses.ConstantProperties In fcomps
+                                                cp.CurrentDB = "FoodProp"
+                                                If Not AvailableCompounds.ContainsKey(cp.Name) Then AvailableCompounds.Add(cp.Name, cp)
+                                            Next
+                                        End Using
+                                        csdb.Dispose()
+                                        cpdb.Dispose()
+                                        chedl.Dispose()
+                                    End Sub)
 
-        If GlobalSettings.Settings.AutomationMode Then tc.Wait()
+            tc.Wait()
+
+        End If
 
     End Sub
 
@@ -3218,7 +3287,7 @@ Imports System.Xml
 
     Public Function LoadZippedXML(pathtofile As String) As XDocument
 
-        Dim pathtosave As String = Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, Guid.NewGuid().ToString())
+        Dim pathtosave As String = Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString())
 
         Directory.CreateDirectory(pathtosave)
 
@@ -3280,7 +3349,7 @@ Label_00CC:
 
     Public Shared Function LoadZippedXMLDoc(pathtofile As String) As XDocument
 
-        Dim pathtosave As String = Path.Combine(My.Computer.FileSystem.SpecialDirectories.Temp, Guid.NewGuid().ToString())
+        Dim pathtosave As String = Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString())
 
         Directory.CreateDirectory(pathtosave)
 
@@ -3528,11 +3597,7 @@ Label_00CC:
 
         Dim otheruos = SharedClasses.Utility.LoadAdditionalUnitOperations()
 
-        Dim unitopassembly = My.Application.Info.LoadedAssemblies.Where(Function(x) x.FullName.Contains("DWSIM.UnitOperations")).FirstOrDefault
-
-        If unitopassembly Is Nothing Then
-            unitopassembly = Assembly.Load("DWSIM.UnitOperations")
-        End If
+        Dim unitopassembly = Assembly.Load("DWSIM.UnitOperations")
 
         Dim euolist As List(Of Interfaces.IExternalUnitOperation) = SharedClasses.Utility.GetUnitOperations(unitopassembly)
 
@@ -3597,21 +3662,20 @@ Label_00CC:
 
     Sub AddDefaultProperties()
 
+        If (GlobalSettings.Settings.RunningPlatform() = Settings.Platform.Linux) Then
+
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)
+
+        End If
+
         If Me.FlowsheetOptions.VisibleProperties.Count = 0 Then
 
-            Dim calculatorassembly = My.Application.Info.LoadedAssemblies.Where(Function(x) x.FullName.Contains("DWSIM.Thermodynamics,")).FirstOrDefault
-            Dim unitopassembly = My.Application.Info.LoadedAssemblies.Where(Function(x) x.FullName.Contains("DWSIM.UnitOperations")).FirstOrDefault
-
-            If calculatorassembly Is Nothing Then
-                calculatorassembly = AppDomain.CurrentDomain.Load("DWSIM.Thermodynamics")
-            End If
-            If unitopassembly Is Nothing Then
-                unitopassembly = AppDomain.CurrentDomain.Load("DWSIM.UnitOperations")
-            End If
+            Dim calculatorassembly = System.Reflection.Assembly.Load("DWSIM.Thermodynamics")
+            Dim unitopassembly = System.Reflection.Assembly.Load("DWSIM.UnitOperations")
 
             Dim aTypeList As New List(Of Type)
-            aTypeList.AddRange(calculatorassembly.GetTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing, True, False)))
-            aTypeList.AddRange(unitopassembly.GetTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing And
+            aTypeList.AddRange(calculatorassembly.GetExportedTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing, True, False)))
+            aTypeList.AddRange(unitopassembly.GetExportedTypes().Where(Function(x) If(x.GetInterface("DWSIM.Interfaces.ISimulationObject") IsNot Nothing And
                                                                    Not x.IsAbstract And x.GetInterface("DWSIM.Interfaces.IExternalUnitOperation") Is Nothing, True, False)))
 
             For Each item In aTypeList.OrderBy(Function(x) x.Name)
@@ -3949,7 +4013,18 @@ Label_00CC:
         End Set
     End Property
 
+    Public Property AvailableSimulationObjects As Dictionary(Of String, ISimulationObject) Implements IFlowsheet.AvailableSimulationObjects
+        Get
+            Return ObjectList
+        End Get
+        Set(value As Dictionary(Of String, ISimulationObject))
+            ObjectList = value
+        End Set
+    End Property
+
     Public Property Results As IFlowsheetResults = New SharedClasses.DWSIM.Flowsheet.FlowsheetResults() Implements IFlowsheet.Results
+
+    Public Property ParticleSizeDistributions As List(Of ISolidParticleSizeDistribution) = New List(Of ISolidParticleSizeDistribution) Implements IFlowsheet.ParticleSizeDistributions
 
     Private Shared Function LoadFromExtensionsFolder(ByVal sender As Object, ByVal args As ResolveEventArgs) As Assembly
 
@@ -3958,14 +4033,23 @@ Label_00CC:
 
         If Not File.Exists(assemblyPath1) Then
             If Not File.Exists(assemblyPath2) Then
+                'Console.WriteLine("Could not find assembly " + assemblyPath1)
                 Return Nothing
             Else
-                Dim assembly As Assembly = Assembly.LoadFrom(assemblyPath2)
-                Return assembly
+                Try
+                    Dim assembly As Assembly = Assembly.LoadFrom(assemblyPath2)
+                    Return assembly
+                Catch ex As System.IO.FileLoadException
+                    'Console.WriteLine("Could not find assembly " + ex.FileName)
+                End Try
             End If
         Else
-            Dim assembly As Assembly = Assembly.LoadFrom(assemblyPath1)
-            Return assembly
+            Try
+                Dim assembly As Assembly = Assembly.LoadFrom(assemblyPath1)
+                Return assembly
+            Catch ex As System.IO.FileLoadException
+                'Console.WriteLine("Could not find assembly " + ex.FileName)
+            End Try
         End If
 
     End Function
@@ -4295,6 +4379,58 @@ Label_00CC:
         Throw New NotImplementedException()
     End Sub
 
+    Public Sub ReleaseResources() Implements IFlowsheet.ReleaseResources
+
+        Me.ProcessScripts(Enums.Scripts.EventType.SimulationClosed, Enums.Scripts.ObjectType.Simulation, "")
+
+        'dispose objects
+
+        Try
+            FileDatabaseProvider.ReleaseDatabase()
+        Catch ex As Exception
+        End Try
+
+        For Each obj As MaterialStream In SimulationObjects.Values.Where(Function(so) TypeOf so Is MaterialStream)
+            For Each p In obj.Phases.Values
+                p.Compounds.Clear()
+            Next
+            obj.Dispose()
+            obj.SetFlowsheet(Nothing)
+        Next
+
+        'For Each uobj As SharedClasses.UnitOperations.BaseClass In SimulationObjects.Values
+        '    uobj.GraphicObject = Nothing
+        '    Try
+        '        If uobj.disposedValue = False Then
+        '            uobj.Dispose()
+        '            uobj = Nothing
+        '        End If
+        '    Catch ex As Exception
+        '    End Try
+        'Next
+
+        'For Each gobj In GraphicObjects.Values
+        '    gobj.Owner = Nothing
+        'Next
+
+        FlowsheetSurface = Nothing
+        FileDatabaseProvider = Nothing
+
+        GraphicObjects.Clear()
+        SimulationObjects.Clear()
+        OptimizationCollection.Clear()
+        SensAnalysisCollection.Clear()
+        PropertyPackages.Clear()
+        SelectedCompounds.Clear()
+        Options.SelectedComponents = Nothing
+        Options.NotSelectedComponents = Nothing
+        Options.SelectedUnitSystem = Nothing
+        Options.SelectedUnitSystem1 = Nothing
+        Options = Nothing
+
+    End Sub
+
+
 #Region "    Snapshots"
 
     Public Sub RegisterSnapshot(stype As SnapshotType, Optional obj As ISimulationObject = Nothing) Implements IFlowsheet.RegisterSnapshot
@@ -4359,8 +4495,19 @@ Label_00CC:
                 xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("SimulationObjects"))
                 xel = xdoc.Element("DWSIM_Simulation_Data").Element("SimulationObjects")
 
-                SimulationObjects(obj.Name).SetFlowsheet(Me)
-                xel.Add(New XElement("SimulationObject", {SimulationObjects(obj.Name).SaveData().ToArray()}))
+                If obj Is Nothing Then
+
+                    For Each obj In SimulationObjects.Values
+                        obj.SetFlowsheet(Me)
+                        xel.Add(New XElement("SimulationObject", {obj.SaveData().ToArray()}))
+                    Next
+
+                Else
+
+                    SimulationObjects(obj.Name).SetFlowsheet(Me)
+                    xel.Add(New XElement("SimulationObject", {SimulationObjects(obj.Name).SaveData().ToArray()}))
+
+                End If
 
             Else 'includeobjectlayout
 
@@ -4492,13 +4639,6 @@ Label_00CC:
             xel = xdoc.Element("DWSIM_Simulation_Data").Element("Results")
             xel.Add(DirectCast(Results, ICustomXMLSerialization).SaveData().ToArray())
 
-            xdoc.Element("DWSIM_Simulation_Data").Add(New XElement("GHGCompositions"))
-            xel = xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions")
-
-            For Each ghgcomp In GHGEmissionCompositions.Values
-                xel.Add(New XElement("GHGComposition", DirectCast(ghgcomp, ICustomXMLSerialization).SaveData().ToArray()))
-            Next
-
         End If
 
         Return xdoc
@@ -4587,24 +4727,6 @@ Label_00CC:
                     data = xdoc.Element("DWSIM_Simulation_Data").Element("Results").Elements.ToList
 
                     DirectCast(Results, ICustomXMLSerialization).LoadData(data)
-
-                End If
-
-                If xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions") IsNot Nothing Then
-
-                    GHGEmissionCompositions = New Dictionary(Of String, IGHGComposition)()
-
-                    data = xdoc.Element("DWSIM_Simulation_Data").Element("GHGCompositions").Elements.ToList
-
-                    For Each xel As XElement In data
-                        Try
-                            Dim obj As New GHGEmissionComposition()
-                            obj.LoadData(xel.Elements.ToList)
-                            GHGEmissionCompositions.Add(obj.ID, obj)
-                        Catch ex As Exception
-                            excs.Add(New Exception("Error Loading GHG Composition Item Information", ex))
-                        End Try
-                    Next
 
                 End If
 
@@ -4806,7 +4928,7 @@ Label_00CC:
                                     Dim propname = xel.Element("Name").Value
                                     Dim proptype = xel.Element("PropertyType").Value
                                     Dim assembly1 As Assembly = Nothing
-                                    For Each assembly In My.Application.Info.LoadedAssemblies
+                                    For Each assembly In AppDomain.CurrentDomain.GetAssemblies()
                                         If proptype.Contains(assembly.GetName().Name) Then
                                             assembly1 = assembly
                                             Exit For
@@ -5166,7 +5288,11 @@ Label_00CC:
             "Total GHG Mass Emissions",
             "Total GHG Molar Emissions",
             "Total CO2eq GHG Mass Emissions",
-            "Total CO2eq GHG Molar Emissions"
+            "Total CO2eq GHG Molar Emissions",
+            "Residual Mass Balance",
+            "Total Energy Balance",
+            "Total CAPEX",
+            "Total OPEX"
         }
 
         Dim extraprops = DirectCast(Results.Additional, IDictionary(Of String, Object))
@@ -5185,19 +5311,35 @@ Label_00CC:
 
             Case "Total GHG Mass Emissions"
 
-                Return Results.GHGEmissionsSummary.TotalGHGMassEmission
+                Return Results.GHGEmissionsSummary.TotalGHGMassEmission.ConvertFromSI(Options.SelectedUnitSystem.massflow)
 
             Case "Total GHG Molar Emissions"
 
-                Return Results.GHGEmissionsSummary.TotalGHGMolarEmission
+                Return Results.GHGEmissionsSummary.TotalGHGMolarEmission.ConvertFromSI(Options.SelectedUnitSystem.molarflow)
 
             Case "Total CO2eq GHG Mass Emissions"
 
-                Return Results.GHGEmissionsSummary.TotalCO2eqMassEmission
+                Return Results.GHGEmissionsSummary.TotalCO2eqMassEmission.ConvertFromSI(Options.SelectedUnitSystem.massflow)
 
             Case "Total CO2eq GHG Molar Emissions"
 
-                Return Results.GHGEmissionsSummary.TotalCO2eqMolarEmission
+                Return Results.GHGEmissionsSummary.TotalCO2eqMolarEmission.ConvertFromSI(Options.SelectedUnitSystem.molarflow)
+
+            Case "Total CAPEX"
+
+                Return Results.TotalCAPEX
+
+            Case "Total OPEX"
+
+                Return Results.TotalOPEX
+
+            Case "Residual Mass Balance"
+
+                Return Results.ResidualMassBalance.ConvertFromSI(Options.SelectedUnitSystem.massflow)
+
+            Case "Total Energy Balance"
+
+                Return Results.TotalEnergyBalance.ConvertFromSI(Options.SelectedUnitSystem.heatflow)
 
             Case Else
 
@@ -5219,19 +5361,35 @@ Label_00CC:
 
             Case "Total GHG Mass Emissions"
 
-                Return "kg/s"
+                Return Options.SelectedUnitSystem.massflow
 
             Case "Total GHG Molar Emissions"
 
-                Return "mol/s"
+                Return Options.SelectedUnitSystem.molarflow
 
             Case "Total CO2eq GHG Mass Emissions"
 
-                Return "kg/s"
+                Return Options.SelectedUnitSystem.massflow
 
             Case "Total CO2eq GHG Molar Emissions"
 
-                Return "mol/s"
+                Return Options.SelectedUnitSystem.molarflow
+
+            Case "Total CAPEX"
+
+                Return "$"
+
+            Case "Total OPEX"
+
+                Return "$/year"
+
+            Case "Residual Mass Balance"
+
+                Return Options.SelectedUnitSystem.massflow
+
+            Case "Total Energy Balance"
+
+                Return Options.SelectedUnitSystem.heatflow
 
             Case Else
 
@@ -5240,6 +5398,51 @@ Label_00CC:
         End Select
 
     End Function
+
+    Public Sub UpdateMassAndEnergyBalance() Implements IFlowsheet.UpdateMassAndEnergyBalance
+
+        Dim equipments = SimulationObjects.Values.Where(Function(o) TypeOf o Is UnitOpBaseClass And TypeOf o IsNot IIndicator)
+
+        Dim totalE As Double = 0.0
+
+        For Each eq In equipments
+            'check efficiency
+            Dim eff As Nullable(Of Double)
+            Dim props = eq.GetType().GetProperties()
+            If props.Where(Function(p) p.Name = "Eficiencia").Count > 0 Then
+                eff = Convert.ToDouble(eq.GetType().GetProperty("Eficiencia").GetValue(eq))
+            ElseIf props.Where(Function(p) p.Name = "ThermalEfficiency").Count > 0 Then
+                eff = Convert.ToDouble(eq.GetType().GetProperty("ThermalEfficiency").GetValue(eq))
+            ElseIf props.Where(Function(p) p.Name = "Efficiency").Count > 0 Then
+                eff = Convert.ToDouble(eq.GetType().GetProperty("Efficiency").GetValue(eq))
+            ElseIf props.Where(Function(p) p.Name = "AdiabaticEfficiency").Count > 0 Then
+                eff = Convert.ToDouble(eq.GetType().GetProperty("AdiabaticEfficiency").GetValue(eq))
+            Else
+                eff = Nothing
+            End If
+            Dim eb = eq.GetPowerGeneratedOrConsumed()
+            totalE += eb
+        Next
+
+        Results.TotalEnergyBalance = totalE
+
+        Dim streams = SimulationObjects.Values.Where(Function(o) TypeOf o Is IMaterialStream).Select(Function(o) DirectCast(o, MaterialStream))
+
+        Dim totalM = 0.0
+
+        For Each s In streams
+            Dim mf = s.GetMassFlow()
+            If Not s.GraphicObject.InputConnectors(0).IsAttached Then
+                totalM += mf
+            End If
+            If Not s.GraphicObject.OutputConnectors(0).IsAttached Then
+                totalM -= mf
+            End If
+        Next
+
+        Results.ResidualMassBalance = totalM
+
+    End Sub
 
 #End Region
 

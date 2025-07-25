@@ -204,11 +204,6 @@ Public Class FormBinEnv
             Me.BtnCalculate.Enabled = False
             Me.BtnCalculate.BackColor = Color.LightGreen
 
-            If My.Settings.EnableGPUProcessing Then
-                Calculator.InitComputeDevice()
-                Settings.gpu.EnableMultithreading()
-            End If
-
             Dim Parameters As New Object()
             Parameters = {tipocalc, P, T, chkVLE.Checked, lle,
                           chkSLE.Checked, chkCritical.Checked, rbSolidSolution.Checked,
@@ -303,10 +298,9 @@ Public Class FormBinEnv
     End Function
     Private Sub BackgroundWorker1_RunWorkerCompleted(ByVal sender As Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
 
-        If My.Settings.EnableGPUProcessing Then
-            Settings.gpu.DisableMultithreading()
-            Settings.gpu.FreeAll()
-        End If
+        For Each pp1 As PropertyPackage In Flowsheet.PropertyPackages.Values
+            pp1.CurrentMaterialStream = Nothing
+        Next
 
         Me.BtnCalculate.Enabled = True
         Me.BtnCalculate.BackColor = SystemColors.Control

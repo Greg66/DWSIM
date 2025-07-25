@@ -43,7 +43,7 @@ Public Class FormCompoundCreator
 
     Public mycase As New CompoundGeneratorCase
     Public simulate365File As S365File = Nothing
-    Friend loaded As Boolean = False
+    Public loaded As Boolean = False
     Friend PureUNIFACCompound As Boolean = True
     Friend isDWSimSaved As Boolean = True
     Friend isUserDBSaved As Boolean = True
@@ -565,25 +565,29 @@ Public Class FormCompoundCreator
 
             populating = True
             For Each r As DataGridViewRow In Me.GridUNIFAC.Rows
-                If .cp.UNIFACGroups(r.Cells(1).Value) <> "" Then r.Cells(2).Value = .cp.UNIFACGroups(r.Cells(1).Value) 'old file format - Subgroup name
-                If .cp.UNIFACGroups(r.Cells(3).Tag(2)) <> "" Then r.Cells(2).Value = .cp.UNIFACGroups(r.Cells(3).Tag(2)) 'new file format - Subgroup ID
-
-                If r.Cells(2).Value > 0 Then
-                    r.Cells(2).Style.BackColor = Color.PaleGreen
-                Else
-                    r.Cells(2).Style.BackColor = Color.White
-                End If
-
+                Try
+                    If .cp.UNIFACGroups(r.Cells(1).Value) <> "" Then r.Cells(2).Value = .cp.UNIFACGroups(r.Cells(1).Value) 'old file format - Subgroup name
+                    If .cp.UNIFACGroups(r.Cells(3).Tag(2)) <> "" Then r.Cells(2).Value = .cp.UNIFACGroups(r.Cells(3).Tag(2)) 'new file format - Subgroup ID
+                    If r.Cells(2).Value > 0 Then
+                        r.Cells(2).Style.BackColor = Color.PaleGreen
+                    Else
+                        r.Cells(2).Style.BackColor = Color.White
+                    End If
+                Catch ex As Exception
+                End Try
             Next
             For Each r As DataGridViewRow In Me.GridMODFAC.Rows
-                If .cp.MODFACGroups(r.Cells(1).Value) <> "" Then r.Cells(2).Value = .cp.MODFACGroups(r.Cells(1).Value) 'old file format - Subgroup name
-                If .cp.MODFACGroups(r.Cells(3).Tag(2)) <> "" Then r.Cells(2).Value = .cp.MODFACGroups(r.Cells(3).Tag(2)) 'new file format - Subgroup ID
+                Try
+                    If .cp.MODFACGroups(r.Cells(1).Value) <> "" Then r.Cells(2).Value = .cp.MODFACGroups(r.Cells(1).Value) 'old file format - Subgroup name
+                    If .cp.MODFACGroups(r.Cells(3).Tag(2)) <> "" Then r.Cells(2).Value = .cp.MODFACGroups(r.Cells(3).Tag(2)) 'new file format - Subgroup ID
 
-                If r.Cells(2).Value > 0 Then
-                    r.Cells(2).Style.BackColor = Color.PaleGreen
-                Else
-                    r.Cells(2).Style.BackColor = Color.White
-                End If
+                    If r.Cells(2).Value > 0 Then
+                        r.Cells(2).Style.BackColor = Color.PaleGreen
+                    Else
+                        r.Cells(2).Style.BackColor = Color.White
+                    End If
+                Catch ex As Exception
+                End Try
             Next
 
             If .cp.NISTMODFACGroups Is Nothing Then
@@ -591,14 +595,16 @@ Public Class FormCompoundCreator
             End If
 
             For Each r As DataGridViewRow In Me.GridNISTMODFAC.Rows
-                If .cp.NISTMODFACGroups(r.Cells(1).Value) <> "" Then r.Cells(2).Value = .cp.NISTMODFACGroups(r.Cells(1).Value) 'old file format - Subgroup name
-                If .cp.NISTMODFACGroups(r.Cells(3).Tag(2)) <> "" Then r.Cells(2).Value = .cp.NISTMODFACGroups(r.Cells(3).Tag(2)) 'new file format - Subgroup ID
-
-                If r.Cells(2).Value > 0 Then
-                    r.Cells(2).Style.BackColor = Color.PaleGreen
-                Else
-                    r.Cells(2).Style.BackColor = Color.White
-                End If
+                Try
+                    If .cp.NISTMODFACGroups(r.Cells(1).Value) <> "" Then r.Cells(2).Value = .cp.NISTMODFACGroups(r.Cells(1).Value) 'old file format - Subgroup name
+                    If .cp.NISTMODFACGroups(r.Cells(3).Tag(2)) <> "" Then r.Cells(2).Value = .cp.NISTMODFACGroups(r.Cells(3).Tag(2)) 'new file format - Subgroup ID
+                    If r.Cells(2).Value > 0 Then
+                        r.Cells(2).Style.BackColor = Color.PaleGreen
+                    Else
+                        r.Cells(2).Style.BackColor = Color.White
+                    End If
+                Catch ex As Exception
+                End Try
             Next
 
             FillUnifacSubGroups()
@@ -736,6 +742,7 @@ Public Class FormCompoundCreator
             .cp.SMILES = TextBoxSMILES.Text
             .cp.TemperatureOfFusion = SystemsOfUnits.Converter.ConvertToSI(su.temperature, CheckEmptyTextBox(TextBoxMeltingTemp))
             .cp.EnthalpyOfFusionAtTf = SystemsOfUnits.Converter.ConvertToSI(su.enthalpy, CheckEmptyTextBox(TextBoxEnthOfFusion))
+            .cp.Critical_Volume = 8314 * .cp.Critical_Compressibility * .cp.Critical_Temperature / .cp.Critical_Pressure
 
             .RegressPVAP = rbRegressPVAP.Checked
             .RegressCPIG = rbRegressCPIG.Checked
@@ -1822,7 +1829,9 @@ Public Class FormCompoundCreator
     End Sub
 
 
-    Private Sub GridExpData_KeyDown(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles GridExpDataRoS.KeyDown, GridExpDataCpS.KeyDown, GridExpDataPVAP.KeyDown, GridExpDataLIQVISC.KeyDown, GridExpDataLIQDENS.KeyDown, GridExpDataCPLiquid.KeyDown, GridExpDataCPIG.KeyDown
+    Private Sub GridExpData_KeyDown(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles GridExpDataRoS.KeyDown,
+        GridExpDataCpS.KeyDown, GridExpDataPVAP.KeyDown, GridExpDataLIQVISC.KeyDown, GridExpDataLIQDENS.KeyDown,
+        GridExpDataCPLiquid.KeyDown, GridExpDataCPIG.KeyDown, GridExpDataTCLiquid.KeyDown
 
         If e.KeyCode = Keys.Delete And e.Modifiers = Keys.Shift Then
             Dim toremove As New ArrayList
@@ -2872,7 +2881,7 @@ Public Class FormCompoundCreator
             pbRender.Image = renderer.renderToBitmap(mol)
             btnRenderSMILES.Enabled = False
         Catch ex As Exception
-            MessageBox.Show(ex.Message.ToString, DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show("Unable to render the molecule. Your input was sent to an external library, which did not return a result or a helpful error message.", DWSIM.App.GetLocalString("Erro"), MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 
@@ -2881,15 +2890,12 @@ Public Class FormCompoundCreator
     End Sub
 
     Private Sub btnRenderSMILES_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnRenderSMILES.Click
-        If DWSIM.App.IsRunningOnMono Then
-            MessageBox.Show(DWSIM.App.GetLocalString("Unsupported_Feature"), "DWSIM", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
-        Else
-            RenderSMILES()
-        End If
+        RenderSMILES()
     End Sub
 
     Private Sub GridExpData_CellValueChanged(ByVal sender As System.Object, ByVal e As System.Windows.Forms.DataGridViewCellEventArgs) Handles GridExpDataPVAP.CellValueChanged,
-                GridExpDataLIQVISC.CellValueChanged, GridExpDataLIQDENS.CellValueChanged, GridExpDataRoS.CellValueChanged, GridExpDataCpS.CellValueChanged, GridExpDataCPLiquid.CellValueChanged, GridExpDataCPIG.CellValueChanged
+                GridExpDataLIQVISC.CellValueChanged, GridExpDataLIQDENS.CellValueChanged, GridExpDataRoS.CellValueChanged, GridExpDataCpS.CellValueChanged, GridExpDataCPLiquid.CellValueChanged,
+                GridExpDataCPIG.CellValueChanged, GridExpDataTCLiquid.CellValueChanged
         If loaded Then
             Try
                 StoreCPIGData()
@@ -2899,6 +2905,7 @@ Public Class FormCompoundCreator
                 StorePVAPData()
                 StoreSolidCpData()
                 StoreSolidDensData()
+                StoreLiqTCData()
                 CheckDataStatus()
             Catch ex As Exception
             End Try
@@ -3019,23 +3026,26 @@ Public Class FormCompoundCreator
             Dim t0 As Integer = mycase.cp.Normal_Boiling_Point * 0.3
             Dim t1 As Integer = mycase.cp.Normal_Boiling_Point
             Dim stp As Integer = (t1 - t0) / 50
-            For T = t0 To t1 Step stp
-                x = SystemsOfUnits.Converter.ConvertFromSI(su.temperature, T)
-                px.Add(x)
-                y1 = SystemsOfUnits.Converter.ConvertFromSI(su.thermalConductivity, PROPS.condl_latini(T, mycase.cp.Normal_Boiling_Point,
+            If stp > 0 Then
+                For T = t0 To t1 Step stp
+                    x = SystemsOfUnits.Converter.ConvertFromSI(su.temperature, T)
+                    px.Add(x)
+                    y1 = SystemsOfUnits.Converter.ConvertFromSI(su.thermalConductivity, PROPS.condl_latini(T, mycase.cp.Normal_Boiling_Point,
                                                                                                        mycase.cp.Critical_Temperature,
                                                                                                         mycase.cp.Molar_Weight, "X"))
-                py1.Add(y1)
-                mytext.AppendLine(FormatNumber(x, 2) & vbTab & FormatNumber(y1, 2))
-            Next
-
-            With frc
-                .px = px
-                .py1 = py1
-                .ycurvetypes = New ArrayList(New Integer() {3})
-                .y1ctitle = "Regressed/Input Equation"
-                .title = "Liquid Thermal Conductivity"
-            End With
+                    py1.Add(y1)
+                    mytext.AppendLine(FormatNumber(x, 2) & vbTab & FormatNumber(y1, 2))
+                Next
+                With frc
+                    .px = px
+                    .py1 = py1
+                    .ycurvetypes = New ArrayList(New Integer() {3})
+                    .y1ctitle = "Regressed/Input Equation"
+                    .title = "Liquid Thermal Conductivity"
+                End With
+            Else
+                MessageBox.Show("Please enter the Normal Boiling Point of the compound.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
         Else
             mytext.AppendLine("T" & vbTab & "yEXP" & vbTab & vbTab & "yCALC")
             mytext.AppendLine("[" & su.temperature & "]" & vbTab & "[" & su.thermalConductivity & "]" & vbTab & "[" & su.thermalConductivity & "]")
@@ -3508,6 +3518,10 @@ Public Class FormCompoundCreator
         Catch ex As Exception
 
         End Try
+    End Sub
+
+    Private Sub GridExpDataTCLiquid_CellValidating(sender As Object, e As DataGridViewCellValidatingEventArgs) Handles GridExpDataTCLiquid.CellValidating
+        DirectCast(sender, DataGridView).ValidateCellForDouble(e)
     End Sub
 
 End Class

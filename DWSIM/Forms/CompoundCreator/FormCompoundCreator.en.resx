@@ -897,6 +897,9 @@
   <data name="BancoDeDadosChemeoToolStripMenuItem.Text" xml:space="preserve">
     <value>Cheméo Database</value>
   </data>
+  <data name="EstruturaUNIFACMODFACDDBToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
   <data name="EstruturaUNIFACMODFACDDBToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>300, 22</value>
   </data>

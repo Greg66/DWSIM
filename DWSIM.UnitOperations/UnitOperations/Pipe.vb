@@ -83,12 +83,19 @@ Namespace UnitOperations
         Public Property UseGlobalWeather As Boolean = False
 
         Public Property Specification As Specmode = Specmode.Length
+
         Public Property OutletPressure As Double = 101325
+
         Public Property OutletTemperature As Double = 298.15
 
         Public Property SlurryViscosityMode As Integer = 0
 
+        Public Property CalculateEquilibrium As Boolean = True
+
+        Public Property CalculateEquilibriumIntervalInSteps As Integer = 1
+
         Public Property PressureDrop_Static As Double = 0.0
+
         Public Property PressureDrop_Friction As Double = 0.0
 
         Public Property IncludeEmulsion() As Boolean
@@ -388,9 +395,9 @@ Namespace UnitOperations
                 es = args(2)
             End If
 
-            Dim Tin, Pin, Tout, Pout, Tout_ant, Pout_ant, Pout_ant2, Toutj, Text, Win, Qin, Qvin, Qlin, Qsin, eta_phi, eta_r, TinP, PinP,
+            Dim Tin, Pin, Tout, Pout, Tout_ant, Pout_ant, Pout_ant2, Text, Win, Qin, Qvin, Qlin, Qsin, eta_phi, eta_r, TinP, PinP,
                 rho_l, rho_v, Cp_l, Cp_v, Cp_m, K_l, K_v, eta_l, eta_v, tens, Hin, Hout, HinP,
-                fT, fP, fP_ant, fP_ant2, w_v, w_l, w, z, z2, dzdT, dText_dL, phi, eta_lh, eta_ll As Double
+                fT, fP, fP_ant, fP_ant2, w_v, w_l, w, z, dText_dL As Double
             Dim cntP, cntT As Integer
 
             If Me.Specification = Specmode.OutletTemperature Then
@@ -399,13 +406,13 @@ Namespace UnitOperations
             End If
 
             'Calcular DP
-            Dim Tpe, Ppe, Tspec, Pspec As Double
-            Dim resv, resf As Object
+            Dim Tpe, Tspec, Pspec As Double
+            Dim resv As Object, resf As Double()
             Dim equilibrio As Object = Nothing
             Dim tmp As Object = Nothing
             Dim tipofluxo As String
             Dim first As Boolean = True
-            Dim holdup, dpf, dph, dpt, DQ, DQmax, U, A, eta, fx, fx0, x, x0, fx00, x00, p0, t0 As Double
+            Dim holdup, dpf, dph, dpt, DQ, DQmax, U, A, fx, fx0, x, x0, fx00, x00, p0, t0 As Double
             Dim f_mix, mu_mix, rho_mix, vel_mix, Re_mix As Double
             Dim nseg As Double
             Dim segmento As New PipeSection
@@ -528,6 +535,9 @@ Namespace UnitOperations
 
                         End With
 
+                        Dim eqcheck = 0
+                        Dim calceq = False
+
                         Do
 
                             If Me.ThermalProfile.TipoPerfil = ThermalEditorDefinitions.ThermalProfileType.Definir_CGTC Then
@@ -618,29 +628,44 @@ Namespace UnitOperations
                                         If segmento.TipoSegmento = "Tubulaosimples" Or segmento.TipoSegmento = "" Or segmento.TipoSegmento = "Straight Tube Section" Or segmento.TipoSegmento = "Straight Tube" Or segmento.TipoSegmento = "Tubulação Simples" Then
                                             resv = fpp.CalculateDeltaP(.DI * 0.0254, .Comprimento / .Incrementos, .Elevacao / .Incrementos, Me.GetRugosity(.Material, segmento), Qvin * 24 * 3600, Qlin * 24 * 3600, eta_v * 1000, eta_l * 1000, rho_v, rho_l, tens)
                                         Else
-                                            segmento.Comprimento = 0.1 '10 cm default
-                                            segmento.Incrementos = 1 'only one increment
-                                            segmento.Elevacao = 0
-                                            resf = Me.Kfit(segmento.TipoSegmento)
-                                            If resf(1) Then
-                                                Dim L_eq As Double
-                                                L_eq = resf(0) * 0.0254 * .DI
-                                                resv = fpp.CalculateDeltaP(.DI * 0.0254, L_eq, 0, Me.GetRugosity(.Material, segmento), Qvin * 24 * 3600, Qlin * 24 * 3600, eta_v * 1000, eta_l * 1000, rho_v, rho_l, tens)
-                                            Else
-                                                mu_mix = (Qlin + Qsin) / (Qvin + Qlin + Qsin) * eta_l + Qvin / (Qvin + Qlin + Qsin) * eta_v
-                                                rho_mix = (Qlin + Qsin) / (Qvin + Qlin + Qsin) * rho_l + Qvin / (Qvin + Qlin + Qsin) * rho_v
-                                                vel_mix = (Qlin + Qvin) / ((.DI * 0.0254) ^ 2 * Math.PI / 4)
-                                                Re_mix = fpp.NRe(rho_mix, vel_mix, .DI * 0.0254, mu_mix)
-                                                Dim k = Me.GetRugosity(.Material, segmento)
-                                                f_mix = fpp.FrictionFactor(Re_mix, .DI * 0.0254, k)
+                                            If segmento.TipoSegmento.Contains("[27]") Then
+                                                'fixed deltaP
+                                                segmento.Comprimento = 0.1 '10 cm default
+                                                segmento.Incrementos = 1 'only one increment
+                                                segmento.Elevacao = 0
                                                 dph = 0
-                                                dpf = resf(0) * ((Qlin + Qsin) / (Qvin + Qlin + Qsin) * rho_l + Qvin / (Qvin + Qlin + Qsin) * rho_v) * (results.LiqVel.GetValueOrDefault + results.VapVel.GetValueOrDefault) ^ 2 / 2
+                                                dpf = segmento.DI.ConvertToSI(FlowSheet.FlowsheetOptions.SelectedUnitSystem.deltaP)
                                                 dpt = dpf
                                                 resv(0) = ""
                                                 resv(1) = (Qlin + Qsin) / (Qvin + Qlin + Qsin)
                                                 resv(2) = dpf
                                                 resv(3) = 0
                                                 resv(4) = dpt
+                                            Else
+                                                segmento.Comprimento = 0.1 '10 cm default
+                                                segmento.Incrementos = 1 'only one increment
+                                                segmento.Elevacao = 0
+                                                resf = Me.Kfit(segmento.TipoSegmento)
+                                                If resf(1) = 1.0 Then
+                                                    Dim L_eq As Double
+                                                    L_eq = resf(0) * 0.0254 * .DI
+                                                    resv = fpp.CalculateDeltaP(.DI * 0.0254, L_eq, 0, Me.GetRugosity(.Material, segmento), Qvin * 24 * 3600, Qlin * 24 * 3600, eta_v * 1000, eta_l * 1000, rho_v, rho_l, tens)
+                                                Else
+                                                    mu_mix = (Qlin + Qsin) / (Qvin + Qlin + Qsin) * eta_l + Qvin / (Qvin + Qlin + Qsin) * eta_v
+                                                    rho_mix = (Qlin + Qsin) / (Qvin + Qlin + Qsin) * rho_l + Qvin / (Qvin + Qlin + Qsin) * rho_v
+                                                    vel_mix = (Qlin + Qvin) / ((.DI * 0.0254) ^ 2 * Math.PI / 4)
+                                                    Re_mix = fpp.NRe(rho_mix, vel_mix, .DI * 0.0254, mu_mix)
+                                                    Dim k = Me.GetRugosity(.Material, segmento)
+                                                    f_mix = fpp.FrictionFactor(Re_mix, .DI * 0.0254, k)
+                                                    dph = 0
+                                                    dpf = resf(0) * ((Qlin + Qsin) / (Qvin + Qlin + Qsin) * rho_l + Qvin / (Qvin + Qlin + Qsin) * rho_v) * (results.LiqVel.GetValueOrDefault + results.VapVel.GetValueOrDefault) ^ 2 / 2
+                                                    dpt = dpf
+                                                    resv(0) = ""
+                                                    resv(1) = (Qlin + Qsin) / (Qvin + Qlin + Qsin)
+                                                    resv(2) = dpf
+                                                    resv(3) = 0
+                                                    resv(4) = dpt
+                                                End If
                                             End If
                                         End If
 
@@ -742,11 +767,28 @@ Namespace UnitOperations
                                         If U <> 0.0# Then
                                             DQ = (Tout - Tin) / Math.Log((results.External_Temperature - Tin) / (results.External_Temperature - Tout)) * U / 1000 * A
                                             DQmax = (results.External_Temperature - Tin) * Cp_m * Win
+                                            Dim SR, Qrad As Double
+                                            If ThermalProfile.IncludeSolarRadiation Then
+                                                If ThermalProfile.UseGlobalSolarRadiation Then
+                                                    SR = ThermalProfile.SolarRadiationAbsorptionEfficiency * FlowSheet.FlowsheetOptions.CurrentWeather.SolarIrradiation_kWh_m2
+                                                Else
+                                                    SR = ThermalProfile.SolarRadiationAbsorptionEfficiency * ThermalProfile.SolarRadiationValue_kWh_m2
+                                                End If
+                                                Dim Asec = Math.PI * .Comprimento / .Incrementos * .DE * 0.0254
+                                                Dim tflux = (Math.PI * (.DE * 0.0254) ^ 2 / 4) * .Comprimento / .Incrementos / ims.GetVolumetricFlow()
+                                                Qrad = SR / tflux * Asec
+                                                DQ += Qrad
+                                                DQmax += Qrad
+                                                results.Absorbed_Radiation = Qrad
+                                            End If
                                             If Double.IsNaN(DQ) Then DQ = 0.0#
                                             If Math.Abs(DQ) > Math.Abs(DQmax) Then DQ = DQmax
-                                            'Tout = DQ / (Win * Cp_m) + Tin
+
+                                            results.Internal_Temperature = (Tout + Tin) / 2
+                                            results.Wall_Temperature = results.Internal_Temperature + DQ / (results.HTC_pipewall * Math.PI * (Math.Log(.DE / .DI) * .DI * 0.0254) * .Comprimento / .Incrementos)
+                                            results.Insulation_Temperature = results.Wall_Temperature + DQ / (results.HTC_insulation * Math.PI * (Math.Log((.DE + ThermalProfile.Espessura / 0.0254) / .DE) * .DE * 0.0254) * .Comprimento / .Incrementos)
+
                                         Else
-                                            'Tout = Tin
                                             DQ = 0.0#
                                             DQmax = 0.0#
                                         End If
@@ -822,7 +864,10 @@ Namespace UnitOperations
                             IObj4?.Paragraphs.Add(String.Format("Recalculating the temporary material stream and moving on to the next segment/increment..."))
 
                             IObj4?.SetCurrent()
-                            oms.Calculate(True, True)
+
+                            If calceq And CalculateEquilibrium Then
+                                oms.Calculate(True, True)
+                            End If
 
                             With oms
 
@@ -881,7 +926,10 @@ Namespace UnitOperations
                                                                                                    .HTC_internal = results.HTC_internal,
                                                                                                    .HTC_insulation = results.HTC_insulation,
                                                                                                    .HTC_pipewall = results.HTC_pipewall,
-                                                                                                   .External_Temperature = results.External_Temperature})
+                                                                                                   .External_Temperature = results.External_Temperature,
+                                                                                                   .Insulation_Temperature = results.Insulation_Temperature,
+                                                                                                   .Wall_Temperature = results.Wall_Temperature,
+                                                                                                   .Absorbed_Radiation = results.Absorbed_Radiation})
 
                                 segmento.Results.Last.MachNumber = .VapVel / oms.Phases(2).Properties.speedOfSound.GetValueOrDefault()
 
@@ -896,6 +944,14 @@ Namespace UnitOperations
                             j += 1
 
                             IObj4?.Close()
+
+                            eqcheck += j
+                            If eqcheck >= CalculateEquilibriumIntervalInSteps * j Then
+                                eqcheck = 0.0
+                                calceq = True
+                            Else
+                                calceq = False
+                            End If
 
                         Loop Until j = nseg
 
@@ -997,9 +1053,9 @@ Namespace UnitOperations
             End With
             segmento.Results.Add(results)
 
-            Me.DeltaP = (PinP - Pout)
-            Me.DeltaT = (TinP - Tout)
-            Me.DeltaQ = -(HinP - Hout) * Win
+            Me.DeltaP = (Pout - PinP)
+            Me.DeltaT = (Tout - TinP)
+            Me.DeltaQ = (Hout - HinP) * Win
 
             'Atribuir valores a corrente de materia conectada a jusante
             Dim msout As MaterialStream
@@ -1088,7 +1144,7 @@ Namespace UnitOperations
 
             'Curva Normal 90°;30,00;1;
             If name = 0 Then
-                tmp(0) = 30
+                tmp(0) = 14
                 tmp(1) = 1
             End If
             'Curva Normal 45°;16,00;1;
@@ -1168,7 +1224,7 @@ Namespace UnitOperations
             End If
             'Contracao Rapida d/D = 3/4;1,11;0;
             If name = 16 Then
-                tmp(0) = 11
+                tmp(0) = 1.11
                 tmp(1) = 0
             End If
             'Entrada Borda;0,25;0;
@@ -1220,6 +1276,11 @@ Namespace UnitOperations
             If name = 26 Then
                 tmp(0) = 1
                 tmp(1) = 0
+            End If
+            'Threaded/Screwed 90° Elbow
+            If name = 28 Then
+                tmp(0) = 30
+                tmp(1) = 1
             End If
 
             Kfit = tmp
@@ -1449,7 +1510,7 @@ Namespace UnitOperations
             If isolamento = True Then
 
                 esp_isol = Me.m_thermalprofile.Espessura 'm
-                U_isol = Me.m_thermalprofile.Condtermica / (Math.Log((Dext + esp_isol) / Dext) * Dext)
+                U_isol = Me.m_thermalprofile.Condtermica / (Math.Log((Dext + 2 * esp_isol) / Dext) * Dext)
 
             End If
 
@@ -1464,7 +1525,7 @@ Namespace UnitOperations
 
                     Dim Zb = Convert.ToDouble(Me.m_thermalprofile.Velocidade)
 
-                    Dim Rs = (Dext + esp_isol) / (2 * k_terreno(Me.m_thermalprofile.Meio)) * Math.Log((2 * Zb + (4 * Zb ^ 2 - (Dext + esp_isol) ^ 2) ^ 0.5) / (Dext + esp_isol))
+                    Dim Rs = (Dext + 2 * esp_isol) / (2 * k_terreno(Me.m_thermalprofile.Meio)) * Math.Log((2 * Zb + (4 * Zb ^ 2 - (Dext + 2 * esp_isol) ^ 2) ^ 0.5) / (Dext + 2 * esp_isol))
 
                     If Zb > 0 Then
                         U_ext = 1 / Rs
@@ -1496,16 +1557,16 @@ Namespace UnitOperations
                     k2 = props(3)
 
                     'External Re
-                    Dim Re_ext = NRe(rho2, vel, (Dext + esp_isol), mu2)
+                    Dim Re_ext = NRe(rho2, vel, (Dext + 2 * esp_isol), mu2)
 
                     'External Pr
                     Dim Pr_ext = NPr(cp2, mu2, k2)
 
                     'External h
-                    Dim h_ext = hext_holman(k2, (Dext + esp_isol), Re_ext, Pr_ext)
+                    Dim h_ext = hext_holman(k2, (Dext + 2 * esp_isol), Re_ext, Pr_ext)
 
                     'External HTC contribution
-                    U_ext = h_ext * (Dext + esp_isol) / Dint
+                    U_ext = h_ext * (Dext + 2 * esp_isol) / Dint
 
                 ElseIf Me.m_thermalprofile.Meio = 1 Then 'Water
 
@@ -1518,16 +1579,16 @@ Namespace UnitOperations
                     k2 = props(3)
 
                     'External Re
-                    Dim Re_ext = NRe(rho2, vel, (Dext + esp_isol), mu2)
+                    Dim Re_ext = NRe(rho2, vel, (Dext + 2 * esp_isol), mu2)
 
                     'External Pr
                     Dim Pr_ext = NPr(cp2, mu2, k2)
 
                     'External h
-                    Dim h_ext = hext_holman(k2, (Dext + esp_isol), Re_ext, Pr_ext)
+                    Dim h_ext = hext_holman(k2, (Dext + 2 * esp_isol), Re_ext, Pr_ext)
 
                     'External HTC contribution
-                    U_ext = h_ext * (Dext + esp_isol) / Dint
+                    U_ext = h_ext * (Dext + 2 * esp_isol) / Dint
 
                 End If
 
@@ -2338,6 +2399,12 @@ Final3:     T = bbb
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.pipe_segment
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.pipe_segment.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

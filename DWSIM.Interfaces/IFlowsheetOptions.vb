@@ -22,7 +22,8 @@ Imports DWSIM.Interfaces.Enums.GraphicObjects
 ''' <summary>
 ''' This interface defines the flowsheet settings and other properties.
 ''' </summary>
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface IFlowsheetOptions
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface IFlowsheetOptions
 
     Property NumberFormat As String
     Property FractionNumberFormat As String
@@ -149,5 +150,7 @@ Imports DWSIM.Interfaces.Enums.GraphicObjects
     Property EnableGHGEmissionsSubsystem As Boolean
 
     Property FlowsheetTransitionObject As IFlowsheetTransitionRestore
+
+    ReadOnly Property UniqueID As String
 
 End Interface

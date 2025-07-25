@@ -116,6 +116,24 @@ Imports PythonConsoleControl
 
         Next
 
+        AddHandler fc.NewDataLoaded, AddressOf NewDataEventHandler
+
+    End Sub
+
+    Private Sub ThisFormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+
+        RemoveHandler fc.NewDataLoaded, AddressOf NewDataEventHandler
+
+    End Sub
+
+    Public Sub NewDataEventHandler(sender As Object, e As INewDataLoadedEventArgs)
+
+        TabStripScripts.Items.Clear()
+
+        'load existing scripts
+        For Each s As Script In fc.ScriptCollection.Values
+            InsertScriptTab(s)
+        Next
 
     End Sub
 
@@ -1012,11 +1030,9 @@ Imports PythonConsoleControl
 
                 CancelDebugToken = New CancellationTokenSource()
 
+                Dim breakpoints As List(Of Integer) = scripteditor.txtScript.GetBookmarks
+
                 Dim t = TaskHelper.Run(Sub() RunScript_IronPython("", script, fc, Sub(frame)
-
-                                                                                      Dim breakpoints As New List(Of Integer)
-
-                                                                                      Me.UIThreadInvoke(Sub() breakpoints = scripteditor.txtScript.GetBookmarks)
 
                                                                                       If breakpoints.Contains(frame.f_lineno) Then
 

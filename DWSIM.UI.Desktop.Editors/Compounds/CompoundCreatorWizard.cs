@@ -62,12 +62,6 @@ namespace DWSIM.UI.Desktop.Editors
         void Init()
         {
 
-            if (GlobalSettings.Settings.OldUI)
-            {
-                Width = (int)(Width * dpi);
-                Height = (int)(Height * dpi);
-            }
-
             comp.ID = new Random().Next(700000, 800000);
 
             comp.OriginalDB = "User";
@@ -143,14 +137,14 @@ namespace DWSIM.UI.Desktop.Editors
                 if (GlobalSettings.Settings.OldUI)
                 {
                     IFilePicker filePickerForm = FilePickerService.GetInstance().GetFilePicker();
-                    IVirtualFile handler = filePickerForm.ShowOpenDialog(new List<FilePickerAllowedType> { new FilePickerAllowedType("JSON File", "*.json")});
+                    IVirtualFile handler = filePickerForm.ShowOpenDialog(new List<FilePickerAllowedType> { new FilePickerAllowedType("JSON File", "*.json") });
                     if (handler != null)
                     {
                         try
                         {
                             comp = Newtonsoft.Json.JsonConvert.DeserializeObject<DWSIM.Thermodynamics.BaseClasses.ConstantProperties>(handler.ReadAllText());
                             estimatefromunifac = false;
-                           MessageBox.Show("Data successfully loaded from JSON file.", "Information", MessageBoxButtons.OK, MessageBoxType.Information, MessageBoxDefaultButton.OK);
+                            MessageBox.Show("Data successfully loaded from JSON file.", "Information", MessageBoxButtons.OK, MessageBoxType.Information, MessageBoxDefaultButton.OK);
                         }
                         catch (Exception ex)
                         {
@@ -180,11 +174,23 @@ namespace DWSIM.UI.Desktop.Editors
                 }
             });
 
-            page1.SuspendLayout();
-            page1.ContentContainer.Add(dl);
-            page1.ResumeLayout();
-            page1.SetFontAndPadding();
+            if (GlobalSettings.Settings.OldUI)
+            {
+                page1.Width = Width;
+                page1.Height = Height;
+            };
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac)
+            {
+                page1.SuspendLayout();
+                page1.ContentContainer.Add(dl);
+                page1.ResumeLayout();
+            }
+            else {
+                page1.ContentContainer.Content = dl;
+                page1.SetFontAndPadding();
+            }
             page1.Show();
+            c.Center(page1);
 
         }
 
@@ -271,12 +277,23 @@ namespace DWSIM.UI.Desktop.Editors
                 dl.CreateAndAddEmptySpace();
                 dl.CreateAndAddEmptySpace();
                 dl.CreateAndAddCheckBoxRow("Search Online Databases for Compound Data", searchonline, (sender, e) => searchonline = sender.Checked.GetValueOrDefault());
-                dl.CreateAndAddLabelRow2("This will search selected online thermodynamic databases (KDB, Cheméo and DDB) for compound data according to its name and/or CAS ID.");
+                dl.CreateAndAddLabelRow2("This will search selected online thermodynamic databases (KDB and Cheméo) for compound data according to its name and/or CAS ID.");
             }
 
-            page2.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
-            page2.SetFontAndPadding();
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac)
+            {
+                page2.SuspendLayout();
+                page2.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
+                page2.ResumeLayout();
+            }
+            else
+            {
+                page2.ContentContainer.Content = new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width };
+                page2.SetFontAndPadding();
+            }
+
             page2.Show();
+            c.Center(page2);
 
         }
 
@@ -425,7 +442,7 @@ namespace DWSIM.UI.Desktop.Editors
                     dl.CreateAndAddLabelRow("Formation Properties");
                     dl.CreateAndAddTextBoxRow(nf, "Enthalpy of Formation @ 298 K (kJ/mol)", comp.Electrolyte_DelHF, (sender, e) => comp.Electrolyte_DelHF = sender.Text.IsValidDouble() ? sender.Text.ToDoubleFromCurrent() : comp.Electrolyte_DelHF);
                     dl.CreateAndAddTextBoxRow(nf, "Gibbs Energy of Formation @ 298 K (kJ/mol)", comp.Electrolyte_DelGF, (sender, e) => comp.Electrolyte_DelGF = sender.Text.IsValidDouble() ? sender.Text.ToDoubleFromCurrent() : comp.Electrolyte_DelGF);
-                    dl.CreateAndAddTextBoxRow(nf, "Heat Capacity @ 298 K (kJ/mol)", comp.Electrolyte_Cp0, (sender, e) => comp.Electrolyte_Cp0 = sender.Text.IsValidDouble() ? sender.Text.ToDoubleFromCurrent() : comp.Electrolyte_Cp0);
+                    dl.CreateAndAddTextBoxRow(nf, "Heat Capacity @ 298 K (kJ/[mol.K])", comp.Electrolyte_Cp0, (sender, e) => comp.Electrolyte_Cp0 = sender.Text.IsValidDouble() ? sender.Text.ToDoubleFromCurrent() : comp.Electrolyte_Cp0);
                     break;
                 case 3:
                     //blackoil
@@ -453,9 +470,20 @@ namespace DWSIM.UI.Desktop.Editors
                     break;
             }
 
-            page2.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
-            page2.SetFontAndPadding();
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac)
+            {
+                page2.SuspendLayout();
+                page2.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
+                page2.ResumeLayout();
+            }
+            else
+            {
+                page2.ContentContainer.Content =new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width };
+                page2.SetFontAndPadding();
+            }
+
             page2.Show();
+            c.Center(page2);
 
         }
 
@@ -486,14 +514,7 @@ namespace DWSIM.UI.Desktop.Editors
             page.Title = "Compound Creator Wizard";
             page.HeaderTitle = "Step 3 - UNIFAC Structure";
             page.HeaderDescription = "Enter UNIFAC structure information, if available.";
-            if (foundddb)
-            {
-                page.FooterText = "DWSIM found UNIFAC/MODFAC structure data at DDB Online Database, check non-empty/non-zeroed fields.";
-            }
-            else
-            {
-                page.FooterText = "";
-            }
+            page.FooterText = "";
 
             page.Init(Width, Height);
 
@@ -514,9 +535,20 @@ namespace DWSIM.UI.Desktop.Editors
                 });
             }
 
-            page.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
-            page.SetFontAndPadding();
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac)
+            {
+                page.SuspendLayout();
+                page.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
+                page.ResumeLayout();
+            }
+            else
+            {
+                page.ContentContainer.Content = new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width };
+                page.SetFontAndPadding();
+            }
+
             page.Show();
+            c.Center(page);
 
         }
 
@@ -644,9 +676,20 @@ namespace DWSIM.UI.Desktop.Editors
                 if (c.IsValidDouble(arg1.Text)) comp.EnthalpyOfFusionAtTf = arg1.Text.ToDoubleFromCurrent();
             });
 
-            page.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
-            page.SetFontAndPadding();
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac)
+            {
+                page.SuspendLayout();
+                page.ContentContainer.Add(new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width });
+                page.ResumeLayout();
+            }
+            else
+            {
+                page.ContentContainer.Content = new Scrollable { Content = dl, Border = BorderType.None, Height = Height, Width = Width };
+                page.SetFontAndPadding();
+            }
+
             page.Show();
+            c.Center(page);
 
         }
 
@@ -844,9 +887,20 @@ namespace DWSIM.UI.Desktop.Editors
             escp.Visible = false;
             escp.PlaceholderText = "T in K, Cp in kJ/[kg.K]";
 
-            page.ContentContainer.Add(dl);
-            page.SetFontAndPadding();
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac)
+            {
+                page.SuspendLayout();
+                page.ContentContainer.Add(dl);
+                page.ResumeLayout();
+            }
+            else
+            {
+                page.ContentContainer.Content = dl;
+                page.SetFontAndPadding();
+            }
+
             page.Show();
+            c.Center(page);
 
         }
 
@@ -945,11 +999,25 @@ namespace DWSIM.UI.Desktop.Editors
                         try
                         {
                             File.WriteAllText(dialog.FileName, Newtonsoft.Json.JsonConvert.SerializeObject(comp, Newtonsoft.Json.Formatting.Indented));
-                            flowsheet.ShowMessage("Compound '" + comp.Name + "' successfully saved to JSON file.", IFlowsheet.MessageType.Information);
+                            if (flowsheet == null)
+                            {
+                                MessageBox.Show("Compound '" + comp.Name + "' successfully saved to JSON file.");
+                            }
+                            else
+                            {
+                                flowsheet.ShowMessage("Compound '" + comp.Name + "' successfully saved to JSON file.", IFlowsheet.MessageType.Information);
+                            }
                         }
                         catch (Exception ex)
                         {
-                            flowsheet.ShowMessage("Error saving compound to JSON file: " + ex.ToString(), IFlowsheet.MessageType.GeneralError);
+                            if (flowsheet == null)
+                            {
+                                MessageBox.Show("Error saving compound to JSON file: " + ex.ToString());
+                            }
+                            else
+                            {
+                                flowsheet.ShowMessage("Error saving compound to JSON file: " + ex.ToString(), IFlowsheet.MessageType.GeneralError);
+                            }
                         }
                     }
                 }
@@ -989,10 +1057,20 @@ namespace DWSIM.UI.Desktop.Editors
                 dl.CreateAndAddLabelRow2("Adds the compound to the current simulation.");
             }
 
-            page.ContentContainer.Add(dl);
-            page.SetFontAndPadding();
-            page.Show();
+            if (GlobalSettings.Settings.RunningPlatform() == GlobalSettings.Settings.Platform.Mac)
+            {
+                page.SuspendLayout();
+                page.ContentContainer.Add(dl);
+                page.ResumeLayout();
+            }
+            else
+            {
+                page.ContentContainer.Content = dl;
+                page.SetFontAndPadding();
+            }
 
+            page.Show();
+            c.Center(page);
 
         }
 
@@ -1035,7 +1113,6 @@ namespace DWSIM.UI.Desktop.Editors
             facdata = null;
 
             foundchemeo = false;
-            foundddb = false;
             foundkdb = false;
 
             string searchterm = "";
@@ -1049,7 +1126,9 @@ namespace DWSIM.UI.Desktop.Editors
                     var cids = Thermodynamics.Databases.KDBLink.KDBParser.GetCompoundIDs(searchterm, false);
                     kdbc = Thermodynamics.Databases.KDBLink.KDBParser.GetCompoundData(int.Parse(cids[0][0]));
                 }
-                catch { }
+                catch (Exception ex){
+                    Console.WriteLine(ex.ToString());
+                }
             });
 
             var t2 = Task.Factory.StartNew(async () =>
@@ -1059,8 +1138,13 @@ namespace DWSIM.UI.Desktop.Editors
                     var cids = await Thermodynamics.Databases.ChemeoLink.ChemeoParser.GetCompoundIDs(comp.Name, false);
                     chemeoc = Thermodynamics.Databases.ChemeoLink.ChemeoParser.GetCompoundData(cids[0][0]);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
             });
+
+            Task.WaitAll(new[] { t1, t2 }, 20000);
 
             Task.WaitAll(new[] { t1, t2 }, 20000);
 
@@ -1105,41 +1189,6 @@ namespace DWSIM.UI.Desktop.Editors
                 comp.IG_Gibbs_Energy_of_Formation_25C = chemeoc.IG_Gibbs_Energy_of_Formation_25C;
                 comp.EnthalpyOfFusionAtTf = chemeoc.EnthalpyOfFusionAtTf;
                 foundchemeo = true;
-            }
-
-
-            try
-            {
-                var cid = Thermodynamics.Databases.DDBStructureLink.DDBStructureParser.GetID(comp.CAS_Number);
-                facdata = Thermodynamics.Databases.DDBStructureLink.DDBStructureParser.GetData(cid);
-            }
-            catch { }
-
-            if (facdata != null)
-            {
-                foundddb = true;
-                if (facdata.ContainsKey("Original"))
-                {
-                    comp.UNIFACGroups = new System.Collections.SortedList();
-                    comp.UNIFACGroups.Clear();
-                    foreach (var item in facdata["Original"])
-                    {
-                        comp.UNIFACGroups.Add(item[1], item[2]);
-                    }
-                }
-                if (facdata.ContainsKey("Modified"))
-                {
-                    comp.MODFACGroups = new System.Collections.SortedList();
-                    comp.MODFACGroups.Clear();
-                    comp.NISTMODFACGroups = new System.Collections.SortedList();
-                    comp.NISTMODFACGroups.Clear();
-                    foreach (var item in facdata["Modified"])
-                    {
-                        comp.MODFACGroups.Add(item[1], item[2]);
-                        comp.NISTMODFACGroups.Add(item[1], item[2]);
-                    }
-                }
-
             }
 
         }

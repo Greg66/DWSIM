@@ -61,10 +61,40 @@ namespace DWSIM.UI.Shared
         /// <param name="form"></param>
         public static void Center(this Form form)
         {
-            var center = Screen.PrimaryScreen.WorkingArea.Center;
-            center.X -= form.Width / 2;
-            center.Y -= form.Height / 2;
-            form.Location = new Point(center);
+            if (!Application.Instance.Platform.IsGtk)
+            {
+                var center = Screen.PrimaryScreen.WorkingArea.Center;
+                center.X -= form.Width / 2;
+                center.Y -= form.Height / 2;
+                form.Location = new Point(center);
+            }
+            else
+            {
+                if (GlobalSettings.Settings.RunningPlatform() != GlobalSettings.Settings.Platform.Linux)
+                {
+                    var center = Screen.PrimaryScreen.WorkingArea.Center;
+                    center.X -= form.Width / 2;
+                    center.Y -= form.Height / 2;
+                    form.Location = new Point(center);
+                }
+                else
+                {
+                    try
+                    {
+                        var center = Screen.PrimaryScreen.Bounds.Center;
+                        center.X -= form.Width / 2;
+                        center.Y -= form.Height / 2;
+                        form.Location = new Point(center);
+                    }
+                    catch
+                    {
+                        var center = Screen.DisplayBounds.Center;
+                        center.X -= form.Width / 2;
+                        center.Y -= form.Height / 2;
+                        form.Location = new Point((int)center.X, (int)center.Y);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -177,7 +207,7 @@ namespace DWSIM.UI.Shared
 
         public static Form GetDefaultTabbedForm(string title, int width, int height, Control[] contents)
         {
-            List<DocumentPage> tabs = new List<DocumentPage>();
+            List<TabPage> tabs = new List<TabPage>();
 
             foreach (var content in contents)
             {
@@ -188,7 +218,7 @@ namespace DWSIM.UI.Shared
                     dyncontent.EndVertical();
                     dyncontent.Width = width - dyncontent.Padding.Value.Left * 2 - dyncontent.Padding.Value.Right * 2;
                 }
-                tabs.Add(new DocumentPage(new Scrollable { Content = content, Border = BorderType.None }) { Text = (string)content.Tag, Closable = false });
+                tabs.Add(new TabPage(new Scrollable { Content = content, Border = BorderType.None }) { Text = (string)content.Tag });
             }
 
             var form = new Form()
@@ -197,13 +227,10 @@ namespace DWSIM.UI.Shared
                 Title = title,
                 ClientSize = new Size((int)(sf * width), (int)(sf * height)),
                 ShowInTaskbar = true
-                //Maximizable = false,
-                //Minimizable = false,
-                //Topmost = true,
-                //Resizable = true
             };
 
-            var tabctrl = new DocumentControl { DisplayArrows = false, AllowReordering = true };
+            var tabctrl = new TabControl();
+            tabctrl.Style = "tabcontrol";
             foreach (var tab in tabs)
             {
                 tabctrl.Pages.Add(tab);
@@ -256,7 +283,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var drop = new ComboBox();
             drop.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (!Eto.Forms.Application.Instance.Platform.IsGtk)
@@ -287,7 +314,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var drop = new DropDown();
             drop.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (!Eto.Forms.Application.Instance.Platform.IsGtk)
@@ -322,7 +349,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var drop = new DropDown();
             drop.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (Application.Instance.Platform.IsGtk)
@@ -361,7 +388,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var drop = new DropDown();
             drop.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (!Eto.Forms.Application.Instance.Platform.IsGtk)
@@ -396,7 +423,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var drop = new DropDown();
             drop.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (!Eto.Forms.Application.Instance.Platform.IsGtk)
@@ -501,7 +528,7 @@ namespace DWSIM.UI.Shared
             }
             else
             {
-                label = new Label { Text = text, Wrap = WrapMode.Word };
+                label = new Label { Text = text, Wrap = WrapMode.Word, };
                 label.Font = new Font(SystemFont.Default, GetEditorFontSize() - 1);
                 label.TextColor = Color.FromArgb(SystemColors.ControlText.Rb, SystemColors.ControlText.Gb, SystemColors.ControlText.Bb, 180);
                 container.AddRow(new TableRow(label));
@@ -557,7 +584,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval.ToString(numberformat), Style = "textbox-rightalign" };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) edittext.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -603,7 +630,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval.ToString(numberformat), Style = "textbox-rightalign" };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) edittext.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -649,7 +676,8 @@ namespace DWSIM.UI.Shared
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
             txt.Font = new Font(SystemFont.Default, GetEditorFontSize());
-            var editor = new ColorPicker { Value = currval };
+            var editor = new ColorPicker { Value = currval, BackgroundColor = Colors.White };
+            editor.Style = "colorpicker-wpf-fix";
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) editor.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
 
             if (command != null) editor.ValueChanged += (sender, e) => command.Invoke((ColorPicker)sender, e);
@@ -667,7 +695,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var editor = new NumericStepper { Value = currval, DecimalPlaces = decimalplaces, MinValue = minval, MaxValue = maxval };
             editor.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) editor.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -687,7 +715,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var editor = new TextBox { Text = currval.ToString(), TextAlignment = TextAlignment.Right };
             editor.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) editor.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -742,7 +770,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval.ToString(numberformat), Style = "textbox-rightalign" };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) edittext.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -762,7 +790,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval.ToString(numberformat), Style = "textbox-rightalign" };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) edittext.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -796,6 +824,28 @@ namespace DWSIM.UI.Shared
             container.CreateAndAddEmptySpace();
 
             return edittext2;
+
+        }
+
+        public static TextBox[] CreateAndAddDoubleTextBoxRow2(this DynamicLayout container, String numberformat, String text, Double currval1, Double currval2, Action<TextBox, EventArgs> command, Action<TextBox, EventArgs> command2)
+        {
+
+            var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
+            txt.Font = new Font(SystemFont.Default, GetEditorFontSize());
+            var edittext = new TextBox { Text = currval1.ToString(numberformat), Width = (int)(sf * 100) };
+            var edittext2 = new TextBox { Text = currval2.ToString(numberformat), Width = (int)(sf * 100) };
+            edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
+            edittext2.Font = new Font(SystemFont.Default, GetEditorFontSize());
+
+            if (command != null) edittext.TextChanged += (sender, e) => command.Invoke((TextBox)sender, e);
+            if (command2 != null) edittext2.TextChanged += (sender, e) => command2.Invoke((TextBox)sender, e);
+
+            var tr = new TableRow(txt, null, edittext, edittext2);
+
+            container.AddRow(tr);
+            container.CreateAndAddEmptySpace();
+
+            return new[] { edittext, edittext2 };
 
         }
 
@@ -949,7 +999,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval, Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth) };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) edittext.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -970,7 +1020,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval, Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth) };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
 
@@ -998,7 +1048,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval, Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth) };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) edittext.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
@@ -1071,7 +1121,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = text, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var edittext = new TextBox { Text = currval, PlaceholderText = placeholder };
             edittext.Font = new Font(SystemFont.Default, GetEditorFontSize());
 
@@ -1171,7 +1221,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = label, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             if (GlobalSettings.Settings.EditorTextBoxFixedSize) control.Width = (int)(sf * GlobalSettings.Settings.EditorTextBoxFixedSizeWidth);
 
             var tr = new TableRow(txt, null, control);
@@ -1242,7 +1292,7 @@ namespace DWSIM.UI.Shared
         {
 
             var txt = new Label { Text = label, VerticalAlignment = VerticalAlignment.Center };
-            txt.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            txt.Font = new Font(SystemFont.Message, GetEditorFontSize());
             var tbox = new TextBox { Width = 120, Text = textboxvalue };
             tbox.Font = new Font(SystemFont.Default, GetEditorFontSize());
             var btn = new Button { Width = 80, Text = buttonlabel };
@@ -1461,7 +1511,7 @@ namespace DWSIM.UI.Shared
         {
 
             var check = new CheckBox { Text = text, Checked = value };
-            check.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            check.Font = new Font(SystemFont.Message, GetEditorFontSize());
 
             if (command != null) check.CheckedChanged += (sender, e) => command.Invoke((CheckBox)sender, e);
             if (keypress != null) check.CheckedChanged += (sender, e) => keypress.Invoke();
@@ -1477,7 +1527,7 @@ namespace DWSIM.UI.Shared
         {
 
             var check = new CheckBox { Text = text, Checked = value };
-            check.Font = new Font(SystemFont.Bold, GetEditorFontSize());
+            check.Font = new Font(SystemFont.Message, GetEditorFontSize());
 
             if (command != null) check.CheckedChanged += (sender, e) => command.Invoke((CheckBox)sender, e);
             if (keypress != null) check.CheckedChanged += (sender, e) => keypress.Invoke();
@@ -1485,6 +1535,74 @@ namespace DWSIM.UI.Shared
             container.Rows.Add(new TableRow(check));
 
             return check;
+        }
+
+        public static OxyPlot.PlotModel CreatePlotModel(string title, string subtitle, string xtitle, string ytitle)
+        {
+
+            var model = new OxyPlot.PlotModel() { Subtitle = subtitle, Title = title };
+            model.Background = OxyPlot.OxyColors.White;
+            model.TitleFontSize = 14;
+            model.SubtitleFontSize = 12;
+            model.Axes.Add(new OxyPlot.Axes.LinearAxis()
+            {
+                MajorGridlineStyle = OxyPlot.LineStyle.Dash,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                Position = OxyPlot.Axes.AxisPosition.Bottom,
+                FontSize = 12,
+                Title = xtitle,
+                Key = "x",
+            });
+            model.Axes.Add(new OxyPlot.Axes.LinearAxis()
+            {
+                MajorGridlineStyle = OxyPlot.LineStyle.Dash,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                Position = OxyPlot.Axes.AxisPosition.Left,
+                FontSize = 12,
+                Title = ytitle
+            });
+            model.LegendFontSize = 11;
+            model.LegendPlacement = OxyPlot.LegendPlacement.Outside;
+            model.LegendOrientation = OxyPlot.LegendOrientation.Horizontal;
+            model.LegendPosition = OxyPlot.LegendPosition.BottomCenter;
+            model.TitleHorizontalAlignment = OxyPlot.TitleHorizontalAlignment.CenteredWithinView;
+
+            return model;
+
+        }
+
+        public static OxyPlot.PlotModel CreatePlotModel(string title, string subtitle, string xtitle, string ytitle, float zoom)
+        {
+
+            var model = new OxyPlot.PlotModel() { Subtitle = subtitle, Title = title };
+            model.Background = OxyPlot.OxyColors.White;
+            model.TitleFontSize = 14 * zoom;
+            model.SubtitleFontSize = 12 * zoom;
+            model.Axes.Add(new OxyPlot.Axes.LinearAxis()
+            {
+                MajorGridlineStyle = OxyPlot.LineStyle.Dash,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                Position = OxyPlot.Axes.AxisPosition.Bottom,
+                FontSize = 12 * zoom,
+                Title = xtitle,
+                Key = "x",
+            });
+            model.Axes.Add(new OxyPlot.Axes.LinearAxis()
+            {
+                MajorGridlineStyle = OxyPlot.LineStyle.Dash,
+                MinorGridlineStyle = OxyPlot.LineStyle.Dot,
+                Position = OxyPlot.Axes.AxisPosition.Left,
+                FontSize = 12 * zoom,
+                Title = ytitle
+            });
+            model.LegendFontSize = 11 * zoom;
+            model.LegendPlacement = OxyPlot.LegendPlacement.Outside;
+            model.LegendOrientation = OxyPlot.LegendOrientation.Horizontal;
+            model.LegendPosition = OxyPlot.LegendPosition.BottomCenter;
+            model.TitleHorizontalAlignment = OxyPlot.TitleHorizontalAlignment.CenteredWithinView;
+
+            return model;
+
         }
 
         public static OxyPlot.PlotModel CreatePlotModel(double[] x, double[] y, string title, string subtitle, string xtitle, string ytitle)

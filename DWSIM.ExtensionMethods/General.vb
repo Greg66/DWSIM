@@ -89,6 +89,42 @@ Public Module General
     End Function
 
     <System.Runtime.CompilerServices.Extension()>
+    Public Function ToDoubleArray(al As String()) As Double()
+
+        Dim list As New List(Of Double)
+        For Each item In al
+            list.Add(item.ToDoubleFromInvariant())
+        Next
+        Return list.ToArray()
+
+    End Function
+
+    <System.Runtime.CompilerServices.Extension()>
+    Public Function ToSingleArray(al As String()) As Single()
+
+        Dim list As New List(Of Single)
+        For Each item In al
+            list.Add(item.ToSingleFromInvariant())
+        Next
+        Return list.ToArray()
+
+    End Function
+
+    <System.Runtime.CompilerServices.Extension()>
+    Public Function ToSingleArray(al As String(), size As Integer) As Single()
+
+        Dim list As New List(Of Single)
+        For Each item In al
+            list.Add(item.ToSingleFromInvariant())
+        Next
+        For i = list.Count To size
+            list.Add(0.0F)
+        Next
+        Return list.ToArray()
+
+    End Function
+
+    <System.Runtime.CompilerServices.Extension()>
     Public Function ToDoubleList(al As ArrayList) As List(Of Double)
 
         Dim list As New List(Of Double)
@@ -527,6 +563,15 @@ Public Module General
     End Function
 
     <System.Runtime.CompilerServices.Extension()>
+    Public Function ToSingleFromInvariant(s As String) As Single
+
+        Dim ci As CultureInfo = CultureInfo.InvariantCulture
+
+        Return Single.Parse(s.Replace(",", "."), NumberStyles.Any - NumberStyles.AllowThousands, ci)
+
+    End Function
+
+    <System.Runtime.CompilerServices.Extension()>
     Public Function ToDoubleFromCurrent(s As String) As Double
 
         Dim ci As CultureInfo = CultureInfo.CurrentCulture
@@ -608,7 +653,7 @@ Public Module General
 
     End Function
 
-    <System.Runtime.CompilerServices.Extension()> _
+    <System.Runtime.CompilerServices.Extension()>
     Public Function ToArrayString(vector As Array) As String
 
         Dim retstr As String = "{ "
@@ -619,6 +664,26 @@ Public Module General
         retstr += "}"
 
         Return retstr
+
+    End Function
+
+    <System.Runtime.CompilerServices.Extension()>
+    Public Function ToSingle(vector As Double()) As Single()
+
+        Return vector.Select(Function(d) Convert.ToSingle(d)).ToArray()
+
+    End Function
+
+    <System.Runtime.CompilerServices.Extension()>
+    Public Function ToDouble(vector As Single()) As Double()
+
+        Return vector.Select(Function(d) Convert.ToDouble(d)).ToArray()
+
+    End Function
+    <System.Runtime.CompilerServices.Extension()>
+    Public Function ToString(vector As Double(), numberformat As String) As String()
+
+        Return vector.Select(Function(d) d.ToString(numberformat, CultureInfo.InvariantCulture)).ToArray()
 
     End Function
 

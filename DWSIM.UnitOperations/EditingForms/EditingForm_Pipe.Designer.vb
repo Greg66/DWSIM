@@ -1,10 +1,10 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class EditingForm_Pipe
 
     Inherits SharedClasses.ObjectEditorForm
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -21,7 +21,7 @@ Partial Class EditingForm_Pipe
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(EditingForm_Pipe))
@@ -41,6 +41,8 @@ Partial Class EditingForm_Pipe
         Me.GroupBoxParameters = New System.Windows.Forms.GroupBox()
         Me.TabControl1 = New System.Windows.Forms.TabControl()
         Me.TabPage4 = New System.Windows.Forms.TabPage()
+        Me.nupCalculateEquilibrium = New System.Windows.Forms.NumericUpDown()
+        Me.chkCalculateEquilibrium = New System.Windows.Forms.CheckBox()
         Me.cbSlurryVisc = New System.Windows.Forms.ComboBox()
         Me.Label21 = New System.Windows.Forms.Label()
         Me.Label8 = New System.Windows.Forms.Label()
@@ -90,10 +92,13 @@ Partial Class EditingForm_Pipe
         Me.TabPage2 = New System.Windows.Forms.TabPage()
         Me.TabPage3 = New System.Windows.Forms.TabPage()
         Me.ToolTipChangeTag = New System.Windows.Forms.ToolTip(Me.components)
+        Me.Button2 = New System.Windows.Forms.Button()
+        Me.Button3 = New System.Windows.Forms.Button()
         Me.GroupBox5.SuspendLayout()
         Me.GroupBoxParameters.SuspendLayout()
         Me.TabControl1.SuspendLayout()
         Me.TabPage4.SuspendLayout()
+        CType(Me.nupCalculateEquilibrium, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.GroupBoxConnections.SuspendLayout()
         Me.GroupBoxResults.SuspendLayout()
         Me.tabstrip1.SuspendLayout()
@@ -218,6 +223,8 @@ Partial Class EditingForm_Pipe
         'TabPage4
         '
         resources.ApplyResources(Me.TabPage4, "TabPage4")
+        Me.TabPage4.Controls.Add(Me.nupCalculateEquilibrium)
+        Me.TabPage4.Controls.Add(Me.chkCalculateEquilibrium)
         Me.TabPage4.Controls.Add(Me.cbSlurryVisc)
         Me.TabPage4.Controls.Add(Me.Label21)
         Me.TabPage4.Controls.Add(Me.Label8)
@@ -248,6 +255,24 @@ Partial Class EditingForm_Pipe
         Me.ToolTipValues.SetToolTip(Me.TabPage4, resources.GetString("TabPage4.ToolTip1"))
         Me.ToolTipChangeTag.SetToolTip(Me.TabPage4, resources.GetString("TabPage4.ToolTip2"))
         Me.TabPage4.UseVisualStyleBackColor = True
+        '
+        'nupCalculateEquilibrium
+        '
+        resources.ApplyResources(Me.nupCalculateEquilibrium, "nupCalculateEquilibrium")
+        Me.nupCalculateEquilibrium.Maximum = New Decimal(New Integer() {1000, 0, 0, 0})
+        Me.nupCalculateEquilibrium.Name = "nupCalculateEquilibrium"
+        Me.ToolTipChangeTag.SetToolTip(Me.nupCalculateEquilibrium, resources.GetString("nupCalculateEquilibrium.ToolTip"))
+        Me.ToolTip1.SetToolTip(Me.nupCalculateEquilibrium, resources.GetString("nupCalculateEquilibrium.ToolTip1"))
+        Me.ToolTipValues.SetToolTip(Me.nupCalculateEquilibrium, resources.GetString("nupCalculateEquilibrium.ToolTip2"))
+        '
+        'chkCalculateEquilibrium
+        '
+        resources.ApplyResources(Me.chkCalculateEquilibrium, "chkCalculateEquilibrium")
+        Me.chkCalculateEquilibrium.Name = "chkCalculateEquilibrium"
+        Me.ToolTip1.SetToolTip(Me.chkCalculateEquilibrium, resources.GetString("chkCalculateEquilibrium.ToolTip"))
+        Me.ToolTipChangeTag.SetToolTip(Me.chkCalculateEquilibrium, resources.GetString("chkCalculateEquilibrium.ToolTip1"))
+        Me.ToolTipValues.SetToolTip(Me.chkCalculateEquilibrium, resources.GetString("chkCalculateEquilibrium.ToolTip2"))
+        Me.chkCalculateEquilibrium.UseVisualStyleBackColor = True
         '
         'cbSlurryVisc
         '
@@ -710,10 +735,30 @@ Partial Class EditingForm_Pipe
         Me.ToolTipChangeTag.ToolTipIcon = System.Windows.Forms.ToolTipIcon.Info
         Me.ToolTipChangeTag.ToolTipTitle = "Info"
         '
+        'Button2
+        '
+        resources.ApplyResources(Me.Button2, "Button2")
+        Me.Button2.Name = "Button2"
+        Me.ToolTip1.SetToolTip(Me.Button2, resources.GetString("Button2.ToolTip"))
+        Me.ToolTipChangeTag.SetToolTip(Me.Button2, resources.GetString("Button2.ToolTip1"))
+        Me.ToolTipValues.SetToolTip(Me.Button2, resources.GetString("Button2.ToolTip2"))
+        Me.Button2.UseVisualStyleBackColor = True
+        '
+        'Button3
+        '
+        resources.ApplyResources(Me.Button3, "Button3")
+        Me.Button3.Name = "Button3"
+        Me.ToolTip1.SetToolTip(Me.Button3, resources.GetString("Button3.ToolTip"))
+        Me.ToolTipChangeTag.SetToolTip(Me.Button3, resources.GetString("Button3.ToolTip1"))
+        Me.ToolTipValues.SetToolTip(Me.Button3, resources.GetString("Button3.ToolTip2"))
+        Me.Button3.UseVisualStyleBackColor = True
+        '
         'EditingForm_Pipe
         '
         resources.ApplyResources(Me, "$this")
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
+        Me.Controls.Add(Me.Button3)
+        Me.Controls.Add(Me.Button2)
         Me.Controls.Add(Me.GroupBoxResults)
         Me.Controls.Add(Me.GroupBoxConnections)
         Me.Controls.Add(Me.GroupBox5)
@@ -728,6 +773,7 @@ Partial Class EditingForm_Pipe
         Me.TabControl1.ResumeLayout(False)
         Me.TabPage4.ResumeLayout(False)
         Me.TabPage4.PerformLayout()
+        CType(Me.nupCalculateEquilibrium, System.ComponentModel.ISupportInitialize).EndInit()
         Me.GroupBoxConnections.ResumeLayout(False)
         Me.GroupBoxConnections.PerformLayout()
         Me.GroupBoxResults.ResumeLayout(False)
@@ -799,4 +845,8 @@ Partial Class EditingForm_Pipe
     Public WithEvents CheckBox1 As CheckBox
     Friend WithEvents cbSlurryVisc As ComboBox
     Friend WithEvents Label21 As Label
+    Friend WithEvents nupCalculateEquilibrium As NumericUpDown
+    Friend WithEvents chkCalculateEquilibrium As CheckBox
+    Friend WithEvents Button2 As Button
+    Friend WithEvents Button3 As Button
 End Class

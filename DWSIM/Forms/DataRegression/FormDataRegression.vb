@@ -3271,7 +3271,6 @@ ByVal new_lambda As Boolean, ByVal nele_hess As Integer, ByRef iRow As Integer()
 
         If doparallel Then
 
-            If dogpu Then GlobalSettings.Settings.gpu.EnableMultithreading()
             Try
                 Dim task1 As Task = New Task(Sub()
                                                  Select Case model
@@ -3315,11 +3314,6 @@ ByVal new_lambda As Boolean, ByVal nele_hess As Integer, ByRef iRow As Integer()
                 Task.WaitAll(task1, task2, task3)
             Catch ae As AggregateException
                 Throw ae.Flatten().InnerException
-            Finally
-                If dogpu Then
-                    GlobalSettings.Settings.gpu.DisableMultithreading()
-                    GlobalSettings.Settings.gpu.FreeAll()
-                End If
             End Try
 
         Else
@@ -3459,7 +3453,6 @@ ByVal new_lambda As Boolean, ByVal nele_hess As Integer, ByRef iRow As Integer()
 
         If doparallel Then
 
-            If dogpu Then GlobalSettings.Settings.gpu.EnableMultithreading()
             Try
                 Dim task1 As Task = New Task(Sub()
                                                  Select Case model
@@ -3503,11 +3496,6 @@ ByVal new_lambda As Boolean, ByVal nele_hess As Integer, ByRef iRow As Integer()
                 Task.WaitAll(task1, task2, task3)
             Catch ae As AggregateException
                 Throw ae.Flatten().InnerException
-            Finally
-                If dogpu Then
-                    GlobalSettings.Settings.gpu.DisableMultithreading()
-                    GlobalSettings.Settings.gpu.FreeAll()
-                End If
             End Try
 
         Else
@@ -3647,7 +3635,6 @@ ByVal new_lambda As Boolean, ByVal nele_hess As Integer, ByRef iRow As Integer()
 
         If doparallel Then
 
-            If dogpu Then GlobalSettings.Settings.gpu.EnableMultithreading()
             Try
                 Dim task1 As Task = New Task(Sub()
                                                  Select Case model
@@ -3691,11 +3678,6 @@ ByVal new_lambda As Boolean, ByVal nele_hess As Integer, ByRef iRow As Integer()
                 Task.WaitAll(task1, task2, task3)
             Catch ae As AggregateException
                 Throw ae.Flatten().InnerException
-            Finally
-                If dogpu Then
-                    GlobalSettings.Settings.gpu.DisableMultithreading()
-                    GlobalSettings.Settings.gpu.FreeAll()
-                End If
             End Try
 
         Else
@@ -4308,7 +4290,7 @@ ByVal new_lambda As Boolean, ByVal nele_hess As Integer, ByRef iRow As Integer()
                                             End If
                                         Else
                                             fresult.Close()
-                                            MessageBox.Show(ExceptionProcessing.ExceptionParser.GetFirstException(t.Exception).Message, DWSIM.App.GetLocalString("Erro"))
+                                            MessageBox.Show("Sorry, we could not retrieve data correctly. KDB Cheric website may be down.", "Error retrieving data", MessageBoxButtons.OK, MessageBoxIcon.Error)
                                         End If
                                     End Sub)
                        End Sub)

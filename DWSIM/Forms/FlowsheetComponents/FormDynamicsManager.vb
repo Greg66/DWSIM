@@ -14,6 +14,8 @@ Public Class FormDynamicsManager
 
     Private Adding As Boolean = False
 
+    Private IntegratorSelectionChanging As Boolean = False
+
     Private Sub FormDynamicsManager_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
         ExtensionMethods.ChangeDefaultFont(Me)
@@ -38,12 +40,33 @@ Public Class FormDynamicsManager
 
         CheckModelStatus()
 
-
         AddHandler gridselectedset.EditingControlShowing, AddressOf Me.EditingControlShowing1
 
         AddHandler grdiselmatrix.EditingControlShowing, AddressOf Me.EditingControlShowing2
 
         AddHandler gridMonitoredVariables.EditingControlShowing, AddressOf Me.EditingControlShowing3
+
+        AddHandler Flowsheet.NewDataLoaded, AddressOf NewDataEventHandler
+
+    End Sub
+
+    Private Sub ThisFormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+
+        RemoveHandler Flowsheet.NewDataLoaded, AddressOf NewDataEventHandler
+
+    End Sub
+
+    Public Sub NewDataEventHandler(sender As Object, e As INewDataLoadedEventArgs)
+
+        UpdateSelectables()
+
+        UpdateAllPanels()
+
+        UpdateControllerList()
+
+        UpdateIndicatorList()
+
+        CheckModelStatus()
 
     End Sub
 
@@ -676,6 +699,8 @@ Public Class FormDynamicsManager
 
     Private Sub gridintegrators_SelectionChanged(sender As Object, e As EventArgs) Handles gridintegrators.SelectionChanged
 
+        IntegratorSelectionChanging = True
+
         If gridintegrators.SelectedCells.Count < 1 Then Exit Sub
 
         Dim i1 = Manager.IntegratorList(gridintegrators.Rows(gridintegrators.SelectedCells(0).RowIndex).Cells(0).Value)
@@ -707,7 +732,7 @@ Public Class FormDynamicsManager
         For Each cei In i1.MonitoredVariables
             With cei
                 Dim obj, prop As String
-                gridMonitoredVariables.Rows.Add(New Object() { .ID, .Description, "", "", .PropertyUnits})
+                gridMonitoredVariables.Rows.Add(New Object() { .ID, .Description, "", "", .MinimumChartAxisValue, .MaximumChartAxisValue, .PropertyUnits})
                 Dim addedrow = gridMonitoredVariables.Rows(gridMonitoredVariables.Rows.Count - 1)
                 If Flowsheet.SimulationObjects.ContainsKey(.ObjectID) Then
                     obj = Flowsheet.SimulationObjects(.ObjectID).GraphicObject.Tag
@@ -727,6 +752,8 @@ Public Class FormDynamicsManager
 
         Adding = False
 
+        IntegratorSelectionChanging = False
+
     End Sub
 
     Private Sub dtpIntegratorDuration_ValueChanged(sender As Object, e As EventArgs)
@@ -734,6 +761,9 @@ Public Class FormDynamicsManager
     End Sub
 
     Private Sub nupCalcEqFreq_ValueChanged(sender As Object, e As EventArgs) Handles nupCalcEqFreq.ValueChanged
+
+        If IntegratorSelectionChanging Then Exit Sub
+
         If Manager Is Nothing Then Exit Sub
 
         Try
@@ -745,6 +775,9 @@ Public Class FormDynamicsManager
     End Sub
 
     Private Sub nupCalcBalFreq_ValueChanged(sender As Object, e As EventArgs) Handles nupCalcBalFreq.ValueChanged
+
+        If IntegratorSelectionChanging Then Exit Sub
+
         If Manager Is Nothing Then Exit Sub
 
         Try
@@ -756,6 +789,9 @@ Public Class FormDynamicsManager
     End Sub
 
     Private Sub nupCalcControlFreq_ValueChanged(sender As Object, e As EventArgs) Handles nupCalcControlFreq.ValueChanged
+
+        If IntegratorSelectionChanging Then Exit Sub
+
         If Manager Is Nothing Then Exit Sub
 
         Try
@@ -1112,6 +1148,14 @@ Public Class FormDynamicsManager
                         v1.PropertyID = props(cbcell.Items.IndexOf(value) - 1)
                     End If
                 Case 4
+                    If value IsNot Nothing AndAlso value.ToString().IsValidDouble() Then
+                        v1.MinimumChartAxisValue = value
+                    End If
+                Case 5
+                    If value IsNot Nothing AndAlso value.ToString().IsValidDouble() Then
+                        v1.MaximumChartAxisValue = value
+                    End If
+                Case 6
                     v1.PropertyUnits = value
             End Select
         Catch ex As Exception
@@ -1229,6 +1273,8 @@ Public Class FormDynamicsManager
 
     Private Sub nupRTStep_ValueChanged(sender As Object, e As EventArgs) Handles nupRTStep.ValueChanged
 
+        If IntegratorSelectionChanging Then Exit Sub
+
         If Manager IsNot Nothing Then
             Try
                 Dim i1 = Manager.IntegratorList(gridintegrators.Rows(gridintegrators.SelectedCells(0).RowIndex).Cells(0).Value)
@@ -1282,6 +1328,9 @@ Public Class FormDynamicsManager
     End Sub
 
     Private Sub nupIntegrationStep_ValueChanged(sender As Object, e As EventArgs) Handles nupIntegrationStep.ValueChanged
+
+        If IntegratorSelectionChanging Then Exit Sub
+
         If Manager Is Nothing Then Exit Sub
 
         Try
@@ -1289,6 +1338,7 @@ Public Class FormDynamicsManager
             i1.IntegrationStep = New TimeSpan(0, 0, 0, 0, nupIntegrationStep.Value)
         Catch ex As Exception
         End Try
+
     End Sub
 
     Private Sub FormDynamicsManager_Shown(sender As Object, e As EventArgs) Handles Me.Shown
@@ -1320,6 +1370,8 @@ Public Class FormDynamicsManager
     End Sub
 
     Private Sub nupDays_ValueChanged(sender As Object, e As EventArgs) Handles nupHours.ValueChanged, nupDays.ValueChanged, nupSeconds.ValueChanged, nupMinutes.ValueChanged
+
+        If IntegratorSelectionChanging Then Exit Sub
 
         If Manager Is Nothing Then Exit Sub
 

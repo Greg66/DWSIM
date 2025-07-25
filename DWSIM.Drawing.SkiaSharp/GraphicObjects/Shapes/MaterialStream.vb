@@ -158,6 +158,8 @@ Namespace GraphicObjects.Shapes
                     'Temperature/Pressure Gradients
             End Select
 
+            If Owner IsNot Nothing Then DirectCast(Owner, IMaterialStream).UpdateStreamType()
+
         End Sub
 
         Public Overrides Function GetPointValue(type As PointValueType, X As Integer, Y As Integer, args As List(Of Object)) As Double
@@ -183,6 +185,8 @@ Namespace GraphicObjects.Shapes
                         Return ms.Phases(0).Compounds(args(0)).MassFraction.GetValueOrDefault()
                     Case PointValueType.CompoundMolarFraction
                         Return ms.Phases(0).Compounds(args(0)).MoleFraction.GetValueOrDefault()
+                    Case PointValueType.MeanSolidParticleSize
+                        Return ms.Phases(7).Properties.particleSize_Mean.GetValueOrDefault()
                     Case Else
                         Return Double.NaN
                 End Select

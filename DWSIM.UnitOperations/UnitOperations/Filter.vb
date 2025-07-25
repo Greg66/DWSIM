@@ -69,6 +69,12 @@ Namespace UnitOperations
         Public Property CakeRelativeHumidity As Double = 0.0#
         Public Property CalcMode As CalculationMode = CalculationMode.Simulation
 
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Steam", "Gas"}
+            End Get
+        End Property
+
         Public Sub New()
             MyBase.New()
         End Sub
@@ -482,6 +488,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.filter
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.filter.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

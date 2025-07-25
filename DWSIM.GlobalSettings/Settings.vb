@@ -18,17 +18,20 @@ Public Class Settings
         WinForms_Direct2D = 1
         WPF = 2
         Gtk2 = 3
+        Gtk3 = 4
     End Enum
 
     Public Enum LinuxPlatformRenderer
         Gtk2 = 0
         WinForms = 1
+        Gtk3 = 2
     End Enum
 
     Public Enum MacOSPlatformRenderer
         MonoMac = 0
         Gtk2 = 1
         WinForms = 2
+        Gtk3 = 3
     End Enum
 
     Public Enum SkiaCanvasRenderer
@@ -36,17 +39,22 @@ Public Class Settings
         OpenGL = 1
     End Enum
 
+    Public Enum AIAssistedConvergenceMode
+        Disabled = 0
+        Provide_Initial_Estimates = 1
+        Provide_Initial_Estimates_2Pass = 2
+        Provide_Initial_Estimates_and_Solutions = 3
+        Provide_Solutions = 4
+        Provide_Initial_Estimates_and_Solutions_2Pass = 5
+    End Enum
+
     Public Shared Property WindowsRenderer As WindowsPlatformRenderer = WindowsPlatformRenderer.WinForms
 
-    Public Shared Property LinuxRenderer As LinuxPlatformRenderer = LinuxPlatformRenderer.Gtk2
+    Public Shared Property LinuxRenderer As LinuxPlatformRenderer = LinuxPlatformRenderer.Gtk3
 
     Public Shared Property MacOSRenderer As MacOSPlatformRenderer = MacOSPlatformRenderer.MonoMac
 
     Public Shared Property FlowsheetRenderer As SkiaCanvasRenderer = SkiaCanvasRenderer.CPU
-
-    Public Shared Property gpu As Cudafy.Host.GPGPU
-    Public Shared Property gpumod As CudafyModule
-    Public Shared Property prevlang As Integer = 0 '0 = CUDA, 1 = OpenCL
 
     Private Shared _tcks As CancellationTokenSource
     Public Shared Property TaskCancellationTokenSource As CancellationTokenSource
@@ -189,6 +197,12 @@ Public Class Settings
 
     Public Shared LockModelParameters As Boolean = False
 
+    Public Shared IsGTKRenderer As Boolean = False
+
+    Public Shared LinuxDisplayDPI As Double = 96.0
+
+    Public Shared AIAssistedConvergenceLevel As AIAssistedConvergenceMode = AIAssistedConvergenceMode.Disabled
+
     <DllImport("kernel32.dll", SetLastError:=True)> Public Shared Function AddDllDirectory(lpPathName As String) As Boolean
 
     End Function
@@ -204,7 +218,7 @@ Public Class Settings
                 End If
 
                 If Not Directory.Exists(pythonpath) Then
-                    Throw New Exception("Please define the path to a valid Python 3.7-3.9 distribution in General Settings and try again.")
+                    Throw New Exception("Please define the path to a valid Python distribution in General Settings and try again.")
                 End If
 
                 Try
@@ -226,7 +240,7 @@ Public Class Settings
                 End If
 
                 If Not File.Exists(pythonpath) Then
-                    Throw New Exception("Please define the path to a valid Python 3.7-3.9 distribution in General Settings and try again.")
+                    Throw New Exception("Please define the path to a valid Python distribution in General Settings and try again.")
                 End If
 
                 Try
@@ -458,7 +472,7 @@ Public Class Settings
         If Settings.RunningPlatform = Platform.Mac Then
             configfiledir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Documents", "DWSIM Application Data") & Path.DirectorySeparatorChar
         Else
-            configfiledir = My.Computer.FileSystem.SpecialDirectories.MyDocuments & Path.DirectorySeparatorChar & "DWSIM Application Data" & Path.DirectorySeparatorChar
+            configfiledir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) & Path.DirectorySeparatorChar & "DWSIM Application Data" & Path.DirectorySeparatorChar
         End If
         Return configfiledir
     End Function
@@ -561,6 +575,8 @@ Public Class Settings
         CallSolverOnEditorPropertyChanged = source.Configs("Misc").GetBoolean("CallSolverOnEditorPropertyChanged", True)
 
         UIScalingFactor = source.Configs("Misc").GetDouble("UIScalingFactor", 1.0)
+
+        LinuxDisplayDPI = source.Configs("Misc").GetDouble("LinuxDisplayDPI", 96.0)
 
         ObjectEditor = source.Configs("Misc").GetInt("ObjectEditor", 0)
 
@@ -684,6 +700,8 @@ Public Class Settings
         source.Configs("Misc").Set("CallSolverOnEditorPropertyChanged", CallSolverOnEditorPropertyChanged)
 
         source.Configs("Misc").Set("UIScalingFactor", UIScalingFactor)
+
+        source.Configs("Misc").Set("LinuxDisplayDPI", LinuxDisplayDPI)
 
         source.Configs("Misc").Set("ObjectEditor", ObjectEditor)
 

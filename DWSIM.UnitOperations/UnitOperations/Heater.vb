@@ -38,6 +38,25 @@ Namespace UnitOperations
 
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public f As EditingForm_HeaterCooler
 
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Electrical Heater"}
+            End Get
+        End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Power, .IsUserDefined = False})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+            Dimensions(0).Value = Math.Abs(DeltaQ.GetValueOrDefault())
+
+        End Sub
+
         Public Enum CalculationMode
             HeatAdded = 0
             OutletTemperature = 1
@@ -620,7 +639,7 @@ Namespace UnitOperations
 
                     IObj?.Paragraphs.Add("Calculation Mode: Outlet Vapor Fraction")
 
-                    IObj?.Paragraphs.Add("Outlet Stream will be specified with Pressure and Temperature. Temperature will be calculated through a PVF Flash call.")
+                    IObj?.Paragraphs.Add("Outlet Stream will be specified with Pressure and Enthalpy. Temperature will be calculated through a PVF Flash call.")
 
                     V2 = m_VFout.GetValueOrDefault
 
@@ -686,7 +705,7 @@ Namespace UnitOperations
                         Case CalculationMode.EnergyStream, CalculationMode.HeatAdded
                             .SpecType = StreamSpec.Pressure_and_Enthalpy
                         Case CalculationMode.OutletVaporFraction
-                            .SpecType = StreamSpec.Pressure_and_VaporFraction
+                            .SpecType = StreamSpec.Pressure_and_Enthalpy
                         Case CalculationMode.TemperatureChange, CalculationMode.OutletTemperature
                             .SpecType = StreamSpec.Temperature_and_Pressure
                     End Select
@@ -904,6 +923,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.heater
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.heater2.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

@@ -56,15 +56,6 @@ namespace DWSIM.ExtensionMethods.Eto
         }
 
         /// <summary>
-        /// Centers the form on the screen.
-        /// </summary>
-        /// <param name="form">Form (window)</param>
-        public static void Center(this Form form)
-        {
-            Common.Center(form);
-        }
-
-        /// <summary>
         /// Gets the standard control container (DynamicLayout)
         /// </summary>
         /// <returns></returns>
@@ -221,9 +212,18 @@ namespace DWSIM.ExtensionMethods.Eto
         /// <returns></returns>
         public static IEnumerable<Control> GetAllChildren(Control control)
         {
-            var controls = control.VisualControls;
-            if (control is Panel) controls = ((Panel)control).Controls;
-            if (control is DocumentControl) controls = ((DocumentControl)control).Pages;
+            var controls = control.VisualControls.Cast<Control>();
+            try
+            {
+                if (control is Panel) controls = ((Panel)control).Controls.Cast<Control>();
+                if (control is DocumentControl) controls = ((DocumentControl)control).Pages.Cast<Control>();
+                if (control is Form) controls = ((Form)control).Children.Cast<Control>();
+                if (control is Layout) controls = ((Layout)control).Children.Cast<Control>();
+                if (control is DynamicLayout && ((DynamicLayout)control).Content != null)
+                    controls = ((DynamicLayout)control).Content.VisualControls.Cast<Control>();
+                if (control is Scrollable) controls = ((Scrollable)control).Content.VisualControls.Cast<Control>();
+            }
+            catch { }
             return controls.SelectMany(ctrl => GetAllChildren(ctrl)).Concat(controls);
         }
 
@@ -234,9 +234,9 @@ namespace DWSIM.ExtensionMethods.Eto
         public static void SetFontAndPadding(this Form form)
         {
 
-            var sysfont = System.Drawing.SystemFonts.MessageBoxFont;
-            var regularfont = new Font(sysfont.FontFamily.Name, sysfont.SizeInPoints);
-            var boldfont = new Font(sysfont.FontFamily.Name, sysfont.SizeInPoints, FontStyle.Bold);
+            var sysfont = global::Eto.Drawing.SystemFonts.Message();
+            var regularfont = new Font(sysfont.Family.Name, sysfont.Size);
+            var boldfont = new Font(sysfont.Family.Name, sysfont.Size, FontStyle.Bold);
 
             var allcontrols = GetAllChildren(form);
             foreach (var control in allcontrols)
@@ -251,6 +251,15 @@ namespace DWSIM.ExtensionMethods.Eto
                     else
                     {
                         ((CommonControl)control).Font = regularfont;
+                    }
+                }
+                if (control is TextBox)
+                {
+                    var tb = (TextBox)control;
+                    var d = 0.0;
+                    if (Double.TryParse(tb.Text, out d))
+                    {
+                        tb.TextAlignment = TextAlignment.Right;
                     }
                 }
                 else if (control is TableLayout)
