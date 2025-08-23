@@ -110,7 +110,7 @@ Public Class FormSimulSettings
 
         CurrentFlowsheet?.EnableUndoRedo()
 
-        RemoveHandler CurrentFlowsheet.NewDataLoaded, AddressOf NewDataEventHandler
+        If CurrentFlowsheet IsNot Nothing Then RemoveHandler CurrentFlowsheet.NewDataLoaded, AddressOf NewDataEventHandler
 
     End Sub
 
@@ -281,6 +281,8 @@ Public Class FormSimulSettings
         Me.chkUsePassword.Checked = CurrentFlowsheet.Options.UsePassword
 
         If DWSIM.App.IsRunningOnMono Then btnConfigPP.Enabled = True
+
+        chkRestoreUnitOpState.Checked = CurrentFlowsheet.Options.RestoreUnitOperationStateAfterError
 
         cbMassBalanceCheck.SelectedIndex = CurrentFlowsheet.Options.MassBalanceCheck
 
@@ -2038,6 +2040,12 @@ Public Class FormSimulSettings
             End If
 
         End If
+
+    End Sub
+
+    Private Sub chkRestoreUnitOpState_CheckedChanged(sender As Object, e As EventArgs) Handles chkRestoreUnitOpState.CheckedChanged
+
+        CurrentFlowsheet.Options.RestoreUnitOperationStateAfterError = chkRestoreUnitOpState.Checked
 
     End Sub
 

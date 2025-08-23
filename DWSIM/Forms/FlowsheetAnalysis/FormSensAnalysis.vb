@@ -14,13 +14,8 @@
 '    GNU General Public License for more details.
 '
 '    You should have received a copy of the GNU General Public License
-'    along with DWSIM.  If not, see <http://www.gnu.org/licenses/>.
 
-Imports DWSIM.Thermodynamics.BaseClasses
-Imports DWSIM.DWSIM.Optimization
-Imports DWSIM.DrawingTools
 Imports Ciloci.Flee
-Imports DWSIM.FlowsheetSolver
 Imports System.Linq
 Imports DWSIM.SharedClasses.Flowsheet.Optimization
 Imports DWSIM.SharedClasses.DWSIM.Flowsheet
@@ -1409,7 +1404,7 @@ Public Class FormSensAnalysis
 
     Private Sub FormSensAnalysis_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
 
-        RemoveHandler form.NewDataLoaded, AddressOf NewDataEventHandler
+        If form IsNot Nothing Then RemoveHandler form.NewDataLoaded, AddressOf NewDataEventHandler
 
     End Sub
 
