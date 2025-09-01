@@ -1189,6 +1189,8 @@ Namespace UnitOperations
                 Dim value As String = ""
                 Dim propidx As Integer = -1
 
+                If prop.Contains("Stage Index") Then Return ""
+
                 Try
                     Integer.TryParse(prop.Split("_")(2), propidx)
                 Catch ex As Exception
@@ -1222,9 +1224,9 @@ Namespace UnitOperations
 
                 Select Case prop
                     Case "Condenser_Specification_Value", "Condenser_Calculated_Value"
-                        value = Me.Specs("C").SpecUnit
+                        value = "" 'Me.Specs("C").SpecUnit
                     Case "Reboiler_Specification_Value", "Reboiler_Calculated_Value"
-                        value = Me.Specs("R").SpecUnit
+                        value = "" 'Me.Specs("R").SpecUnit
                     Case "Estimated Height"
                         value = su.diameter
                     Case "Estimated Diameter"
@@ -1329,6 +1331,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.col_dc_32
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.col_dc_32.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String
@@ -1659,6 +1667,8 @@ Namespace UnitOperations
             Dim cv As New SystemsOfUnits.Converter
             Dim value As String = ""
 
+            If prop.Contains("Stage Index") Then Return ""
+
             Dim propidx As Integer = -1
 
             Try
@@ -1759,6 +1769,12 @@ Namespace UnitOperations
             Return My.Resources.col_abs_32
         End Function
 
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.col_abs_32.png")
+
+        End Function
+
         Public Overrides Function GetDisplayDescription() As String
             Return ResMan.GetLocalString("CABS_Desc")
         End Function
@@ -1829,6 +1845,39 @@ Namespace UnitOperations
         Public Shared ExternalColumnSolvers As New Dictionary(Of String, IExternalColumnSolver)
 
         Public Property InitialEstimatesProvider As String = "Internal (Default)"
+
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Tray Column", "Packed Column"}
+            End Get
+        End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Diameter, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Height, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.NumberOfTrays, .IsUserDefined = False})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+            Dimensions(0).Value = EstimatedDiameter
+            Dimensions(1).Value = EstimatedHeight
+            If TypeOf Me Is AbsorptionColumn Then
+                Dimensions(2).Value = Stages.Count
+            Else
+                If DirectCast(Me, DistillationColumn).RefluxedAbsorber Then
+                    Dimensions(2).Value = Stages.Count - 1
+                ElseIf DirectCast(Me, DistillationColumn).RefluxedAbsorber Then
+                    Dimensions(2).Value = Stages.Count - 1
+                Else
+                    Dimensions(2).Value = Stages.Count - 2
+                End If
+            End If
+
+        End Sub
 
         Public Overrides Property ObjectClass As SimulationObjectClass = SimulationObjectClass.Columns
 
@@ -2225,7 +2274,7 @@ Namespace UnitOperations
                         ElseIf i = Me.NumberOfStages - 1 Then
                             _st(_st.Count - 1).Name = FlowSheet.GetTranslatedString("DCReboiler")
                         Else
-                            _st(_st.Count - 1).Name = "Stage" & _st.Count + 1
+                            _st(_st.Count - 1).Name = "Stage" & _st.Count - 1
                         End If
                     Case ColType.AbsorptionColumn
                         If i = 0 Then
@@ -2233,7 +2282,7 @@ Namespace UnitOperations
                         ElseIf i = NumberOfStages - 1 Then
                             _st(_st.Count - 1).Name = "BottomStage"
                         Else
-                            _st(_st.Count - 1).Name = "Stage" & _st.Count + 1
+                            _st(_st.Count - 1).Name = "Stage" & _st.Count - 1
                         End If
                 End Select
             Next

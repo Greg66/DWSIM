@@ -120,7 +120,7 @@ Namespace Databases
 
             Dim mytxt As String = ""
 
-            Using filestr As Stream = Assembly.GetAssembly(Me.GetType).GetManifestResourceStream("DWSIM.Thermodynamics.chemsep1.xml")
+            Using filestr As Stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DWSIM.Thermodynamics.chemsep1.xml")
                 Using t As New StreamReader(filestr)
                     mytxt = t.ReadToEnd()
                 End Using
@@ -129,7 +129,7 @@ Namespace Databases
             xmldoc = New XmlDocument
             xmldoc.LoadXml(mytxt)
 
-            Using filestr As Stream = Assembly.GetAssembly(Me.GetType).GetManifestResourceStream("DWSIM.Thermodynamics.chemsep2.xml")
+            Using filestr As Stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DWSIM.Thermodynamics.chemsep2.xml")
                 Using t As New StreamReader(filestr)
                     mytxt = t.ReadToEnd()
                 End Using
@@ -226,6 +226,8 @@ Namespace Databases
                             cp.IG_Enthalpy_of_Formation_25C = Double.Parse(node2.Attributes("value").Value, nf) / 1000 / cp.Molar_Weight
                         Case "GibbsEnergyOfFormation" '/1000/MW, kJ/kg
                             cp.IG_Gibbs_Energy_of_Formation_25C = Double.Parse(node2.Attributes("value").Value, nf) / 1000 / cp.Molar_Weight
+                        Case "HeatOfCombustion" '/1000/MW, kJ/kg
+                            cp.StandardHeatOfCombustion_LHV = Double.Parse(node2.Attributes("value").Value, nf) / 1000 / cp.Molar_Weight
                         Case "RacketParameter"
                             cp.Z_Rackett = Double.Parse(node2.Attributes("value").Value, nf)
                         Case "ChaoSeaderAcentricFactor"

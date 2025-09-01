@@ -8,6 +8,7 @@ Imports DWSIM.GlobalSettings
 Public Class Calculator
 
     Public Shared _ResourceManager As System.Resources.ResourceManager
+    Public Shared Culture As Globalization.CultureInfo
 
     Public Shared ExcelLogForm As LogForm
 
@@ -17,11 +18,9 @@ Public Class Calculator
 
     Public Shared Function GetLocalString(ByVal text As String) As String
 
+        If Culture Is Nothing Then Culture = New Globalization.CultureInfo("en-US")
+
         If _ResourceManager Is Nothing Then
-
-            Dim cultureinfo As String = If(Settings.ExcelMode, "en", GlobalSettings.Settings.CultureInfo)
-
-            My.Application.ChangeUICulture(cultureinfo)
 
             'loads the resource manager
             _ResourceManager = New System.Resources.ResourceManager("DWSIM.Thermodynamics.Strings", System.Reflection.Assembly.GetExecutingAssembly())
@@ -30,12 +29,7 @@ Public Class Calculator
 
         If text <> "" Then
 
-            Dim cultureinfo As String = If(Settings.ExcelMode, "en", GlobalSettings.Settings.CultureInfo)
-            If My.Application.UICulture.Name <> cultureinfo Then
-                My.Application.ChangeUICulture(cultureinfo)
-            End If
-
-            Dim retstr As String = _ResourceManager.GetString(text, My.Application.UICulture)
+            Dim retstr As String = _ResourceManager.GetString(text, Culture)
             If retstr Is Nothing Then Return text Else Return retstr
 
         Else
@@ -86,71 +80,71 @@ Public Class Calculator
 
     Shared Sub InitComputeDevice()
 
-        If Settings.gpu Is Nothing Then
+        'If Settings.gpu Is Nothing Then
 
-            'set target language
+        '    'set target language
 
-            Select Case Settings.CudafyTarget
-                Case 0, 1
-                    CudafyTranslator.Language = eLanguage.Cuda
-                Case 2
-                    CudafyTranslator.Language = eLanguage.OpenCL
-            End Select
+        '    Select Case Settings.CudafyTarget
+        '        Case 0, 1
+        '            CudafyTranslator.Language = eLanguage.Cuda
+        '        Case 2
+        '            CudafyTranslator.Language = eLanguage.OpenCL
+        '    End Select
 
-            'get the gpu instance
+        '    'get the gpu instance
 
-            Dim gputype As eGPUType = Settings.CudafyTarget
+        '    Dim gputype As eGPUType = Settings.CudafyTarget
 
-            Settings.gpu = CudafyHost.GetDevice(gputype, Settings.CudafyDeviceID)
+        '    Settings.gpu = CudafyHost.GetDevice(gputype, Settings.CudafyDeviceID)
 
-            'cudafy all classes that contain a gpu function
+        '    'cudafy all classes that contain a gpu function
 
-            If Settings.gpumod Is Nothing Then
-                Select Case Settings.CudafyTarget
-                    Case 0, 1
-                        Dim errmsg As String = ""
-                        Settings.gpumod = CudafyModule.TryDeserialize("cudacode.cdfy", errmsg)
-                        If errmsg <> "" Then Throw New CudafyException(errmsg)
-                    Case 2
-                        'OpenCL code is device-specific and must be compiled on each initialization
-                End Select
-                If Settings.gpumod Is Nothing Then
-                    Select Case Settings.CudafyTarget
-                        Case 0
-                            Settings.gpumod = CudafyTranslator.Cudafy(GetType(PropertyPackages.Auxiliary.LeeKeslerPlocker),
-                                        GetType(PropertyPackages.ThermoPlugs.PR),
-                                        GetType(PropertyPackages.ThermoPlugs.SRK))
-                            Settings.gpumod.Serialize("emulator.cdfy")
-                        Case 1
-                            Dim cp As New Cudafy.CompileProperties()
-                            With cp
-                                .Architecture = eArchitecture.sm_20
-                                .CompileMode = eCudafyCompileMode.Default
-                                .Platform = ePlatform.All
-                                .WorkingDirectory = My.Computer.FileSystem.SpecialDirectories.Temp
-                                'CUDA SDK v6.5 path
-                                .CompilerPath = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe"
-                                .IncludeDirectoryPath = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"
-                            End With
-                            Settings.gpumod = CudafyTranslator.Cudafy(cp, GetType(PropertyPackages.Auxiliary.LeeKeslerPlocker),
-                                        GetType(PropertyPackages.ThermoPlugs.PR),
-                                        GetType(PropertyPackages.ThermoPlugs.SRK))
-                            Settings.gpumod.Serialize("cudacode.cdfy")
-                        Case 2
-                            'Settings.gpumod = CudafyTranslator.Cudafy(GetType(PropertyPackages.Auxiliary.LeeKeslerPlocker),
-                            '            GetType(PropertyPackages.ThermoPlugs.PR),
-                            '            GetType(PropertyPackages.ThermoPlugs.SRK))
-                            Settings.gpumod = CudafyTranslator.Cudafy(GetType(PropertyPackages.ThermoPlugs.PR),
-                                        GetType(PropertyPackages.ThermoPlugs.SRK))
-                    End Select
-                End If
-            End If
+        '    If Settings.gpumod Is Nothing Then
+        '        Select Case Settings.CudafyTarget
+        '            Case 0, 1
+        '                Dim errmsg As String = ""
+        '                Settings.gpumod = CudafyModule.TryDeserialize("cudacode.cdfy", errmsg)
+        '                If errmsg <> "" Then Throw New CudafyException(errmsg)
+        '            Case 2
+        '                'OpenCL code is device-specific and must be compiled on each initialization
+        '        End Select
+        '        If Settings.gpumod Is Nothing Then
+        '            Select Case Settings.CudafyTarget
+        '                Case 0
+        '                    Settings.gpumod = CudafyTranslator.Cudafy(GetType(PropertyPackages.Auxiliary.LeeKeslerPlocker),
+        '                                GetType(PropertyPackages.ThermoPlugs.PR),
+        '                                GetType(PropertyPackages.ThermoPlugs.SRK))
+        '                    Settings.gpumod.Serialize("emulator.cdfy")
+        '                Case 1
+        '                    Dim cp As New Cudafy.CompileProperties()
+        '                    With cp
+        '                        .Architecture = eArchitecture.sm_20
+        '                        .CompileMode = eCudafyCompileMode.Default
+        '                        .Platform = ePlatform.All
+        '                        .WorkingDirectory = My.Computer.FileSystem.SpecialDirectories.Temp
+        '                        'CUDA SDK v6.5 path
+        '                        .CompilerPath = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe"
+        '                        .IncludeDirectoryPath = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"
+        '                    End With
+        '                    Settings.gpumod = CudafyTranslator.Cudafy(cp, GetType(PropertyPackages.Auxiliary.LeeKeslerPlocker),
+        '                                GetType(PropertyPackages.ThermoPlugs.PR),
+        '                                GetType(PropertyPackages.ThermoPlugs.SRK))
+        '                    Settings.gpumod.Serialize("cudacode.cdfy")
+        '                Case 2
+        '                    'Settings.gpumod = CudafyTranslator.Cudafy(GetType(PropertyPackages.Auxiliary.LeeKeslerPlocker),
+        '                    '            GetType(PropertyPackages.ThermoPlugs.PR),
+        '                    '            GetType(PropertyPackages.ThermoPlugs.SRK))
+        '                    Settings.gpumod = CudafyTranslator.Cudafy(GetType(PropertyPackages.ThermoPlugs.PR),
+        '                                GetType(PropertyPackages.ThermoPlugs.SRK))
+        '            End Select
+        '        End If
+        '    End If
 
-            'load cudafy module
+        '    'load cudafy module
 
-            If Not Settings.gpu.IsModuleLoaded(Settings.gpumod.Name) Then Settings.gpu.LoadModule(Settings.gpumod)
+        '    If Not Settings.gpu.IsModuleLoaded(Settings.gpumod.Name) Then Settings.gpu.LoadModule(Settings.gpumod)
 
-        End If
+        'End If
 
     End Sub
 

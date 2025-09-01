@@ -36,9 +36,12 @@ Partial Class EditingForm_Recycle
         Me.GroupBox4 = New System.Windows.Forms.GroupBox()
         Me.rtbAnnotations = New Extended.Windows.Forms.RichTextBoxExtended()
         Me.GroupBoxParameters1 = New System.Windows.Forms.GroupBox()
+        Me.chkLegacyMode = New System.Windows.Forms.CheckBox()
+        Me.Label5 = New System.Windows.Forms.Label()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.tbMaxIts = New System.Windows.Forms.TextBox()
         Me.chkGlobalBroyden = New System.Windows.Forms.CheckBox()
+        Me.TrackBar1 = New System.Windows.Forms.TrackBar()
         Me.cbP = New System.Windows.Forms.ComboBox()
         Me.tbPT = New System.Windows.Forms.TextBox()
         Me.Label4 = New System.Windows.Forms.Label()
@@ -66,6 +69,7 @@ Partial Class EditingForm_Recycle
         Me.GroupBox5.SuspendLayout()
         Me.GroupBox4.SuspendLayout()
         Me.GroupBoxParameters1.SuspendLayout()
+        CType(Me.TrackBar1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.GroupBoxConnections.SuspendLayout()
         Me.GroupBoxParameters2.SuspendLayout()
         Me.SuspendLayout()
@@ -159,7 +163,7 @@ Partial Class EditingForm_Recycle
         resources.ApplyResources(Me.rtbAnnotations, "rtbAnnotations")
         Me.rtbAnnotations.Name = "rtbAnnotations"
         Me.rtbAnnotations.Rtf = "{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1046{\fonttbl{\f0\fnil Microsoft " &
-    "Sans Serif;}}" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "{\*\generator Riched20 10.0.19041}\viewkind4\uc1 " & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "\pard\f0\fs17\" &
+    "Sans Serif;}}" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "{\*\generator Riched20 10.0.22621}\viewkind4\uc1 " & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "\pard\f0\fs17\" &
     "par" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "}" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10)
         Me.rtbAnnotations.ShowRedo = False
         Me.rtbAnnotations.ShowUndo = False
@@ -170,14 +174,34 @@ Partial Class EditingForm_Recycle
         'GroupBoxParameters1
         '
         resources.ApplyResources(Me.GroupBoxParameters1, "GroupBoxParameters1")
+        Me.GroupBoxParameters1.Controls.Add(Me.chkLegacyMode)
+        Me.GroupBoxParameters1.Controls.Add(Me.Label5)
         Me.GroupBoxParameters1.Controls.Add(Me.Label1)
         Me.GroupBoxParameters1.Controls.Add(Me.tbMaxIts)
         Me.GroupBoxParameters1.Controls.Add(Me.chkGlobalBroyden)
+        Me.GroupBoxParameters1.Controls.Add(Me.TrackBar1)
         Me.GroupBoxParameters1.Name = "GroupBoxParameters1"
         Me.GroupBoxParameters1.TabStop = False
         Me.ToolTipChangeTag.SetToolTip(Me.GroupBoxParameters1, resources.GetString("GroupBoxParameters1.ToolTip"))
         Me.ToolTipValues.SetToolTip(Me.GroupBoxParameters1, resources.GetString("GroupBoxParameters1.ToolTip1"))
         Me.ToolTip1.SetToolTip(Me.GroupBoxParameters1, resources.GetString("GroupBoxParameters1.ToolTip2"))
+        '
+        'chkLegacyMode
+        '
+        resources.ApplyResources(Me.chkLegacyMode, "chkLegacyMode")
+        Me.chkLegacyMode.Name = "chkLegacyMode"
+        Me.ToolTip1.SetToolTip(Me.chkLegacyMode, resources.GetString("chkLegacyMode.ToolTip"))
+        Me.ToolTipChangeTag.SetToolTip(Me.chkLegacyMode, resources.GetString("chkLegacyMode.ToolTip1"))
+        Me.ToolTipValues.SetToolTip(Me.chkLegacyMode, resources.GetString("chkLegacyMode.ToolTip2"))
+        Me.chkLegacyMode.UseVisualStyleBackColor = True
+        '
+        'Label5
+        '
+        resources.ApplyResources(Me.Label5, "Label5")
+        Me.Label5.Name = "Label5"
+        Me.ToolTip1.SetToolTip(Me.Label5, resources.GetString("Label5.ToolTip"))
+        Me.ToolTipChangeTag.SetToolTip(Me.Label5, resources.GetString("Label5.ToolTip1"))
+        Me.ToolTipValues.SetToolTip(Me.Label5, resources.GetString("Label5.ToolTip2"))
         '
         'Label1
         '
@@ -203,6 +227,16 @@ Partial Class EditingForm_Recycle
         Me.ToolTipChangeTag.SetToolTip(Me.chkGlobalBroyden, resources.GetString("chkGlobalBroyden.ToolTip1"))
         Me.ToolTipValues.SetToolTip(Me.chkGlobalBroyden, resources.GetString("chkGlobalBroyden.ToolTip2"))
         Me.chkGlobalBroyden.UseVisualStyleBackColor = True
+        '
+        'TrackBar1
+        '
+        resources.ApplyResources(Me.TrackBar1, "TrackBar1")
+        Me.TrackBar1.Minimum = 1
+        Me.TrackBar1.Name = "TrackBar1"
+        Me.ToolTip1.SetToolTip(Me.TrackBar1, resources.GetString("TrackBar1.ToolTip"))
+        Me.ToolTipChangeTag.SetToolTip(Me.TrackBar1, resources.GetString("TrackBar1.ToolTip1"))
+        Me.ToolTipValues.SetToolTip(Me.TrackBar1, resources.GetString("TrackBar1.ToolTip2"))
+        Me.TrackBar1.Value = 10
         '
         'cbP
         '
@@ -435,11 +469,11 @@ Partial Class EditingForm_Recycle
         '
         resources.ApplyResources(Me, "$this")
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
+        Me.Controls.Add(Me.GroupBoxParameters1)
         Me.Controls.Add(Me.GroupBoxParameters2)
         Me.Controls.Add(Me.GroupBoxConnections)
         Me.Controls.Add(Me.GroupBox5)
         Me.Controls.Add(Me.GroupBox4)
-        Me.Controls.Add(Me.GroupBoxParameters1)
         Me.Name = "EditingForm_Recycle"
         Me.ToolTipValues.SetToolTip(Me, resources.GetString("$this.ToolTip"))
         Me.ToolTip1.SetToolTip(Me, resources.GetString("$this.ToolTip1"))
@@ -449,6 +483,7 @@ Partial Class EditingForm_Recycle
         Me.GroupBox4.ResumeLayout(False)
         Me.GroupBoxParameters1.ResumeLayout(False)
         Me.GroupBoxParameters1.PerformLayout()
+        CType(Me.TrackBar1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.GroupBoxConnections.ResumeLayout(False)
         Me.GroupBoxConnections.PerformLayout()
         Me.GroupBoxParameters2.ResumeLayout(False)
@@ -494,4 +529,7 @@ Partial Class EditingForm_Recycle
     Friend WithEvents ToolTipChangeTag As ToolTip
     Public WithEvents Label1 As Label
     Public WithEvents tbMaxIts As TextBox
+    Friend WithEvents TrackBar1 As TrackBar
+    Public WithEvents Label5 As Label
+    Friend WithEvents chkLegacyMode As CheckBox
 End Class

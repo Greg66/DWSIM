@@ -32,6 +32,7 @@ Imports DWSIM.Thermodynamics.Streams
 Imports DWSIM.SharedClasses
 Imports DWSIM.Interfaces.Enums
 Imports DWSIM.Drawing.SkiaSharp.GraphicObjects
+Imports System.Threading
 
 Namespace UnitOperations
 
@@ -61,6 +62,8 @@ Namespace UnitOperations
 
         Public Overrides Property ObjectClass As SimulationObjectClass = SimulationObjectClass.CAPEOPEN
 
+        Public Overrides ReadOnly Property SupportsRestoreStateAfterError As Boolean = False
+
         Public Property EmbeddedImageData As String = ""
 
         Public Property UseEmbeddedImage As Boolean = False
@@ -68,6 +71,8 @@ Namespace UnitOperations
         Public Overrides ReadOnly Property SupportsDynamicMode As Boolean = True
 
         Public Overrides ReadOnly Property HasPropertiesForDynamicMode As Boolean = False
+
+        Private Shared Lock As New Object
 
         Public Sub New()
             MyBase.New()
@@ -100,7 +105,7 @@ Namespace UnitOperations
             Me.ComponentName = name
             Me.ComponentDescription = description
 
-            If Type.GetType("Mono.Runtime") Is Nothing Then
+            If GlobalSettings.Settings.RunningPlatform() = Settings.Platform.Windows Then
 
                 If Not chemsep Then
 
@@ -813,6 +818,34 @@ Namespace UnitOperations
 
         End Sub
 
+        Sub DisconnectPorts()
+            If Not _couo Is Nothing Then
+                Dim cnobj As Object = Nothing
+                Dim myuo As CapeOpen.ICapeUnit = _couo
+                Dim myports As ICapeCollection = myuo.ports
+                Dim i As Integer = 0
+                Dim numports As Integer = myports.Count
+                If numports > 0 Then
+                    For i = 1 To numports
+                        Dim id As ICapeIdentification = myports.Item(i)
+                        Dim myport As ICapeUnitPort = myports.Item(i)
+                        Try
+                            cnobj = myport.connectedObject
+                        Catch ex As Exception
+                            cnobj = Nothing
+                        End Try
+                        Try
+                            If Not cnobj Is Nothing Then myport.Disconnect()
+                        Catch ex As Exception
+                            Dim ecu As CapeOpen.ECapeUser = myuo
+                            Me.FlowSheet.ShowMessage(Me.GraphicObject.Tag & ": CAPE-OPEN Exception: " & ecu.code & " at " & ecu.interfaceName & ". Reason: " & ecu.description, IFlowsheet.MessageType.Warning)
+                        End Try
+                    Next
+                End If
+            End If
+        End Sub
+
+
         Sub Edit()
             If Not _couo Is Nothing Then
                 Dim myuo As CapeOpen.ICapeUtilities = _couo
@@ -974,7 +1007,7 @@ Namespace UnitOperations
 
         Public Overrides Sub Calculate(Optional ByVal args As Object = Nothing)
 
-            If Not Calculator.IsRunningOnMono Then
+            SyncLock Lock
 
                 Dim IObj As Inspector.InspectorItem = Inspector.Host.GetNewInspectorItem()
 
@@ -1082,7 +1115,7 @@ Namespace UnitOperations
 
                 IObj?.Close()
 
-            End If
+            End SyncLock
 
         End Sub
 
@@ -1179,8 +1212,13 @@ Namespace UnitOperations
 #Region "    IDisposable Overload"
 
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
+
             ' Check to see if Dispose has already been called.
+
             If Not Me.disposedValue Then
+
+                DisconnectPorts()
+
                 ' If disposing equals true, dispose all managed 
                 ' and unmanaged resources.
                 If disposing Then
@@ -1195,12 +1233,16 @@ Namespace UnitOperations
                 If Not _couo Is Nothing Then
                     Terminate()
                     If Marshal.IsComObject(_couo) Then Marshal.ReleaseComObject(_couo)
+                    _couo = Nothing
                 End If
+
+                _istr = Nothing
 
                 ' Note disposing has been done.
                 disposedValue = True
 
             End If
+
         End Sub
 
 #End Region
@@ -1235,6 +1277,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.uo_co_32
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.uo_co_32.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

@@ -50,8 +50,6 @@ Public Class FormWelcome
             lvlatest.LargeImageList = ImageList2
             lvsamples.SmallImageList = ImageList2
             lvsamples.LargeImageList = ImageList2
-            lvlatestfolders.SmallImageList = ImageList2
-            lvlatestfolders.LargeImageList = ImageList2
             FOSSEEList.SmallImageList = ImageList2
             FOSSEEList.LargeImageList = ImageList2
         End If
@@ -73,10 +71,6 @@ Public Class FormWelcome
                     Case ".dwrsd", ".dwrsd2"
                         lvi.ImageIndex = 2
                 End Select
-                If Not Me.lvlatestfolders.Items.ContainsKey(Path.GetDirectoryName(f)) Then
-                    Me.lvlatestfolders.Items.Add(Path.GetDirectoryName(f), Path.GetDirectoryName(f), 3).Tag = Path.GetDirectoryName(f)
-                    Me.lvlatestfolders.Items(Me.lvlatestfolders.Items.Count - 1).ToolTipText = Path.GetDirectoryName(f)
-                End If
             End If
         Next
 
@@ -102,36 +96,31 @@ Public Class FormWelcome
         FOSSEEList.Items.Add(New ListViewItem("Downloading flowsheet list, please wait...", 1) With {.Tag = ""})
 
         Task.Factory.StartNew(Function()
-                                  Return SharedClasses.FOSSEEFlowsheets.GetFOSSEEFlowsheets()
+                                  Return FOSSEEFlowsheets.GetFOSSEEFlowsheets()
                               End Function).ContinueWith(Sub(t)
-                                                             Me.UIThreadInvoke(Sub()
-                                                                                   FOSSEEList.Items.Clear()
-                                                                                   If (t.Exception IsNot Nothing) Then
-                                                                                       FOSSEEList.Items.Add(New ListViewItem("Error loading flowsheet list. Check your internet connection.", 1) With {.Tag = ""})
-                                                                                   Else
-                                                                                       For Each item As FOSSEEFlowsheet In t.Result
-                                                                                           fslist.Add(item.DownloadLink, item)
-                                                                                           FOSSEEList.Items.Add(New ListViewItem(item.DisplayName, 0) With {.Tag = item.DownloadLink})
-                                                                                           My.Application.MainWindowForm.FOSSEEList.Add(item)
-                                                                                       Next
-                                                                                       'Owner.UpdateFOSSEEList()
-                                                                                   End If
-                                                                               End Sub)
+                                                             If t.Exception Is Nothing Then
+                                                                 Me.UIThreadInvoke(Sub()
+                                                                                       FOSSEEList.Items.Clear()
+                                                                                       If (t.Exception IsNot Nothing) Then
+                                                                                           FOSSEEList.Items.Add(New ListViewItem("Error loading flowsheet list. Check your internet connection.", 1) With {.Tag = ""})
+                                                                                       Else
+                                                                                           For Each item As FOSSEEFlowsheet In t.Result
+                                                                                               fslist.Add(item.DownloadLink, item)
+                                                                                               FOSSEEList.Items.Add(New ListViewItem(item.DisplayName, 0) With {.Tag = item.DownloadLink})
+                                                                                               My.Application.MainWindowForm.FOSSEEList.Add(item)
+                                                                                           Next
+                                                                                           'Owner.UpdateFOSSEEList()
+                                                                                       End If
+                                                                                   End Sub)
+                                                             End If
                                                          End Sub)
 
 
         If DWSIM.App.IsRunningOnMono Then
             Me.lvlatest.View = View.List
-            Me.lvlatestfolders.View = View.List
         End If
 
         ChangeDefaultFont(Me)
-
-        NewsViewer.EnsureCoreWebView2Async(FormMain.WebView2Environment).ContinueWith(Sub()
-                                                                                          UIThread(Sub()
-                                                                                                       NewsViewer.Source = New Uri("https://www.patreon.com/dwsim/posts")
-                                                                                                   End Sub)
-                                                                                      End Sub)
 
         FormMain.TranslateFormFunction?.Invoke(Me)
 
@@ -174,7 +163,7 @@ Public Class FormWelcome
 
     End Sub
 
-    Private Sub lvlatestfolders_ItemActivate(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles lvlatestfolders.ItemActivate
+    Private Sub lvlatestfolders_ItemActivate(ByVal sender As System.Object, ByVal e As System.EventArgs)
 
         Application.DoEvents()
         Application.DoEvents()
@@ -469,4 +458,10 @@ Public Class FormWelcome
             Process.Start(My.Application.Info.DirectoryPath & Path.DirectorySeparatorChar & "docs" & Path.DirectorySeparatorChar & "Pro_User_Guide.pdf")
         End If
     End Sub
+
+    Private Sub btnClose_Click(sender As Object, e As EventArgs) Handles btnClose.Click
+        My.Application.MainWindowForm.PainelDeBoasvindasToolStripMenuItem.Checked = False
+        My.Application.MainWindowForm.WelcomePanel.Visible = False
+    End Sub
+
 End Class

@@ -149,7 +149,7 @@ namespace DWSIM.UI.Desktop.Editors
                     break;
                 case ObjectType.EnergyStream:
                     var es = (EnergyStream)SimObject;
-                    s.CreateAndAddTextBoxRow(container, nf, "Heat Flow (" + su.heatflow + ")", cv.ConvertFromSI(su.heatflow, es.EnergyFlow.GetValueOrDefault()),
+                    var tb = s.CreateAndAddTextBoxRow(container, nf, "Heat Flow (" + su.heatflow + ")", cv.ConvertFromSI(su.heatflow, es.EnergyFlow.GetValueOrDefault()),
                                    (TextBox arg3, EventArgs ev) =>
                                    {
                                        if (arg3.Text.IsValidDoubleExpression())
@@ -162,6 +162,7 @@ namespace DWSIM.UI.Desktop.Editors
                                            arg3.TextColor = (Colors.Red);
                                        }
                                    });
+                    if (SimObject.GraphicObject.InputConnectors[0].IsAttached) tb.ReadOnly = true;
                     s.CreateAndAddDescriptionRow(container,
                                                  SimObject.GetPropertyDescription("Heat Flow"));
                     break;
@@ -1100,7 +1101,7 @@ namespace DWSIM.UI.Desktop.Editors
                                 editor.Save();
                             });
                         };
-                        form.Center();
+                        DWSIM.UI.Shared.Common.Center(form);
                         form.Show();
                     });
                     break;
@@ -1198,6 +1199,9 @@ namespace DWSIM.UI.Desktop.Editors
                        });
                     s.CreateAndAddDescriptionRow(container,
                                                  SimObject.GetPropertyDescription("Reboiler Pressure"));
+
+
+
                     int pos6 = 0;
                     switch (sc.condtype)
                     {
@@ -1222,6 +1226,21 @@ namespace DWSIM.UI.Desktop.Editors
                     });
                     s.CreateAndAddDescriptionRow(container,
                                                  SimObject.GetPropertyDescription("Condenser Type"));
+
+                    s.CreateAndAddTextBoxRow(container, nf, "Stage/Tray Height", sc.StageHeight,
+                        (tbx, e) =>
+                        {
+                            if (tbx.Text.IsValidDoubleExpression())
+                            {
+                                tbx.TextColor = (SystemColors.ControlText);
+                                sc.StageHeight = cv.ConvertToSI(su.pressure, tbx.Text.ToString().ParseExpressionToDouble());
+                            }
+                            else
+                            {
+                                tbx.TextColor = (Colors.Red);
+                            }
+                        });
+
                     break;
                 case ObjectType.HeatExchanger:
                     var hx = (HeatExchanger)SimObject;
@@ -1789,7 +1808,7 @@ namespace DWSIM.UI.Desktop.Editors
                     {
                         var editor = new Editors.UnitOperations.ElementMatrixEditor(reactor2g);
                         var form = s.GetDefaultEditorForm("Element Matrix Editor", 600, 300, editor, false);
-                        form.Center();
+                        DWSIM.UI.Shared.Common.Center(form);
                         form.Show();
                     });
                     s.CreateAndAddLabelRow(container, "Convergence Parameters");
@@ -1958,8 +1977,19 @@ namespace DWSIM.UI.Desktop.Editors
                     s.CreateAndAddDropDownRow(container, "ODE Solver", new List<string> { "Implicit Runge-Kutta", "Explicit Runge-Kutta", "Adams-Moulton", "Gear’s BDF" },
                      reactor4.InternalSolver,
                       (dd, e) => reactor4.InternalSolver = dd.SelectedIndex);
-                    s.CreateAndAddDescriptionRow(container,
-                                                 SimObject.GetPropertyDescription("Calculation Mode"));
+                    s.CreateAndAddTextBoxRow(container, nf, "ODE Solver Volume Step (0.00 to 1.00)", reactor4.dV,
+                              (TextBox arg3, EventArgs ev) =>
+                              {
+                                  if (arg3.Text.IsValidDoubleExpression())
+                                  {
+                                      arg3.TextColor = (SystemColors.ControlText);
+                                      reactor4.dV = arg3.Text.ToString().ParseExpressionToDouble();
+                                  }
+                                  else
+                                  {
+                                      arg3.TextColor = (Colors.Red);
+                                  }
+                              });
                     s.CreateAndAddTextBoxRow(container, nf, "Outlet Temperature (" + su.temperature + ")", cv.ConvertFromSI(su.temperature, reactor4.OutletTemperature),
                        (TextBox arg3, EventArgs ev) =>
                        {
@@ -2093,7 +2123,7 @@ namespace DWSIM.UI.Desktop.Editors
                               });
                     s.CreateAndAddDropDownRow(container, "Slurry Viscosity Correction", new List<string> { "Disabled", "Yoshida et al" },
                         reactor4.SlurryViscosityMode,
-                         (dd, e) => reactor4.SlurryViscosityMode = dd.SelectedIndex);
+                         (dd, e) => reactor4.SlurryViscosityMode = dd.SelectedIndex);                    
                     break;
                 case ObjectType.ComponentSeparator:
                     var csep = (ComponentSeparator)SimObject;
@@ -2166,7 +2196,8 @@ namespace DWSIM.UI.Desktop.Editors
                         {
                             cs.SpecUnit = units[arg3.SelectedIndex];
                         });
-                    };
+                    }
+                    ;
                     break;
                 case ObjectType.NodeOut:
                     var splitter = (DWSIM.UnitOperations.UnitOperations.Splitter)SimObject;
@@ -2400,18 +2431,31 @@ namespace DWSIM.UI.Desktop.Editors
                                 });
                     s.CreateAndAddDescriptionRow(container,
                                                  SimObject.GetPropertyDescription("Temperature Convergence Tolerance"));
-                    s.CreateAndAddCheckBoxRow(container, "Include Joule-Thomson Effect", pipe.IncludeEmulsion, (CheckBox arg2, EventArgs ev) =>
+
+                    s.CreateAndAddCheckBoxRow(container, "Calculate Equilibrium and Properties", pipe.CalculateEquilibrium, (CheckBox arg2, EventArgs ev) =>
+                    {
+                        pipe.CalculateEquilibrium = arg2.Checked.GetValueOrDefault();
+                    });
+                    s.CreateAndAddNumericEditorRow(container, "Eq./Prop. Calculation Interval (Sections)", pipe.CalculateEquilibriumIntervalInSteps, 0.0, 1000.0, 0, (arg2, ev) =>
+                    {
+                        pipe.CalculateEquilibriumIntervalInSteps = (int)arg2.Value;
+                    });
+                    s.CreateAndAddCheckBoxRow(container, "Include Emulsion Effect", pipe.IncludeEmulsion, (CheckBox arg2, EventArgs ev) =>
                     {
                         pipe.IncludeEmulsion = arg2.Checked.GetValueOrDefault();
                     });
-                    s.CreateAndAddDescriptionRow(container,
-                                                 SimObject.GetPropertyDescription("Include Joule-Thomson Effect"));
                     s.CreateAndAddDropDownRow(container, "Slurry Viscosity Correction", new List<string> { "Disabled", "Yoshida et al" },
                         pipe.SlurryViscosityMode,
                          (dd, e) => pipe.SlurryViscosityMode = dd.SelectedIndex);
                     break;
                 case ObjectType.Vessel:
                     var vessel = (Vessel)SimObject;
+                    s.CreateAndAddDropDownRow(container, "Calculation Mode", new List<string>(new[] {
+                        "Adiabatic", "Legacy", "Heating/Cooling Isothermic", "Heating/Cooling Isobaric" }), (int)vessel.CalculationMode,
+                       (sender, e) =>
+                       {
+                           vessel.CalculationMode = sender.SelectedIndex.ToEnum<Vessel.CalculationModes>();
+                       });
                     s.CreateAndAddCheckBoxRow(container, "Override Separation Pressure", vessel.OverrideP, (CheckBox arg2, EventArgs ev) =>
                     {
                         vessel.OverrideP = arg2.Checked.GetValueOrDefault();
@@ -2729,7 +2773,8 @@ namespace DWSIM.UI.Desktop.Editors
                                 if (sender.Text.IsValidDoubleExpression())
                                 {
                                     fsuo.Fsheet.SimulationObjects[item.Value.ObjectID].SetPropertyValue(item.Value.ObjectProperty, sender.Text.ParseExpressionToDouble(), su);
-                                };
+                                }
+                                ;
                             });
                         }
                     }

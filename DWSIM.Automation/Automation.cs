@@ -10,11 +10,15 @@ using DWSIM.SharedClassesCSharp.FilePicker.Windows;
 using DWSIM.GlobalSettings;
 using System.Linq;
 using DWSIM.Interfaces.Enums;
-using Org.BouncyCastle.Utilities.Collections;
-using System.Runtime.InteropServices.ComTypes;
-using System.Windows.Forms;
+using DWSIM.SharedClasses;
+using DWSIM.Thermodynamics.PropertyPackages;
+using DWSIM.Thermodynamics;
+using System.Threading.Tasks;
+using DWSIM.Thermodynamics.AdvancedEOS;
+using CapeOpen;
+using DWSIM.Thermodynamics.BaseClasses;
+using System.Resources;
 using static System.Net.Mime.MediaTypeNames;
-using System.Collections.ObjectModel;
 
 namespace DWSIM.Automation
 {
@@ -240,6 +244,12 @@ namespace DWSIM.Automation
     public class Automation3 : AutomationInterface
     {
 
+        public Dictionary<String, IPropertyPackage> AvailablePropertyPackages { get; } = new Dictionary<string, IPropertyPackage>();
+
+        public Dictionary<String, ICompoundConstantProperties> AvailableCompounds { get; } = new Dictionary<string, ICompoundConstantProperties>();
+
+        private System.Resources.ResourceManager rm, prm;
+
         public Automation3()
         {
             Settings.AutomationMode = true;
@@ -248,8 +258,253 @@ namespace DWSIM.Automation
             GlobalSettings.Settings.AutomationMode = true;
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.AssemblyResolve += new ResolveEventHandler(LoadAssembly);
-            FlowsheetBase.FlowsheetBase.AddPropPacks();
-            LoadExtenders();
+            //FlowsheetBase.FlowsheetBase.AddPropPacks();
+            LoadItems();
+            FlowsheetBase.FlowsheetBase.Extenders = LoadExtenders();
+        }
+
+        private void LoadItems()
+        {
+
+            // resources
+
+            rm = new System.Resources.ResourceManager("DWSIM.FlowsheetBase.Strings", Assembly.GetAssembly(typeof(FlowsheetBase.FlowsheetBase)));
+            prm = new System.Resources.ResourceManager("DWSIM.FlowsheetBase.Properties", Assembly.GetAssembly(typeof(FlowsheetBase.FlowsheetBase)));
+
+            // proppacks
+
+            if (AvailablePropertyPackages.Count > 0) return;
+
+            var plist = new System.Collections.Concurrent.BlockingCollection<PropertyPackage>();
+
+            var t1 = TaskHelper.Run(() =>
+            {
+                var CPPP = new CoolPropPropertyPackage();
+                CPPP.ComponentName = "CoolProp";
+                plist.Add(CPPP);
+
+                var CPIPP = new CoolPropIncompressiblePurePropertyPackage();
+                CPIPP.ComponentName = "CoolProp (Incompressible Fluids)";
+                CPIPP.ComponentDescription = "CoolProp (Incompressible Fluids)";
+                plist.Add(CPIPP);
+
+                var CPIMPP = new CoolPropIncompressibleMixturePropertyPackage();
+                CPIMPP.ComponentName = "CoolProp (Incompressible Mixtures)";
+                CPIMPP.ComponentDescription = "CoolProp (Incompressible Mixtures)";
+                plist.Add(CPIMPP);
+
+                var STPP = new SteamTablesPropertyPackage();
+                STPP.ComponentName = "Steam Tables (IAPWS-IF97)";
+                plist.Add(STPP);
+
+                var SEAPP = new SeawaterPropertyPackage();
+                SEAPP.ComponentName = "Seawater IAPWS-08";
+                plist.Add(SEAPP);
+            });
+
+            var t2 = TaskHelper.Run(() =>
+            {
+
+                var PRPP = new PengRobinsonPropertyPackage();
+                PRPP.ComponentName = "Peng-Robinson (PR)";
+                plist.Add(PRPP);
+
+            });
+
+            var t3 = TaskHelper.Run(() =>
+            {
+
+                var PRSV2PP = new PRSV2PropertyPackage();
+                PRSV2PP.ComponentName = "Peng-Robinson-Stryjek-Vera 2 (PRSV2-M)";
+                plist.Add(PRSV2PP);
+
+                var PRSV2PPVL = new PRSV2VLPropertyPackage();
+                PRSV2PPVL.ComponentName = "Peng-Robinson-Stryjek-Vera 2 (PRSV2-VL)";
+                plist.Add(PRSV2PPVL);
+
+            });
+
+            var t4 = TaskHelper.Run(() =>
+            {
+
+                var SRKPP = new SRKPropertyPackage();
+                SRKPP.ComponentName = "Soave-Redlich-Kwong (SRK)";
+                plist.Add(SRKPP);
+
+            });
+
+            var t6 = TaskHelper.Run(() =>
+            {
+
+                var UPP = new UNIFACPropertyPackage();
+                UPP.ComponentName = "UNIFAC";
+                plist.Add(UPP);
+
+                var ULLPP = new UNIFACLLPropertyPackage();
+                ULLPP.ComponentName = "UNIFAC-LL";
+                plist.Add(ULLPP);
+
+                var MUPP = new MODFACPropertyPackage();
+                MUPP.ComponentName = "Modified UNIFAC (Dortmund)";
+                plist.Add(MUPP);
+
+                var NUPP = new NISTMFACPropertyPackage();
+                NUPP.ComponentName = "Modified UNIFAC (NIST)";
+                plist.Add(NUPP);
+
+            });
+
+            var t10 = TaskHelper.Run(() =>
+            {
+
+                var WPP = new WilsonPropertyPackage();
+                WPP.ComponentName = "Wilson";
+                plist.Add(WPP);
+
+                var NRTLPP = new NRTLPropertyPackage();
+                NRTLPP.ComponentName = "NRTL";
+                plist.Add(NRTLPP);
+
+                var UQPP = new UNIQUACPropertyPackage();
+                UQPP.ComponentName = "UNIQUAC";
+                plist.Add(UQPP);
+
+                var CSLKPP = new ChaoSeaderPropertyPackage();
+                CSLKPP.ComponentName = "Chao-Seader";
+                plist.Add(CSLKPP);
+
+                var GSLKPP = new GraysonStreedPropertyPackage();
+                GSLKPP.ComponentName = "Grayson-Streed";
+                plist.Add(GSLKPP);
+
+                var RPP = new RaoultPropertyPackage();
+                RPP.ComponentName = "Raoult's Law";
+                plist.Add(RPP);
+
+                var LKPPP = new LKPPropertyPackage();
+                LKPPP.ComponentName = "Lee-Kesler-Plöcker";
+                plist.Add(LKPPP);
+
+            });
+
+            var t11 = TaskHelper.Run(() =>
+            {
+
+                var ISPP = new IdealElectrolytePropertyPackage();
+                plist.Add(ISPP);
+
+                var BOPP = new BlackOilPropertyPackage();
+                BOPP.ComponentName = "Black Oil";
+                plist.Add(BOPP);
+
+                var GERGPP = new GERG2008PropertyPackage();
+                plist.Add(GERGPP);
+
+                var PCSAFTPP = new PCSAFT2PropertyPackage();
+                plist.Add(PCSAFTPP);
+
+                var PR78PP = new PengRobinson1978PropertyPackage();
+                PR78PP.ComponentName = "Peng-Robinson 1978 (PR78)";
+                plist.Add(PR78PP);
+
+                var PR78Adv = new PengRobinson1978AdvancedPropertyPackage();
+                plist.Add(PR78Adv);
+
+                var SRKAdv = new SoaveRedlichKwongAdvancedPropertyPackage();
+                plist.Add(SRKAdv);
+
+            });
+
+            Task.WaitAll(t1, t2, t3, t4, t6, t10, t11);
+
+            foreach (var pp in plist)
+            {
+                AvailablePropertyPackages.Add(((ICapeIdentification)pp).ComponentName, pp);
+            }
+
+            var otherpps = SharedClasses.Utility.LoadAdditionalPropertyPackages();
+
+            foreach (var pp in otherpps)
+            {
+                if (!AvailablePropertyPackages.ContainsKey(((ICapeIdentification)pp).ComponentName))
+                    AvailablePropertyPackages.Add(((ICapeIdentification)pp).ComponentName, pp);
+                else
+                    Console.WriteLine(String.Format("Error adding External Property Package '{0}'. Check the 'ppacks' and 'extenders' folders for duplicate items.", ((ICapeIdentification)pp).ComponentName));
+            }
+
+            if (!Settings.IsRunningOnMono())
+            {
+                var COPP = new CAPEOPENPropertyPackage();
+                COPP.ComponentName = "CAPE-OPEN";
+                AvailablePropertyPackages.Add(COPP.ComponentName.ToString(), COPP);
+            }
+
+            // compounds
+
+            if (AvailableCompounds.Count() > 0) return;
+
+            var addedcomps = new List<String>();
+            var casnumbers = new List<String>();
+
+            var csdb = new Thermodynamics.Databases.ChemSep();
+            csdb.Load();
+            var cpa = csdb.Transfer();
+            foreach (ConstantProperties cp in cpa)
+            { if (!AvailableCompounds.ContainsKey(cp.Name)) AvailableCompounds.Add(cp.Name, cp); }
+
+            var cpdb = new Thermodynamics.Databases.CoolProp();
+            cpdb.Load();
+            cpa = cpdb.Transfer();
+            addedcomps = AvailableCompounds.Keys.Select((x) => x.ToLower()).ToList();
+            foreach (ConstantProperties cp in cpa)
+            { if (!AvailableCompounds.ContainsKey(cp.Name)) AvailableCompounds.Add(cp.Name, cp); }
+
+            var bddb = new Thermodynamics.Databases.Biodiesel();
+            bddb.Load();
+            cpa = bddb.Transfer();
+            addedcomps = AvailableCompounds.Keys.Select((x) => x.ToLower()).ToList();
+            foreach (ConstantProperties cp in cpa)
+            { if (!AvailableCompounds.ContainsKey(cp.Name)) AvailableCompounds.Add(cp.Name, cp); }
+
+            var chedl = new Thermodynamics.Databases.ChEDL_Thermo();
+            chedl.Load();
+            cpa = chedl.Transfer().ToArray();
+
+            addedcomps = AvailableCompounds.Keys.Select((x) => x.ToLower()).ToList();
+            casnumbers = AvailableCompounds.Values.Select((x) => x.CAS_Number).ToList();
+
+            foreach (ConstantProperties cp in cpa)
+            {
+                if (!addedcomps.Contains(cp.Name.ToLower()) && !addedcomps.Contains(cp.Name))
+                    if (!casnumbers.Contains(cp.CAS_Number))
+                        if (!AvailableCompounds.ContainsKey(cp.Name)) AvailableCompounds.Add(cp.Name, cp);
+            }
+
+            var elec = new Thermodynamics.Databases.Electrolyte();
+            elec.Load();
+            cpa = elec.Transfer().ToArray();
+            addedcomps = AvailableCompounds.Keys.Select((x) => x.ToLower()).ToList();
+            foreach (ConstantProperties cp in cpa)
+            { if (!AvailableCompounds.ContainsKey(cp.Name)) AvailableCompounds.Add(cp.Name, cp); }
+
+            var comps = Thermodynamics.Databases.UserDB.LoadAdditionalCompounds();
+            foreach (ConstantProperties cp in comps)
+            { if (!AvailableCompounds.ContainsKey(cp.Name)) AvailableCompounds.Add(cp.Name, cp); }
+
+            using (var filestr = Assembly.GetAssembly(elec.GetType()).GetManifestResourceStream("DWSIM.Thermodynamics.FoodProp.xml"))
+            {
+                var fcomps = Thermodynamics.Databases.UserDB.ReadComps(filestr);
+                foreach (var cp in fcomps)
+                {
+                    cp.CurrentDB = "FoodProp";
+                    if (!AvailableCompounds.ContainsKey(cp.Name)) AvailableCompounds.Add(cp.Name, cp);
+                }
+            }
+
+            csdb.Dispose();
+            cpdb.Dispose();
+            chedl.Dispose();
+
         }
 
         [DispId(0)]
@@ -295,6 +550,11 @@ namespace DWSIM.Automation
             Settings.AutomationMode = true;
             Settings.CultureInfo = "en";
             var fsheet = new Flowsheet2(null, UIUpdHandler);
+            fsheet.SupressDataLoading = true;
+            fsheet.AvailableCompounds = AvailableCompounds;
+            fsheet.AvailablePropertyPackages = AvailablePropertyPackages;
+            fsheet.SetResourcesManager(rm);
+            fsheet.SetPropertyResourcesManager(prm);
             fsheet.Init();
             if (System.IO.Path.GetExtension(filepath).ToLower().EndsWith("z"))
             {
@@ -304,6 +564,7 @@ namespace DWSIM.Automation
             {
                 fsheet.LoadFromXML(XDocument.Load(filepath));
             }
+            Settings.CalculatorActivated = true;
             return fsheet;
         }
 
@@ -313,6 +574,11 @@ namespace DWSIM.Automation
             Settings.AutomationMode = true;
             Settings.CultureInfo = "en";
             var fsheet = new Flowsheet2(null, null);
+            fsheet.SupressDataLoading = true;
+            fsheet.AvailableCompounds = AvailableCompounds;
+            fsheet.AvailablePropertyPackages = AvailablePropertyPackages;
+            fsheet.SetResourcesManager(rm);
+            fsheet.SetPropertyResourcesManager(prm);
             fsheet.Init();
             if (System.IO.Path.GetExtension(filepath).ToLower().EndsWith("z"))
             {
@@ -322,13 +588,17 @@ namespace DWSIM.Automation
             {
                 fsheet.LoadFromXML(XDocument.Load(filepath));
             }
+            Settings.CalculatorActivated = true;
             return fsheet;
         }
 
         [DispId(3)]
         public void ReleaseResources()
         {
-
+            rm = null;
+            prm = null;
+            AvailablePropertyPackages?.Clear();
+            AvailableCompounds?.Clear();
         }
 
         [DispId(4)]
@@ -381,6 +651,11 @@ namespace DWSIM.Automation
         {
             Settings.AutomationMode = true;
             var f = new Flowsheet2(null, null);
+            f.SupressDataLoading = true;
+            f.AvailableCompounds = AvailableCompounds;
+            f.AvailablePropertyPackages = AvailablePropertyPackages;
+            f.SetResourcesManager(rm);
+            f.SetPropertyResourcesManager(prm);
             f.Init();
             return f;
         }
@@ -464,7 +739,7 @@ namespace DWSIM.Automation
             return extList.ConvertAll(t => (IExtenderCollection)Activator.CreateInstance(t));
         }
 
-        void LoadExtenders()
+        List<IExtenderCollection> LoadExtenders()
         {
 
             List<IExtenderCollection> extlist = GetExtenders(LoadExtenderDLLs());
@@ -477,15 +752,24 @@ namespace DWSIM.Automation
                     {
                         foreach (var item in extender.Collection)
                         {
-                            item.SetMainWindow(null);
-                            item.Run();
+                            var load = false;
+                            if (item is IExtender5) load = ((IExtender5)item).LoadInAutomationMode;
+                            if (load)
+                            {
+                                item.SetMainWindow(null);
+                                item.Run();
+                            }
                         }
-                    } }
+                    }
+                }
                 catch (Exception ex)
                 {
                     Logging.Logger.LogError("Extender Initialization", ex);
                 }
             }
+
+            return extlist;
+
         }
 
     }

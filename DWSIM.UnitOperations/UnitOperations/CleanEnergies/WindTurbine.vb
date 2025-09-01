@@ -8,6 +8,7 @@ Imports SkiaSharp
 Imports Eto.Forms
 Imports DWSIM.UI.Shared.Common
 Imports System.Globalization
+Imports DWSIM.SharedClasses
 
 Namespace UnitOperations
 
@@ -24,6 +25,27 @@ Namespace UnitOperations
         Private calc As DWSIM.Thermodynamics.CalculatorInterface.Calculator
 
         Private rpp As DWSIM.Thermodynamics.PropertyPackages.RaoultPropertyPackage
+
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Onshore", "Offshore"}
+            End Get
+        End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Power, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Diameter, .IsUserDefined = False})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+            Dimensions(0).Value = GeneratedPower
+            Dimensions(1).Value = RotorDiameter * 1000.0
+
+        End Sub
 
         Public Overrides Property Prefix As String = "WT-"
 
@@ -266,6 +288,12 @@ Namespace UnitOperations
         Public Overrides Function GetIconBitmap() As Object
 
             Return My.Resources.icons8_wind_turbine
+
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.icons8_wind_turbine.png")
 
         End Function
 

@@ -38,6 +38,25 @@ Namespace UnitOperations
             DataTable = 4
         End Enum
 
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Ball", "Gate", "Butterfly"}
+            End Get
+        End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Diameter, .IsUserDefined = False})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+            Dimensions(0).Value = GetInletMaterialStream(0).GetVolumetricFlow() * 15850.323140625 / Kv * 10.67 * 0.0254 'm
+
+        End Sub
+
         Public Overrides ReadOnly Property SupportsDynamicMode As Boolean = True
 
         Public Overrides ReadOnly Property HasPropertiesForDynamicMode As Boolean = True
@@ -106,7 +125,10 @@ Namespace UnitOperations
 
         Public Property FlowCoefficient As FlowCoefficientType = FlowCoefficientType.Kv
 
+        Public Property EstimatedDiameter As Double
+
         Private ActuatorTimeToNext As New DateTime
+
 
         Private DelayedOpenings As New Queue(Of Double)
 
@@ -1116,12 +1138,47 @@ Namespace UnitOperations
 
             IObj?.Paragraphs.Add(String.Format("Inlet Stream Enthalpy = {0} kJ/kg", Hi))
 
-            IObj?.SetCurrent()
-            Dim tmp = Me.PropertyPackage.CalculateEquilibrium2(FlashCalculationType.PressureEnthalpy, P2, H2, T2est)
-            T2 = tmp.CalculatedTemperature
-            CheckSpec(T2, True, "outlet temperature")
-            H2c = tmp.CalculatedEnthalpy
-            CheckSpec(H2c, False, "outlet enthalpy")
+            If Not ims.IsSingleCompound() Then
+
+                'build quadratic curve
+
+                Dim msc As MaterialStream = ims.Clone()
+                msc.SetPressure(P2)
+                msc.SetFlashSpec("PT")
+
+                Dim Tvec = New Double() {Ti, Ti * 0.98, Ti * 0.97, Ti * 0.96, Ti * 0.95}
+                Dim Hvec = New Double() {0.0, 0.0, 0.0, 0.0, 0.0}
+
+                For i = 0 To Tvec.Count - 1
+                    msc.PropertyPackage = PropertyPackage
+                    PropertyPackage.CurrentMaterialStream = msc
+                    msc.SetTemperature(Tvec(i))
+                    msc.Calculate()
+                    Hvec(i) = msc.GetMassEnthalpy()
+                Next
+
+                ims.PropertyPackage = PropertyPackage
+                PropertyPackage.CurrentMaterialStream = ims
+
+                T2est = MathNet.Numerics.Interpolation.CubicSpline.InterpolateAkima(Hvec, Tvec).Interpolate(H2)
+
+                IObj?.SetCurrent()
+                Dim tmp = Me.PropertyPackage.CalculateEquilibrium2(FlashCalculationType.PressureEnthalpy, P2, H2, T2est)
+                T2 = tmp.CalculatedTemperature
+                CheckSpec(T2, True, "outlet temperature")
+                H2c = tmp.CalculatedEnthalpy
+                CheckSpec(H2c, False, "outlet enthalpy")
+
+            Else
+
+                IObj?.SetCurrent()
+                Dim tmp = Me.PropertyPackage.CalculateEquilibrium2(FlashCalculationType.PressureEnthalpy, P2, H2, T2est)
+                T2 = tmp.CalculatedTemperature
+                CheckSpec(T2, True, "outlet temperature")
+                H2c = tmp.CalculatedEnthalpy
+                CheckSpec(H2c, False, "outlet enthalpy")
+
+            End If
 
             If DebugMode Then AppendDebugLine(String.Format("Calculated outlet temperature T2 = {0} K", T2))
 
@@ -1399,6 +1456,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.valve
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.valve.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

@@ -56,11 +56,20 @@ namespace DWSIM.UI.Desktop.Editors.LogicalBlocks
             container.CreateAndAddCheckBoxRow("Converge using global solver",
                 recycle.AccelerationMethod == Interfaces.Enums.AccelMethod.GlobalBroyden,
                 (sender, e) => { if (sender.Checked.GetValueOrDefault()) recycle.AccelerationMethod = Interfaces.Enums.AccelMethod.GlobalBroyden; else recycle.AccelerationMethod = Interfaces.Enums.AccelMethod.None; });
+            container.CreateAndAddCheckBoxRow("Legacy Mode", recycle.LegacyMode,
+                (sender, e) => recycle.LegacyMode = sender.Checked.GetValueOrDefault());
             container.CreateAndAddTextBoxRow("N0", "Maximum Iterations", recycle.MaximumIterations,
                 (sender, e) =>
                 {
                     if (sender.Text.IsValidDouble()) recycle.MaximumIterations = int.Parse(sender.Text);
                 });
+            var nu = container.CreateAndAddNumericEditorRow("Smoothing Factor", recycle.SmoothingFactor, 0.1, 1.0, 1,
+                (sender, e) =>
+                {
+                    recycle.SmoothingFactor= sender.Value;
+                }
+                );
+            nu.Increment=0.1;
             container.CreateAndAddLabelRow("Convergence Tolerances");
             container.CreateAndAddTextBoxRow(nf, "Mass Flow", cv.ConvertFromSI(su.massflow, recycle.ConvergenceParameters.VazaoMassica),
                 (sender, e) =>
@@ -405,9 +414,9 @@ namespace DWSIM.UI.Desktop.Editors.LogicalBlocks
             {
                 if (adjust.ControlledObject == null) return;
                 if (adjust.ManipulatedObject == null) return;
-                var fcp = new DWSIM.UnitOperations.EditingForm_Adjust_ControlPanel();
-                fcp.myADJ = adjust;
+                var fcp = s.GetDefaultEditorForm("Control Panel: " + adjust.GraphicObject.Tag, 600, 600, new ControllerPanel(adjust));
                 fcp.Show();
+                fcp.Center();
             });
 
         }
@@ -833,7 +842,7 @@ namespace DWSIM.UI.Desktop.Editors.LogicalBlocks
             var su = simobj.GetFlowsheet().FlowsheetOptions.SelectedUnitSystem;
             var nf = simobj.GetFlowsheet().FlowsheetOptions.NumberFormat;
 
-            var dc = new DocumentControl { DisplayArrows = true };
+            var dc = new DocumentControl();
             var dp1 = new DocumentPage { Closable = false, Text = "General" };
             var dp2 = new DocumentPage { Closable = false, Text = "Python Script" };
 

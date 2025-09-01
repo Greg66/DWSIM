@@ -143,6 +143,8 @@ Namespace PropertyPackages.Auxiliary.FlashAlgorithms
 
             settings(Interfaces.Enums.FlashSetting.FailSafeCalculationMode) = 1
 
+            settings(Interfaces.Enums.FlashSetting.PVFlash_FivePointStencilNumericalDerivative) = False
+
             Return settings
 
         End Function
@@ -1244,7 +1246,7 @@ will converge to this solution.")
             'if a second liquid phase is detected, estimate composition
             If stresult.Count > 0 Then
 
-                Dim validsolutions = stresult.Where(Function(s) s.Max > 0.5).ToList()
+                Dim validsolutions = stresult.Where(Function(s) s.Max > 0.05).ToList()
 
                 Dim fcl(n), fcv(n) As Double
 
@@ -1612,6 +1614,9 @@ will converge to this solution.")
                 End If
                 If Not FlashSettings.ContainsKey(Interfaces.Enums.FlashSetting.FailSafeCalculationMode) Then
                     FlashSettings.Add(Interfaces.Enums.FlashSetting.FailSafeCalculationMode, 1)
+                End If
+                If Not FlashSettings.ContainsKey(Interfaces.Enums.FlashSetting.FailSafeCalculationMode) Then
+                    FlashSettings.Add(Interfaces.Enums.FlashSetting.PVFlash_FivePointStencilNumericalDerivative, False)
                 End If
             End If
 

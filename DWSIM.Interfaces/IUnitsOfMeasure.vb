@@ -20,7 +20,8 @@ Imports DWSIM.Interfaces.Enums
 ''' <summary>
 ''' This interface defines the basic properties of a System of Units class.
 ''' </summary>
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface IUnitsOfMeasure
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface IUnitsOfMeasure
 
     Function GetUnitSet(measureID As Enums.UnitOfMeasure) As List(Of String)
 
@@ -168,5 +169,7 @@ Imports DWSIM.Interfaces.Enums
     Function GetUnitType(unit As String) As UnitOfMeasure
 
     Property emission_factor As String
+
+    Property specific_power As String
 
 End Interface

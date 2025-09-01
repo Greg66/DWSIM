@@ -42,6 +42,13 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
     Public Shared Event CalculationError As CustomEvent
     Public Shared Event CalculatingObject As CustomEvent2
 
+    Private Shared _callback As IFlowsheetSolveCallback
+    Public Shared Sub RegisterCallback(callback As IFlowsheetSolveCallback)
+        If _callback Is Nothing Then
+            _callback = callback
+        End If
+    End Sub
+
     ''' <summary>
     ''' Flowsheet calculation routine 1. Calculates the object using information sent by the queue and updates the flowsheet.
     ''' </summary>
@@ -93,7 +100,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                                 End If
 
                                 For Each utility In myUnitOp.AttachedUtilities
-                                    If utility.AutoUpdate Then utility.Update()
+                                    If utility.AutoUpdate Then fbag.RunCodeOnUIThread(Sub() utility.Update())
                                 Next
 
                                 myUnitOp.Calculated = True
@@ -147,7 +154,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                             End If
 
                             For Each utility In myUnitOp.AttachedUtilities
-                                If utility.AutoUpdate Then utility.Update()
+                                If utility.AutoUpdate Then fbag.RunCodeOnUIThread(Sub() utility.Update())
                             Next
 
                             myUnitOp.Calculated = False
@@ -189,7 +196,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                     End If
 
                     For Each utility In myObj.AttachedUtilities
-                        If utility.AutoUpdate Then utility.Update()
+                        If utility.AutoUpdate Then fbag.RunCodeOnUIThread(Sub() utility.Update())
                     Next
 
                     myObj.Calculated = True
@@ -314,7 +321,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                         myObj.Solve()
                     End If
                     For Each utility In myObj.AttachedUtilities
-                        If utility.AutoUpdate Then utility.Update()
+                        If utility.AutoUpdate Then fbag.RunCodeOnUIThread(Sub() utility.Update())
                     Next
                     myObj.Calculated = True
                     If myObj.IsSpecAttached = True Then
@@ -544,7 +551,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                             End If
                         End If
                         For Each au In myobj.AttachedUtilities
-                            If au.AutoUpdate Then au.Update()
+                            If au.AutoUpdate Then fbag.RunCodeOnUIThread(Sub() au.Update())
                         Next
                         myobj.GraphicObject.Calculated = True
                         myobj.LastUpdated = Date.Now
@@ -660,7 +667,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                         CalculateObjectAsync(fobj, myinfo, ct)
                     End If
                     For Each au In myobj.AttachedUtilities
-                        If au.AutoUpdate Then au.Update()
+                        If au.AutoUpdate Then fbag.RunCodeOnUIThread(Sub() au.Update())
                     Next
                     myobj.GraphicObject.Calculated = True
                     myobj.LastUpdated = Date.Now
@@ -771,7 +778,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                                                        CalculateObjectAsync(fobj, myinfo, ct)
                                                    End If
                                                    For Each au In myobj.AttachedUtilities
-                                                       If au.AutoUpdate Then au.Update()
+                                                       If au.AutoUpdate Then fbag.RunCodeOnUIThread(Sub() au.Update())
                                                    Next
                                                    myobj.GraphicObject.Calculated = True
                                                    myobj.LastUpdated = Date.Now
@@ -1129,6 +1136,15 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                 Return New List(Of Exception)
             End If
 
+            If _callback IsNot Nothing Then
+
+                Dim filename = Path.GetFileName(fs.FilePath)
+
+                If Not String.IsNullOrEmpty(filename) Then
+                    _callback.OnSolved(filename)
+                End If
+            End If
+
             Inspector.Host.CurrentSolutionID = Date.Now.ToBinary
 
             If GlobalSettings.Settings.InspectorEnabled Then
@@ -1228,8 +1244,11 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
 
             Dim objstack As List(Of String) = objl(0)
 
+            Dim WaitingForUserDefinedOrder As Boolean = False
+
             If ChangeCalcOrder Then
                 If mode = 0 Or mode = 1 Then
+                    WaitingForUserDefinedOrder = True
                     fgui.RunCodeOnUIThread(Sub()
                                                Dim customlist = fgui.FlowsheetOptions.CustomCalculationOrder
                                                Dim reflist = New List(Of String)(customlist)
@@ -1249,9 +1268,14 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                                                    objstack = fgui.ChangeCalculationOrder(objstack)
                                                End If
                                                fgui.FlowsheetOptions.CustomCalculationOrder = New List(Of String)(objstack)
+                                               WaitingForUserDefinedOrder = False
                                            End Sub)
                 End If
             End If
+
+            While WaitingForUserDefinedOrder
+                Thread.Sleep(500)
+            End While
 
             IObj?.Paragraphs.Add("The objects which will be calculated are (in this order): ")
 
@@ -1324,10 +1348,6 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
             For i As Integer = 0 To totalv - 1
                 rechess(i, i) = 1
             Next
-
-            'initialize GPU if option enabled
-
-            If Settings.EnableGPUProcessing Then Settings.gpu.EnableMultithreading()
 
             Dim maintask As Task
 
@@ -1540,7 +1560,7 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
                                                                   Dim rec = DirectCast(fbag.SimulationObjects(r), IRecycle)
                                                                   If rec.AccelerationMethod = AccelMethod.GlobalBroyden Then
                                                                       For Each kvp In rec.Errors
-                                                                          rec.Values(kvp.Key) = recvars(i) + 0.7 * recdvars(i)
+                                                                          rec.Values(kvp.Key) = 0.3 * recvars(i) + 0.7 * recdvars(i)
                                                                           i += 1
                                                                       Next
                                                                   End If
@@ -1649,16 +1669,11 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
 
             End Select
 
+            fs.UpdateMassAndEnergyBalance()
+
             'clears any calculation stop request.
 
             Settings.CalculatorStopRequested = False
-
-            'Frees GPU memory if enabled.
-
-            If Settings.EnableGPUProcessing Then
-                Settings.gpu.DisableMultithreading()
-                Settings.gpu.FreeAll()
-            End If
 
             'updates the display status of all objects in the calculation list.
 
@@ -1738,11 +1753,9 @@ Public Delegate Sub CustomEvent2(ByVal objinfo As CalculationArgs)
 
             fgui.UpdateInterface()
 
-            fgui.RefreshInterface()
+            GlobalSettings.Settings.CalculatorBusy = False
 
             fgui.ProcessScripts(Scripts.EventType.SolverFinished, Scripts.ObjectType.Solver, "")
-
-            GlobalSettings.Settings.CalculatorBusy = False
 
             IObj?.Close()
 

@@ -40,6 +40,8 @@ Namespace UnitOperations
         Public Shared InitializationAction2 As Action(Of BaseClass)
         Public Shared InitializationAction3 As Action(Of BaseClass)
 
+        Public Shared TransferAdditionalSolidDataAction As Action(Of BaseClass)
+
         <Newtonsoft.Json.JsonIgnore> <Xml.Serialization.XmlIgnore> Public Property LastSolutionInputSnapshot As String = ""
 
         Protected Friend _IsDirty As Boolean = True
@@ -297,6 +299,26 @@ Namespace UnitOperations
 
         Public MustOverride Function GetIconBitmap() As Object Implements ISimulationObject.GetIconBitmap
 
+        Public Overridable Function GetIconBitmapBytes() As Byte() Implements ISimulationObject.GetIconBitmapBytes
+
+            Return New Byte() {}
+
+        End Function
+
+        Protected Function GetBytesFromResource(resourcename As String) As Byte()
+
+            Dim assembly1 = Assembly.GetCallingAssembly()
+            Using stream = assembly1.GetManifestResourceStream(resourcename)
+                Dim streamLength As Integer = Convert.ToInt32(stream.Length)
+                Dim fileData As Byte() = New Byte(streamLength) {}
+                ' Read the file into a byte array
+                stream.Read(fileData, 0, streamLength)
+                stream.Close()
+                Return fileData
+            End Using
+
+        End Function
+
         <NonSerialized> Private _AttachedUtilities As New List(Of IAttachedUtility)
 
         Public Property AttachedUtilities As List(Of IAttachedUtility) Implements ISimulationObject.AttachedUtilities
@@ -463,7 +485,7 @@ Namespace UnitOperations
 
         End Sub
 
-        Public Sub Solve() Implements ISimulationObject.Solve
+        Public Overridable Sub Solve() Implements ISimulationObject.Solve
 
             If FlowSheet.FlowsheetOptions.ForceObjectSolving Then
                 Calculated = False
@@ -492,11 +514,19 @@ Namespace UnitOperations
                 End If
             End If
 
+            TransferAdditionalSolidData()
+
             If GHGEmissionData IsNot Nothing Then
                 GHGEmissionData.OwnerID = Name
                 GHGEmissionData.Flowsheet = FlowSheet
                 GHGEmissionData.Update()
             End If
+
+        End Sub
+
+        Public Overridable Sub TransferAdditionalSolidData()
+
+            TransferAdditionalSolidDataAction?.Invoke(Me)
 
         End Sub
 
@@ -713,10 +743,16 @@ Namespace UnitOperations
 
             Dim proplist As New List(Of String)
 
-            Dim epcol = DirectCast(ExtraProperties, IDictionary(Of String, Object))
+            Dim col1 = DirectCast(ExtraProperties, IDictionary(Of String, Object))
+            Dim col2 = DirectCast(ExtraPropertiesDescriptions, IDictionary(Of String, Object))
+            Dim col3 = DirectCast(ExtraPropertiesUnitTypes, IDictionary(Of String, Object))
 
-            For Each item In epcol
-                proplist.Add(item.Key)
+            For Each p In col1
+                If col2.ContainsKey(p.Key) And col3.ContainsKey(p.Key) Then
+                    If FlowSheet IsNot Nothing Then proplist.Add(p.Key)
+                Else
+                    proplist.Add(p.Key)
+                End If
             Next
 
             If FlowSheet IsNot Nothing Then
@@ -945,7 +981,7 @@ Namespace UnitOperations
         End Sub
 
         ' This code added by Visual Basic to correctly implement the disposable pattern.
-        Public Sub Dispose() Implements IDisposable.Dispose
+        Public Overridable Sub Dispose() Implements IDisposable.Dispose
 
             ' Do not change this code.  Put cleanup code in Dispose(ByVal disposing As Boolean) above.
             Dispose(True)
@@ -1334,33 +1370,11 @@ Namespace UnitOperations
                 End If
                 drw?.AppendLine("Date: " + Date.Now.ToString())
                 drw?.AppendLine()
-                drw?.AppendLine("Application & System Info: ")
-                drw?.AppendLine()
-
-                Dim version = Assembly.GetExecutingAssembly().GetName().Version.ToString() & " (" &
-                    IO.File.GetLastWriteTimeUtc(Assembly.GetExecutingAssembly().Location).ToString() + ")"
-
-                drw?.AppendLine(String.Format("Unit Operations Library Version: {0}", version))
-                drw?.AppendLine(String.Format("OS Version: {0}", My.Computer.Info.OSFullName & ", Version " & My.Computer.Info.OSVersion & ", " & My.Computer.Info.OSPlatform & " Platform"))
-                drw?.AppendLine(String.Format("Runtime Version: {0}", SharedClasses.Utility.GetRuntimeVersion()))
-
-                Try
-                    Dim scrh As New System.Management.ManagementObjectSearcher("select * from Win32_Processor")
-                    Dim cpu As String = System.Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER")
-                    For Each qinfo In scrh.Get()
-                        cpu += " / " & qinfo.Properties("Name").Value.ToString
-                    Next
-                    drw?.AppendLine(String.Format("CPU Info: {0}", cpu))
-                Catch ex As Exception
-                End Try
-
                 drw?.AppendLine()
                 drw?.AppendLine("Solver Settings: ")
                 drw?.AppendLine()
                 drw?.AppendLine(String.Format("Solver Option: {0}", GlobalSettings.Settings.SolverMode))
                 drw?.AppendLine(String.Format("Use Parallel CPU Acceleration: {0}", GlobalSettings.Settings.EnableParallelProcessing))
-                drw?.AppendLine(String.Format("Use Parallel GPU Acceleration: {0}", GlobalSettings.Settings.EnableGPUProcessing))
-                drw?.AppendLine(String.Format("Use CPU SIMD Extensions: {0}", GlobalSettings.Settings.UseSIMDExtensions))
                 drw?.AppendLine()
                 drw?.AppendLine("Calculation Report: ")
                 drw?.AppendLine()
@@ -1827,6 +1841,45 @@ Namespace UnitOperations
         Public Overridable Function GetPreferredGraphicObjectHeight() As Double Implements ISimulationObject.GetPreferredGraphicObjectHeight
             Return 40.0
         End Function
+
+        Public Overridable Function GetProperties2() As String() Implements ISimulationObject.GetProperties2
+
+            Dim props = GetProperties(PropertyType.ALL).Select(Function(p) FlowSheet?.GetTranslatedString(p)).ToArray()
+            Return props
+
+        End Function
+
+        Public Overridable Function GetPropertyValue2(propname As String, arg1 As String, units As String) As Object Implements ISimulationObject.GetPropertyValue2
+
+            Dim propcodes = GetProperties(PropertyType.ALL)
+            Dim propnames = GetProperties2().ToList()
+
+            Dim value = GetPropertyValue(propcodes(propnames.IndexOf(propname)))
+
+            If Double.TryParse(value.ToString(), New Double) Then
+                Return cv.ConvertFromSI(units, Convert.ToDouble(value))
+            Else
+                Return value
+            End If
+
+        End Function
+
+        Public Overridable Sub SetPropertyValue2(propname As String, arg1 As String, units As String, value As Object) Implements ISimulationObject.SetPropertyValue2
+
+            Dim propcodes = GetProperties(PropertyType.ALL)
+            Dim propnames = GetProperties2().ToList()
+
+            Dim propcode = propcodes(propnames.IndexOf(propname))
+
+            If Double.TryParse(value.ToString(), New Double) Then
+                Dim newvalue = cv.ConvertToSI(units, Convert.ToDouble(value))
+                SetPropertyValue(propcode, newvalue)
+            Else
+                SetPropertyValue(propcode, value)
+            End If
+
+        End Sub
+
     End Class
 
 End Namespace

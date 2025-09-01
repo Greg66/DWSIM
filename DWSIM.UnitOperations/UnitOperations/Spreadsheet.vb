@@ -44,11 +44,32 @@ Namespace UnitOperations
     <System.Serializable()> Public Class ExcelUO
 
         Inherits UnitOpBaseClass
+
         Public Overrides Property ObjectClass As SimulationObjectClass = SimulationObjectClass.UserModels
 
         Public Overrides ReadOnly Property HasPropertiesForDynamicMode As Boolean = False
 
         Public Overrides ReadOnly Property SupportsDynamicMode As Boolean = True
+
+        Private Declare Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hWnd As Integer, ByRef lpdwProcessId As Integer) As Integer
+
+        Private Function GetExcelProcess(ByVal excelApp As Object) As Process
+            Dim id As Integer
+            GetWindowThreadProcessId(excelApp.HinstancePtr, id)
+            Return Process.GetProcessById(id)
+        End Function
+
+        Private Sub TerminateExcelProcess(ByVal excelApp As Object)
+            Try
+                Dim process = GetExcelProcess(excelApp)
+                If (Not (process) Is Nothing) Then
+                    process.Kill()
+                End If
+            Catch ex As System.Runtime.InteropServices.InvalidComObjectException
+            End Try
+        End Sub
+
+
 
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public f As EditingForm_SpreadsheetUO
 
@@ -176,6 +197,8 @@ Namespace UnitOperations
                 Dim excelProxy As Object = Activator.CreateInstance(excelType)
 
                 Using xcl As New Excel.Application(Nothing, excelProxy)
+
+                    'pid = excelProxy.
 
                     For Each CurrAddin As Excel.AddIn In xcl.AddIns
                         If CurrAddin.Installed Then
@@ -441,6 +464,8 @@ Namespace UnitOperations
                     End If
 
                 End Using
+
+                TerminateExcelProcess(excelProxy)
 
             Else
 
@@ -856,6 +881,8 @@ Namespace UnitOperations
 
                     End Using
 
+                    TerminateExcelProcess(excelProxy)
+
                 Else
 
                     'use GemBox to read and write data
@@ -1075,6 +1102,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.table
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.table.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

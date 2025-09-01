@@ -41,7 +41,7 @@ Public Class FormPhEnv
 
     Dim PB, PO, TVB, TVD, HB, HO, SB, SO, VB, VO, TE, PE,
         PB1, TVB1, HB1, SB1, VB1, PB2, TVB2, HB2, SB2, VB2,
-        PHsI, PHsII, THsI, THsII, TQ, PQ, TI, PI, POWF, TOWF, HOWF, SOWF, VOWF As New ArrayList
+        PHsI, PHsII, THsI, THsII, TQ, PQ, TI, PI, POWF, TOWF, HOWF, SOWF, VOWF As New List(Of Double)
 
     Dim UT, UP, UH, US, UV As New ArrayList
 
@@ -91,8 +91,9 @@ Public Class FormPhEnv
 
         End Try
 
-        If TypeOf DirectCast(AttachedTo, Streams.MaterialStream).PropertyPackage Is PropertyPackages.PengRobinsonPropertyPackage Or _
-           TypeOf DirectCast(AttachedTo, Streams.MaterialStream).PropertyPackage Is PropertyPackages.SRKPropertyPackage Then
+        If TypeOf DirectCast(AttachedTo, Streams.MaterialStream).PropertyPackage Is PropertyPackages.PengRobinsonPropertyPackage Or
+           TypeOf DirectCast(AttachedTo, Streams.MaterialStream).PropertyPackage Is PropertyPackages.SRKPropertyPackage Or
+           TypeOf DirectCast(AttachedTo, Streams.MaterialStream).PropertyPackage Is PropertyPackages.PengRobinson1978PropertyPackage Then
             Me.chkStabCurve.Enabled = True
             chkpip.Enabled = True
         Else
@@ -186,11 +187,6 @@ exec:       With Me.GraphControl.GraphPane.Legend
             Me.phaseidentification = chkpip.Checked
             Me.hydratecalc = chkhyd.Checked
             Me.Button1.Enabled = False
-
-            If My.Settings.EnableGPUProcessing Then
-                Calculator.InitComputeDevice()
-                Settings.gpu.EnableMultithreading()
-            End If
 
             Me.BackgroundWorker1.RunWorkerAsync(New Object() {0, Me.tbQuality.Value, Me.chkQualityLine.Checked, Me.chkStabCurve.Checked, Me.chkpip.Checked, Me.chkhyd.Checked, Me.chkHydVapOnly.Checked, chkImmiscibleWater.Checked})
 
@@ -1127,7 +1123,7 @@ exec:       With Me.GraphControl.GraphPane.Legend
 
         PC = diagdata(15)
 
-        Dim th1, th2, ph1, ph2 As New ArrayList, Ph, Th As Object, Pmin, Pmax As Double, Vz() As Double, Vn() As String
+        Dim th1, th2, ph1, ph2 As New List(Of Double), Ph, Th As Object, Pmin, Pmax As Double, Vz() As Double, Vn() As String
 
         If e.Argument(5) = True Then
 
@@ -1186,11 +1182,6 @@ exec:       With Me.GraphControl.GraphPane.Legend
     End Sub
 
     Private Sub BackgroundWorker1_RunWorkerCompleted(ByVal sender As Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
-
-        If My.Settings.EnableGPUProcessing Then
-            Settings.gpu.DisableMultithreading()
-            Settings.gpu.FreeAll()
-        End If
 
         Me.Button1.Enabled = True
 

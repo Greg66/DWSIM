@@ -48,6 +48,24 @@ Namespace UnitOperations
 
         Protected m_eta As Nullable(Of Double) = 100
 
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Air Cooler"}
+            End Get
+        End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Area, .IsUserDefined = True})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+
+        End Sub
+
         Public Enum CalculationMode
             HeatRemoved = 0
             OutletTemperature = 1
@@ -679,7 +697,7 @@ Namespace UnitOperations
                         Case CalculationMode.HeatRemoved
                             .SpecType = StreamSpec.Pressure_and_Enthalpy
                         Case CalculationMode.OutletVaporFraction
-                            .SpecType = StreamSpec.Pressure_and_VaporFraction
+                            .SpecType = StreamSpec.Pressure_and_Enthalpy
                         Case CalculationMode.TemperatureChange, CalculationMode.OutletTemperature
                             .SpecType = StreamSpec.Temperature_and_Pressure
                     End Select
@@ -896,6 +914,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.cooler
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.cooler.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

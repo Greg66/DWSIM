@@ -40,22 +40,47 @@ Public Class FormFileExplorer
         UpdateSize()
         ListFiles()
 
+        AddHandler Flowsheet.NewDataLoaded, AddressOf NewDataEventHandler
+
+    End Sub
+
+    Private Sub ThisFormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+
+        If Flowsheet IsNot Nothing Then RemoveHandler Flowsheet.NewDataLoaded, AddressOf NewDataEventHandler
+
+    End Sub
+
+    Public Sub NewDataEventHandler(sender As Object, e As INewDataLoadedEventArgs)
+
+        UpdateSize()
+        ListFiles()
+
     End Sub
 
     Private Sub UpdateSize()
 
-        lblSize.Text = String.Format(Flowsheet.GetTranslatedString1("DBSize"), Flowsheet.FileDatabaseProvider.GetSizeinKB())
+        If Flowsheet.FileDatabaseProvider IsNot Nothing Then
+            Try
+                lblSize.Text = String.Format(Flowsheet.GetTranslatedString1("DBSize"), Flowsheet.FileDatabaseProvider.GetSizeinKB())
+            Catch ex As Exception
+            End Try
+        End If
 
     End Sub
 
     Public Sub ListFiles()
 
         Dim provider = Flowsheet.FileDatabaseProvider
-        Dim files = provider.GetFiles()
-        ListView1.Items.Clear()
-        For Each item In files
-            ListView1.Items.Add(item)
-        Next
+        If provider IsNot Nothing Then
+            Try
+                Dim files = provider.GetFiles()
+                ListView1.Items.Clear()
+                For Each item In files
+                    ListView1.Items.Add(item)
+                Next
+            Catch ex As Exception
+            End Try
+        End If
 
     End Sub
 

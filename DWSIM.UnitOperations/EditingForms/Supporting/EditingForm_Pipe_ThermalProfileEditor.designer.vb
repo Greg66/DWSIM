@@ -25,6 +25,10 @@ Partial Class PipeThermalProfileEditor
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(PipeThermalProfileEditor))
         Me.RadioButton7 = New System.Windows.Forms.RadioButton()
         Me.GroupBox7 = New System.Windows.Forms.GroupBox()
+        Me.Label2 = New System.Windows.Forms.Label()
+        Me.tbSolarIrradiation = New System.Windows.Forms.TextBox()
+        Me.chkSolarIrradiationGlobal = New System.Windows.Forms.CheckBox()
+        Me.chkIncludeSolarIrradiation = New System.Windows.Forms.CheckBox()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.lblTAGUnits2 = New System.Windows.Forms.Label()
         Me.TextBoxTAG2 = New System.Windows.Forms.TextBox()
@@ -64,6 +68,8 @@ Partial Class PipeThermalProfileEditor
         Me.Label52 = New System.Windows.Forms.Label()
         Me.TextBoxCGTC = New System.Windows.Forms.TextBox()
         Me.Label53 = New System.Windows.Forms.Label()
+        Me.Label3 = New System.Windows.Forms.Label()
+        Me.tbSolarEff = New System.Windows.Forms.TextBox()
         Me.GroupBox7.SuspendLayout()
         Me.GroupBox8.SuspendLayout()
         Me.GroupBox9.SuspendLayout()
@@ -77,6 +83,12 @@ Partial Class PipeThermalProfileEditor
         'GroupBox7
         '
         resources.ApplyResources(Me.GroupBox7, "GroupBox7")
+        Me.GroupBox7.Controls.Add(Me.Label3)
+        Me.GroupBox7.Controls.Add(Me.tbSolarEff)
+        Me.GroupBox7.Controls.Add(Me.Label2)
+        Me.GroupBox7.Controls.Add(Me.tbSolarIrradiation)
+        Me.GroupBox7.Controls.Add(Me.chkSolarIrradiationGlobal)
+        Me.GroupBox7.Controls.Add(Me.chkIncludeSolarIrradiation)
         Me.GroupBox7.Controls.Add(Me.Label1)
         Me.GroupBox7.Controls.Add(Me.lblTAGUnits2)
         Me.GroupBox7.Controls.Add(Me.TextBoxTAG2)
@@ -102,6 +114,26 @@ Partial Class PipeThermalProfileEditor
         Me.GroupBox7.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         Me.GroupBox7.Name = "GroupBox7"
         Me.GroupBox7.TabStop = False
+        '
+        'Label2
+        '
+        resources.ApplyResources(Me.Label2, "Label2")
+        Me.Label2.Name = "Label2"
+        '
+        'tbSolarIrradiation
+        '
+        resources.ApplyResources(Me.tbSolarIrradiation, "tbSolarIrradiation")
+        Me.tbSolarIrradiation.Name = "tbSolarIrradiation"
+        '
+        'chkSolarIrradiationGlobal
+        '
+        resources.ApplyResources(Me.chkSolarIrradiationGlobal, "chkSolarIrradiationGlobal")
+        Me.chkSolarIrradiationGlobal.Name = "chkSolarIrradiationGlobal"
+        '
+        'chkIncludeSolarIrradiation
+        '
+        resources.ApplyResources(Me.chkIncludeSolarIrradiation, "chkIncludeSolarIrradiation")
+        Me.chkIncludeSolarIrradiation.Name = "chkIncludeSolarIrradiation"
         '
         'Label1
         '
@@ -324,6 +356,16 @@ Partial Class PipeThermalProfileEditor
         resources.ApplyResources(Me.Label53, "Label53")
         Me.Label53.Name = "Label53"
         '
+        'Label3
+        '
+        resources.ApplyResources(Me.Label3, "Label3")
+        Me.Label3.Name = "Label3"
+        '
+        'tbSolarEff
+        '
+        resources.ApplyResources(Me.tbSolarEff, "tbSolarEff")
+        Me.tbSolarEff.Name = "tbSolarEff"
+        '
         'PipeThermalProfileEditor
         '
         resources.ApplyResources(Me, "$this")
@@ -386,4 +428,10 @@ Partial Class PipeThermalProfileEditor
     Public WithEvents Label1 As System.Windows.Forms.Label
     Friend WithEvents Button1 As Button
     Public WithEvents chkUserDefU As CheckBox
+    Public WithEvents chkSolarIrradiationGlobal As CheckBox
+    Public WithEvents chkIncludeSolarIrradiation As CheckBox
+    Public WithEvents Label2 As Label
+    Public WithEvents tbSolarIrradiation As TextBox
+    Public WithEvents Label3 As Label
+    Public WithEvents tbSolarEff As TextBox
 End Class

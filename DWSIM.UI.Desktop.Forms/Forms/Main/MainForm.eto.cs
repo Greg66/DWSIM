@@ -41,6 +41,8 @@ namespace DWSIM.UI
 
         private int height = 640;
 
+        private int c1, c2, c3, c4;
+
         void InitializeComponent()
         {
 
@@ -52,14 +54,14 @@ namespace DWSIM.UI
 
             height = (int)(height * sf);
 
-            Application.Instance.UnhandledException += (sender, e) =>
-            {
-                new DWSIM.UI.Desktop.Editors.UnhandledExceptionView((Exception)e.ExceptionObject).ShowModalAsync();
-            };
+            ClientSize = new Size((int)(width * sf), (int)(height * sf));
+
+            //Application.Instance.UnhandledException += (sender, e) =>
+            //{
+            //    new DWSIM.UI.Desktop.Editors.UnhandledExceptionView((Exception)e.ExceptionObject).ShowModalAsync();
+            //};
 
             Title = "DWSIMLauncher".Localize();
-
-            ClientSize = new Size((int)(width * sf), (int)(height * sf));
 
             Icon = Eto.Drawing.Icon.FromResource(imgprefix + "DWSIM_ico.ico");
 
@@ -200,7 +202,12 @@ namespace DWSIM.UI
                 var basepath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 try
                 {
-                    Process.Start(basepath + Path.DirectorySeparatorChar + "docs" + Path.DirectorySeparatorChar + "user_guide.pdf");
+                    var ug1 = basepath + Path.DirectorySeparatorChar + "docs" + Path.DirectorySeparatorChar + "user_guide.pdf";
+                    var ug2 = basepath + Path.DirectorySeparatorChar + "docs" + Path.DirectorySeparatorChar + "User_Guide.pdf";
+                    if (File.Exists(ug1))
+                        Process.Start(ug1);
+                    else if (File.Exists(ug2))
+                        Process.Start(ug2);
                 }
                 catch (Exception ex)
                 {
@@ -230,7 +237,7 @@ namespace DWSIM.UI
 
             abslayout.Add(pabout, dx, dy * 6 + bfh + 4 * (int)(100 * sf));
 
-            MostRecentList = new TreeGridView();
+            MostRecentList = new TreeGridView { AllowMultipleSelection = false, Width = (int)(460 * sf) };
             SampleList = new ListBox();
             FoldersList = new ListBox();
             FOSSEEList = new ListBox();
@@ -347,7 +354,7 @@ namespace DWSIM.UI
                     FOSSEEList.Items.Clear();
                     if (t.Exception != null)
                     {
-                        FOSSEEList.Items.Add(new ListItem { Text = "Error loading flowsheet list. Check your internet connection.", Key = "" });
+                        FOSSEEList.Items.Add(new ListItem { Text = "Error loading flowsheet list: " + t.Exception.InnerException?.Message, Key = "" });
                         DWSIM.Logging.Logger.LogError("FOSSEE Flowsheets loading error", t.Exception);
                         Console.WriteLine(t.Exception.ToString());
                         foreach (var iex in t.Exception.InnerExceptions)
@@ -369,7 +376,9 @@ namespace DWSIM.UI
 
             FoldersList.SelectedIndexChanged += (sender, e) =>
             {
-                if (FoldersList.SelectedIndex >= 0)
+                if (!Application.Instance.Platform.IsGtk)
+                    c3+=1;
+                if (FoldersList.SelectedIndex >= 0 && c3 > 0)
                 {
                     var dialog = new OpenFileDialog();
                     dialog.Title = "Open File".Localize();
@@ -382,29 +391,47 @@ namespace DWSIM.UI
                         LoadSimulation(dialog.FileName);
                     }
                 }
+                c3+=1;
             };
 
-            MostRecentList.SelectedItemChanged += (sender, e) =>
+            if (s.RunningPlatform() == s.Platform.Linux)
             {
-                if (MostRecentList.SelectedItem != null)
+                MostRecentList.CellClick += (sender, e) =>
                 {
-                    var si = (TreeGridItem)MostRecentList.SelectedItem;
-                    var data = (Dictionary<string, string>)si.Tag;
-                    LoadSimulation(data["Path"]);
+                    if (e.Row >= 0)
+                    {
+                        var si = (TreeGridItem)tgc[e.Row];
+                        var data = (Dictionary<string, string>)si.Tag;
+                        LoadSimulation(data["Path"]);
+                    };
                 };
-            };
+            }
+            else
+            {
+                MostRecentList.SelectedItemChanged += (sender, e) =>
+                {
+                    if (MostRecentList.SelectedItem != null)
+                    {
+                        var si = (TreeGridItem)MostRecentList.SelectedItem;
+                        var data = (Dictionary<string, string>)si.Tag;
+                        LoadSimulation(data["Path"]);
+                    };
+                };
+            }
 
             SampleList.SelectedIndexChanged += (sender, e) =>
             {
-                if (SampleList.SelectedIndex >= 0)
-                {
+                if (!Application.Instance.Platform.IsGtk) c1+=1;
+                if (SampleList.SelectedIndex >= 0 && c1 > 0)
                     LoadSimulation(SampleList.SelectedKey);
-                };
+                c1+=1;
             };
 
             FOSSEEList.SelectedIndexChanged += (sender, e) =>
             {
-                if (FOSSEEList.SelectedIndex >= 0 && FOSSEEList.SelectedKey != "")
+                if (!Application.Instance.Platform.IsGtk)
+                    c2+=1;
+                if (FOSSEEList.SelectedIndex >= 0 && FOSSEEList.SelectedKey != "" && c2 > 0)
                 {
                     var item = fslist[FOSSEEList.SelectedKey];
                     var sb = new StringBuilder();
@@ -441,11 +468,10 @@ namespace DWSIM.UI
                         FOSSEEList.SelectedIndex = -1;
                     }
                 };
+                c2+=1;
             };
 
             var fosseecontainer = c.GetDefaultContainer();
-            var l1 = c.CreateAndAddLabelRow3(fosseecontainer, "About the Project");
-            var l2 = c.CreateAndAddDescriptionRow(fosseecontainer, "FOSSEE, IIT Bombay, invites chemical engineering students, faculty and practitioners to the flowsheeting project using DWSIM. We want you to convert existing flowsheets into DWSIM and get honoraria and certificates.");
             var bu1 = c.CreateAndAddButtonRow(fosseecontainer, "Submit a Flowsheet", null, (b1, e1) => Process.Start("https://dwsim.fossee.in/flowsheeting-project"));
             var bu2 = c.CreateAndAddButtonRow(fosseecontainer, "About FOSSEE", null, (b2, e2) => Process.Start("https://fossee.in/"));
             var l3 = c.CreateAndAddLabelRow3(fosseecontainer, "Completed Flowsheets");
@@ -464,14 +490,17 @@ namespace DWSIM.UI
 
             if (Application.Instance.Platform.IsGtk)
             {
+                var scrollable = new Scrollable { Content = tabview };
                 tabview.Size = new Size((int)(480 * sf), (int)(636 - dy * 4 - bfh));
+                scrollable.Size = new Size((int)(480 * sf), (int)(636 - dy * 4 - bfh));
+                abslayout.Add(scrollable, dx * 2 + (int)(500 * sf), dy * 2 + bfh);
             }
             else
             {
                 tabview.Size = new Size((int)(480 * sf), (int)(ClientSize.Height - dy * 4 - bfh));
+                abslayout.Add(tabview, dx * 2 + (int)(500 * sf), dy * 2 + bfh);
             }
 
-            abslayout.Add(tabview, dx * 2 + (int)(500 * sf), dy * 2 + bfh);
 
             Content = abslayout;
 
@@ -505,7 +534,19 @@ namespace DWSIM.UI
             hitem1.Click += (sender, e) =>
             {
                 var basepath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                Process.Start(basepath + Path.DirectorySeparatorChar + "docs" + Path.DirectorySeparatorChar + "user_guide.pdf");
+                try
+                {
+                    var ug1 = basepath + Path.DirectorySeparatorChar + "docs" + Path.DirectorySeparatorChar + "user_guide.pdf";
+                    var ug2 = basepath + Path.DirectorySeparatorChar + "docs" + Path.DirectorySeparatorChar + "User_Guide.pdf";
+                    if (File.Exists(ug1))
+                        Process.Start(ug1);
+                    else if (File.Exists(ug2))
+                        Process.Start(ug2);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error opening User Guide", MessageBoxButtons.OK, MessageBoxType.Error, MessageBoxDefaultButton.OK);
+                }
             };
 
             var hitem2 = new ButtonMenuItem { Text = "Support".Localize(), Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "help_browser.png")) };
@@ -523,7 +564,7 @@ namespace DWSIM.UI
             var hitem4 = new ButtonMenuItem { Text = "Go to DWSIM Website".Localize(), Image = new Bitmap(Eto.Drawing.Bitmap.FromResource(imgprefix + "help_browser.png")) };
             hitem4.Click += (sender, e) =>
             {
-                "http://dwsim.inforside.com.br".OpenURL();
+                "https://dwsim.org".OpenURL();
             };
 
             // create menu
@@ -542,6 +583,11 @@ namespace DWSIM.UI
             //Plugins
 
             LoadPlugins();
+
+            if (Application.Instance.Platform.IsGtk)
+                Size = new Size((int)(width * sf), (int)(height * sf));
+
+            DWSIM.UI.Shared.Common.Center(this);
 
         }
 
@@ -572,16 +618,17 @@ namespace DWSIM.UI
         {
             Application.Instance.Invoke(() =>
             {
-        //switch (GlobalSettings.Settings.RunningPlatform())
-        //{
-        //    case GlobalSettings.Settings.Platform.Windows:
-        //        ClientSize = new Size((int)(s.UIScalingFactor * 700), (int)(s.UIScalingFactor * 400));
-        //        break;
-        //}
-        var splash = new SplashScreen { MainFrm = this };
+                //switch (GlobalSettings.Settings.RunningPlatform())
+                //{
+                //    case GlobalSettings.Settings.Platform.Windows:
+                //        ClientSize = new Size((int)(s.UIScalingFactor * 700), (int)(s.UIScalingFactor * 400));
+                //        break;
+                //}
+                var splash = new SplashScreen { MainFrm = this };
                 splash.Show();
+                DWSIM.UI.Shared.Common.Center(splash);
             });
-            this.Center();
+            DWSIM.UI.Shared.Common.Center(this);
 
         }
 
@@ -626,6 +673,11 @@ namespace DWSIM.UI
                         form.FlowsheetObject.FlowsheetOptions.FilePath = path;
                     }).ContinueWith((t) =>
                     {
+                        if (t.Exception != null)
+                        {
+                            Console.WriteLine("Error loading file: " + t.Exception.ToString());
+                            MessageBox.Show("Error loading file: " + t.Exception.Message, "Error", MessageBoxType.Error);
+                        }
                         Application.Instance.Invoke(() =>
                         {
                             loadingdialog.Close();

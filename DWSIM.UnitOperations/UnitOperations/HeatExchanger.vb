@@ -80,6 +80,24 @@ Namespace UnitOperations
 
         Public Overrides ReadOnly Property HasPropertiesForDynamicMode As Boolean = True
 
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Shell and Tube", "Plate and Frame", "Double Pipe"}
+            End Get
+        End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Area, .IsUserDefined = False})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+            Dimensions(0).Value = Area
+
+        End Sub
 
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public f As EditingForm_HeatExchanger
 
@@ -365,7 +383,7 @@ Namespace UnitOperations
 
         Public Overrides Sub CreateDynamicProperties()
 
-            AddDynamicProperty("Cold Fluid Flow Conductance", "Flow Conductance (inverse of Resistance).", 1, UnitOfMeasure.conductance, 1.0.GetType())
+            AddDynamicProperty("Cold Fluid Flow Conductance", "Flow Conductance (inverse of Resistance) for the Cold Fluid.", 1, UnitOfMeasure.conductance, 1.0.GetType())
             AddDynamicProperty("Hot Fluid Flow Conductance", "Flow Conductance (inverse of Resistance) for the Hot Fluid.", 1, UnitOfMeasure.conductance, 1.0.GetType())
             AddDynamicProperty("Volume for Cold Fluid", "Available Volume for Cold Fluid", 1, UnitOfMeasure.volume, 1.0.GetType())
             AddDynamicProperty("Volume for Hot Fluid", "Available Volume for Cold Fluid", 1, UnitOfMeasure.volume, 1.0.GetType())
@@ -387,7 +405,7 @@ Namespace UnitOperations
             If integrator.RealTime Then timestep = Convert.ToDouble(integrator.RealTimeStepMs) / 1000.0
 
             Dim KrCold As Double = GetDynamicProperty("Cold Fluid Flow Conductance")
-            Dim KrHot As Double = GetDynamicProperty("Cold Fluid Flow Conductance")
+            Dim KrHot As Double = GetDynamicProperty("Hot Fluid Flow Conductance")
 
             Dim VolumeCold As Double = GetDynamicProperty("Volume for Cold Fluid")
             Dim VolumeHot As Double = GetDynamicProperty("Volume for Hot Fluid")
@@ -960,6 +978,8 @@ Namespace UnitOperations
                                 Else
                                     fs = 1.526 * Res ^ -0.129
                                 End If
+                            Else
+                                Throw New Exception(String.Format("The ratio between tube spacing and tube external diameter needs to be less than or equal to 1.5 (current value: {0})", pitch / de))
                             End If
                         Case 2, 3
                             If Res < 100 Then
@@ -1007,6 +1027,8 @@ Namespace UnitOperations
                                 Else
                                     fs = 0.718 * Res ^ -0.008
                                 End If
+                            Else
+                                Throw New Exception(String.Format("The ratio between tube spacing and tube external diameter needs to be less than or equal to 1.5 (current value: {0})", pitch / de))
                             End If
                     End Select
 
@@ -1169,6 +1191,8 @@ Namespace UnitOperations
 
             StOutHot.AssignFromPhase(PhaseLabel.Mixture, AccumulationStreamHot, False)
             StOutCold.AssignFromPhase(PhaseLabel.Mixture, AccumulationStreamCold, False)
+            StOutHot.DefinedFlow = FlowSpec.Mass
+            StOutCold.DefinedFlow = FlowSpec.Mass
 
             StInHot.SetPressure(Ph1)
             StInCold.SetPressure(Pc1)
@@ -2397,6 +2421,8 @@ Namespace UnitOperations
                                     Else
                                         fs = 1.526 * Res ^ -0.129
                                     End If
+                                Else
+                                    Throw New Exception(String.Format("The ratio between tube spacing and tube external diameter needs to be less than or equal to 1.5 (current value: {0})", pitch / de))
                                 End If
                             Case 2, 3
                                 If Res < 100 Then
@@ -2444,6 +2470,8 @@ Namespace UnitOperations
                                     Else
                                         fs = 0.718 * Res ^ -0.008
                                     End If
+                                Else
+                                    Throw New Exception(String.Format("The ratio between tube spacing and tube external diameter needs to be less than or equal to 1.5 (current value: {0})", pitch / de))
                                 End If
                         End Select
 
@@ -2703,6 +2731,8 @@ Namespace UnitOperations
 
                 StOutCold.AtEquilibrium = False
                 StOutHot.AtEquilibrium = False
+                StOutHot.DefinedFlow = FlowSpec.Mass
+                StOutCold.DefinedFlow = FlowSpec.Mass
 
                 If CalculationMode <> HeatExchangerCalcMode.OutletVaporFraction1 And CalculationMode <> HeatExchangerCalcMode.OutletVaporFraction2 Then
                     If Th2 < Tc1 Or Tc2 > Th1 Then
@@ -3046,6 +3076,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.heat_exchanger
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.heat_exchanger.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

@@ -14,16 +14,13 @@
 '    GNU General Public License for more details.
 '
 '    You should have received a copy of the GNU General Public License
-'    along with DWSIM.  If not, see <http://www.gnu.org/licenses/>.
 
-Imports DWSIM.Thermodynamics.BaseClasses
-Imports DWSIM.DWSIM.Optimization
-Imports DWSIM.DrawingTools
 Imports Ciloci.Flee
-Imports DWSIM.FlowsheetSolver
 Imports System.Linq
 Imports DWSIM.SharedClasses.Flowsheet.Optimization
 Imports DWSIM.SharedClasses.DWSIM.Flowsheet
+Imports System.Threading.Tasks
+Imports DWSIM.Interfaces
 
 Public Class FormSensAnalysis
 
@@ -41,6 +38,8 @@ Public Class FormSensAnalysis
     Private EnableAutoSave As Boolean = True
 
     Public cbc2, cbc3, cbc0, cbc1 As DataGridViewComboBoxCell
+
+    Private Loaded As Boolean = False
 
     Private Sub FormSensAnalysis_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
 
@@ -137,11 +136,102 @@ Public Class FormSensAnalysis
             .Columns(1).HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleLeft
         End With
 
-        If Me.lbCases.Items.Count > 0 Then Me.lbCases.SelectedIndex = Me.lbCases.Items.Count - 1
+        If Me.lbCases.Items.Count > 0 Then
+            selectedindex = 0
+            lbCases.SelectedIndex = 0
+        End If
 
         form.WriteToLog(DWSIM.App.GetLocalTipString("FSAN001"), Color.Black, MessageType.Tip)
 
         FormMain.TranslateFormFunction?.Invoke(Me)
+
+        Loaded = True
+
+        AddHandler form.NewDataLoaded, AddressOf NewDataEventHandler
+
+    End Sub
+
+    Public Sub NewDataEventHandler(sender As Object, e As INewDataLoadedEventArgs)
+
+        MessageBox.Show("Flowsheet data has been changed. This window will now reload.", "New Data Incoming", MessageBoxButtons.OK, MessageBoxIcon.Information)
+
+        Me.lbCases.Items.Clear()
+
+        If form.Collections.OPT_SensAnalysisCollection Is Nothing Then form.Collections.OPT_SensAnalysisCollection = New List(Of SensitivityAnalysisCase)
+
+        For Each sacase As SensitivityAnalysisCase In form.Collections.OPT_SensAnalysisCollection
+            Me.lbCases.Items.Add(sacase.name)
+        Next
+
+        Me.cbObjIndVar1.Items.Clear()
+        Me.cbObjIndVar2.Items.Clear()
+        Me.cbPropIndVar1.Items.Clear()
+        Me.cbPropIndVar2.Items.Clear()
+
+        Me.cbObjIndVar1.Items.Add(DWSIM.App.GetLocalString("SpreadsheetCell"))
+        Me.cbObjIndVar2.Items.Add(DWSIM.App.GetLocalString("SpreadsheetCell"))
+        Me.cbObjIndVar1.Items.Add(DWSIM.App.GetLocalString("ReactionProperty"))
+        Me.cbObjIndVar2.Items.Add(DWSIM.App.GetLocalString("ReactionProperty"))
+        For Each obj In form.SimulationObjects.Values.OrderBy(Function(o) o.GraphicObject.Tag)
+            Me.cbObjIndVar1.Items.Add(obj.GraphicObject.Tag)
+            Me.cbObjIndVar2.Items.Add(obj.GraphicObject.Tag)
+        Next
+
+        cbc0 = New DataGridViewComboBoxCell
+        cbc0.Sorted = True
+        cbc0.MaxDropDownItems = 10
+        cbc0.Items.Add(DWSIM.App.GetLocalString("SpreadsheetCell"))
+        cbc0.Items.Add(DWSIM.App.GetLocalString("Flowsheet Result"))
+        For Each obj As SharedClasses.UnitOperations.BaseClass In form.Collections.FlowsheetObjectCollection.Values
+            cbc0.Items.Add(obj.GraphicObject.Tag)
+        Next
+        cbc1 = New DataGridViewComboBoxCell
+        cbc1.MaxDropDownItems = 10
+
+        cbc2 = New DataGridViewComboBoxCell
+        cbc2.Sorted = True
+        cbc2.MaxDropDownItems = 10
+        cbc2.Items.Add(DWSIM.App.GetLocalString("SpreadsheetCell"))
+        cbc2.Items.Add(DWSIM.App.GetLocalString("Flowsheet Result"))
+        For Each obj As SharedClasses.UnitOperations.BaseClass In form.Collections.FlowsheetObjectCollection.Values
+            cbc2.Items.Add(obj.GraphicObject.Tag)
+        Next
+        cbc3 = New DataGridViewComboBoxCell
+        cbc3.MaxDropDownItems = 10
+
+        Dim tbc1 As New DataGridViewTextBoxCell()
+        Dim tbc2 As New DataGridViewTextBoxCell()
+        Dim tbc3 As New DataGridViewTextBoxCell()
+        With tbc1
+            .Style.Alignment = DataGridViewContentAlignment.MiddleLeft
+        End With
+        With tbc2
+            .Style.Alignment = DataGridViewContentAlignment.MiddleCenter
+        End With
+        With tbc3
+            .Style.Alignment = DataGridViewContentAlignment.MiddleCenter
+            .Style.BackColor = Color.FromKnownColor(KnownColor.Control)
+        End With
+
+        With Me.dgDepVariables
+            .Columns(1).CellTemplate = cbc0
+            .Columns(2).CellTemplate = cbc1
+        End With
+
+        With Me.dgVariables
+            .Columns(0).CellTemplate = tbc1
+            .Columns(1).CellTemplate = tbc1
+            .Columns(2).CellTemplate = cbc2
+            .Columns(3).CellTemplate = cbc3
+            .Columns(4).CellTemplate = tbc2
+            .Columns(5).CellTemplate = tbc3
+            .Columns(1).HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleLeft
+        End With
+
+        If Me.lbCases.Items.Count > 0 Then
+            selectedindex = 0
+            lbCases.SelectedIndex = 0
+        End If
 
     End Sub
 
@@ -404,9 +494,45 @@ Public Class FormSensAnalysis
 
     Private Sub lbCases_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles lbCases.SelectedIndexChanged
 
-        If Me.selectedindex <> Me.lbCases.SelectedIndex Then
+        If (Loaded And selectedindex >= 0 And selectedindex <> lbCases.SelectedIndex And
+            lbCases.SelectedIndex >= 0) Then
 
-            Me.selectedindex = Me.lbCases.SelectedIndex
+            TabControl1.Enabled = True
+
+            If MessageBox.Show(form.GetTranslatedString1("Desejasalvarasaltera"),
+               form.GetTranslatedString1("Pergunta"),
+               MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
+
+                Me.selectedindex = Me.lbCases.SelectedIndex
+
+                If Not Me.lbCases.SelectedItem Is Nothing Then
+                    For Each sacase As SensitivityAnalysisCase In form.Collections.OPT_SensAnalysisCollection
+                        If sacase.name = Me.lbCases.SelectedItem.ToString Then
+                            Me.selectedsacase = sacase
+                            Me.PopulateForm(sacase)
+                            Exit For
+                        End If
+                    Next
+                    'TabPage2.Enabled = True
+                    'TabPage3.Enabled = True
+                    GroupBox8.Enabled = True
+                    GroupBox9.Enabled = True
+                    btnRun.Enabled = True
+                    'gbExp.Enabled = True
+                Else
+                    'TabPage2.Enabled = False
+                    'TabPage3.Enabled = False
+                    'gbExp.Enabled = False
+                    GroupBox8.Enabled = False
+                    GroupBox9.Enabled = False
+                    btnRun.Enabled = False
+                End If
+
+                selected = True
+
+            End If
+
+        ElseIf Not Loaded And selectedindex = lbCases.SelectedIndex Then
 
             If Not Me.lbCases.SelectedItem Is Nothing Then
                 For Each sacase As SensitivityAnalysisCase In form.Collections.OPT_SensAnalysisCollection
@@ -416,16 +542,10 @@ Public Class FormSensAnalysis
                         Exit For
                     End If
                 Next
-                'TabPage2.Enabled = True
-                'TabPage3.Enabled = True
                 GroupBox8.Enabled = True
                 GroupBox9.Enabled = True
                 btnRun.Enabled = True
-                'gbExp.Enabled = True
             Else
-                'TabPage2.Enabled = False
-                'TabPage3.Enabled = False
-                'gbExp.Enabled = False
                 GroupBox8.Enabled = False
                 GroupBox9.Enabled = False
                 btnRun.Enabled = False
@@ -439,29 +559,45 @@ Public Class FormSensAnalysis
 
     Private Sub btnCopyCase_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnCopyCase.Click
 
-        Dim sacase2 As New SensitivityAnalysisCase
+        If MessageBox.Show(form.GetTranslatedString1("ConfirmOperation"),
+                   form.GetTranslatedString1("Ateno"),
+                   MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
 
-        Dim sacase = form.Collections.OPT_SensAnalysisCollection(Me.lbCases.SelectedIndex)
-        sacase2 = sacase.Clone
-        sacase2.name = sacase.name & "_1"
+            Dim sacase2 As New SensitivityAnalysisCase
 
-        Me.lbCases.Items.Add(sacase2.name)
-        Me.lbCases.SelectedItem = sacase2.name
-        form.Collections.OPT_SensAnalysisCollection.Add(sacase2)
+            Dim sacase = form.Collections.OPT_SensAnalysisCollection(Me.lbCases.SelectedIndex)
+            sacase2 = sacase.Clone
+            sacase2.name = sacase.name & "_1"
+
+            Me.lbCases.Items.Add(sacase2.name)
+            Me.lbCases.SelectedItem = sacase2.name
+            form.Collections.OPT_SensAnalysisCollection.Add(sacase2)
+
+        End If
 
     End Sub
 
     Private Sub btnSaveCase_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnSaveCase.Click
 
-        Dim prevselected = lbCases.SelectedIndex
+        If MessageBox.Show(form.GetTranslatedString1("ConfirmOperation"),
+                           form.GetTranslatedString1("Ateno"),
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
 
-        For i As Integer = 0 To lbCases.Items.Count - 1
-            lbCases.SelectedIndex = i
-            Dim sacase = form.Collections.OPT_SensAnalysisCollection(Me.lbCases.SelectedIndex)
-            SaveForm(sacase)
-        Next
+            Dim prevselected = lbCases.SelectedIndex
 
-        lbCases.SelectedIndex = prevselected
+            For i As Integer = 0 To lbCases.Items.Count - 1
+                lbCases.SelectedIndex = i
+                Dim sacase = form.Collections.OPT_SensAnalysisCollection(Me.lbCases.SelectedIndex)
+                Try
+                    SaveForm(sacase)
+                Catch ex As Exception
+                    MessageBox.Show(String.Format("Failed to save case {0}: {1}", sacase.name, ex.Message), form.GetTranslatedString1("Ateno"), MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End Try
+            Next
+
+            lbCases.SelectedIndex = prevselected
+
+        End If
 
     End Sub
 
@@ -605,20 +741,26 @@ Public Class FormSensAnalysis
     End Sub
 
     Private Sub btnDeleteCase_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnDeleteCase.Click
-        If MessageBox.Show(DWSIM.App.GetLocalString("ConfirmOperation"), "DWSIM", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = Windows.Forms.DialogResult.Yes Then
+
+        If MessageBox.Show(form.GetTranslatedString1("ConfirmOperation"),
+                   form.GetTranslatedString1("Ateno"),
+                   MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
+
             form.Collections.OPT_SensAnalysisCollection.RemoveAt(lbCases.SelectedIndex)
             Me.lbCases.Items.Remove(Me.lbCases.SelectedItem)
             If lbCases.Items.Count > 0 Then Me.lbCases.SelectedIndex = 0
+
         End If
+
     End Sub
 
     Private Sub btnRun_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnRun.Click
 
         Dim idx As Integer = 0
-        Dim iv1ll, iv1ul, iv1np, iv2ll, iv2ul, iv2np, dvval, iv1val, iv2val, iv1val0, iv2val0 As Double
+        Dim iv1ll, iv1ul, iv1np, iv2ll, iv2ul, iv2np, iv1val0, iv2val0 As Double
         Dim iv1id, iv2id, iv1prop, iv2prop, dvid, dvprop As String
         Dim i, j, counter As Integer
-        Dim res As New ArrayList
+        Dim res As New List(Of Double())
 
         Me.lbCases.SelectedIndex = Me.selectedindex
 
@@ -653,197 +795,204 @@ Public Class FormSensAnalysis
             dvprop = .dv.propID
         End With
 
-        Try
-            Me.btnRun.Enabled = False
-            Me.btnAbort.Enabled = True
-            btnExportToNewSheet.Enabled = False
-            Me.abortCalc = False
-            res.Clear()
-            counter = 0
-            Me.tbStats.Text = ""
-            With Me.dgvResults
-                .Columns.Clear()
-                .Columns.Add("IV1", "")
-                .Columns.Add("IV2", "")
-                .Rows.Clear()
-                If Me.tbUnitIndVar1.Text <> "" Then
-                    .Columns(0).HeaderText = Me.cbObjIndVar1.SelectedItem.ToString & " - " & Me.cbPropIndVar1.SelectedItem.ToString & " (" & Me.tbUnitIndVar1.Text & ")"
-                Else
-                    .Columns(0).HeaderText = Me.cbObjIndVar1.SelectedItem.ToString & " - " & Me.cbPropIndVar1.SelectedItem.ToString
-                End If
-                If chkIndVar2.Checked Then
-                    .Columns(1).Visible = True
-                    If Me.tbUnitIndVar2.Text <> "" Then
-                        .Columns(1).HeaderText = Me.cbObjIndVar2.SelectedItem.ToString & " - " & Me.cbPropIndVar2.SelectedItem.ToString & " (" & Me.tbUnitIndVar2.Text & ")"
-                    Else
-                        .Columns(1).HeaderText = Me.cbObjIndVar2.SelectedItem.ToString & " - " & Me.cbPropIndVar2.SelectedItem.ToString
-                    End If
-                Else
-                    .Columns(1).Visible = False
-                End If
-                If Me.rbExp.Checked Then
-                    .Columns.Add("DV", "EXP Val")
-                Else
-                    For Each var As SAVariable In selectedsacase.depvariables.Values
-                        .Columns.Add(var.propID, var.objectTAG & " - " & form.GetTranslatedString1(var.propID) & " (" & var.unit & ")")
-                    Next
-                End If
-            End With
-            'store original values
-            If iv1id <> "SpreadsheetCell" And iv1id <> "ReactionProperty" Then
-                iv1val0 = form.Collections.FlowsheetObjectCollection(iv1id).GetPropertyValue(iv1prop)
-            ElseIf iv1id = "ReactionProperty" Then
-                Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv1prop.Split("|")(0)).FirstOrDefault
-                iv1val0 = rx.GetPropertyValue(iv1prop.Split("|")(1))
+        Dim state0 = form.GetSnapshot(SnapshotType.All)
+
+        Dim EndAction = Sub()
+                            UIThread(Sub()
+                                         Me.btnRun.Enabled = True
+                                         Me.btnAbort.Enabled = False
+                                         Me.tbStats.Text += "Restoring simulation to its original state..." & vbCrLf
+                                         Me.tbStats.SelectionStart = Me.tbStats.Text.Length - 1
+                                         Me.tbStats.SelectionLength = 1
+                                         Me.tbStats.ScrollToCaret()
+
+                                         form.RestoreSnapshot(state0, SnapshotType.All)
+
+                                         Me.tbStats.Text += "Done!" & vbCrLf
+                                         Me.tbStats.SelectionStart = Me.tbStats.Text.Length - 1
+                                         Me.tbStats.SelectionLength = 1
+                                         Me.tbStats.ScrollToCaret()
+                                         Me.BtnDrawChart.Enabled = True
+                                         If My.Application.UtilityPlugins.ContainsKey("DF7368D6-5A06-4856-9B7A-D7F09D81F71F") Then
+                                             btnRegressData.Enabled = True
+                                         End If
+                                         btnExportToNewSheet.Enabled = True
+                                         FillChartData()
+                                     End Sub)
+                        End Sub
+
+        Me.btnRun.Enabled = False
+        Me.btnAbort.Enabled = True
+        btnExportToNewSheet.Enabled = False
+        Me.abortCalc = False
+        res.Clear()
+        counter = 0
+        Me.tbStats.Text = ""
+        With Me.dgvResults
+            .Columns.Clear()
+            .Columns.Add("IV1", "")
+            .Columns.Add("IV2", "")
+            .Rows.Clear()
+            If Me.tbUnitIndVar1.Text <> "" Then
+                .Columns(0).HeaderText = Me.cbObjIndVar1.SelectedItem.ToString & " - " & Me.cbPropIndVar1.SelectedItem.ToString & " (" & Me.tbUnitIndVar1.Text & ")"
             Else
-                iv1val0 = form.FormSpreadsheet.GetCellValue(iv1prop).Data
+                .Columns(0).HeaderText = Me.cbObjIndVar1.SelectedItem.ToString & " - " & Me.cbPropIndVar1.SelectedItem.ToString
             End If
-            If Me.chkIndVar2.Checked Then
-                If iv2id <> "SpreadsheetCell" And iv2id <> "ReactionProperty" Then
-                    iv2val0 = form.Collections.FlowsheetObjectCollection(iv2id).GetPropertyValue(iv2prop)
-                ElseIf iv2id = "ReactionProperty" Then
-                    Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv2prop.Split("|")(0)).FirstOrDefault
-                    iv2val0 = rx.GetPropertyValue(iv2prop.Split("|")(1))
+            If chkIndVar2.Checked Then
+                .Columns(1).Visible = True
+                If Me.tbUnitIndVar2.Text <> "" Then
+                    .Columns(1).HeaderText = Me.cbObjIndVar2.SelectedItem.ToString & " - " & Me.cbPropIndVar2.SelectedItem.ToString & " (" & Me.tbUnitIndVar2.Text & ")"
                 Else
-                    iv2val0 = form.FormSpreadsheet.GetCellValue(iv2prop).Data
+                    .Columns(1).HeaderText = Me.cbObjIndVar2.SelectedItem.ToString & " - " & Me.cbPropIndVar2.SelectedItem.ToString
                 End If
             Else
-                iv2val0 = 0.0#
+                .Columns(1).Visible = False
             End If
-            For i = 0 To iv1np
-                For j = 0 To iv2np
-                    iv1val = iv1ll + i * (iv1ul - iv1ll) / iv1np
-                    If Me.chkIndVar2.Checked Then iv2val = iv2ll + j * (iv2ul - iv2ll) / iv2np Else iv2val = 0
-                    'set object properties
-                    If iv1id <> "SpreadsheetCell" And iv1id <> "ReactionProperty" Then
-                        form.Collections.FlowsheetObjectCollection(iv1id).SetPropertyValue(iv1prop, iv1val)
-                    ElseIf iv1id = "ReactionProperty" Then
-                        Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv1prop.Split("|")(0)).FirstOrDefault
-                        rx.SetPropertyValue(iv1prop.Split("|")(1), iv1val)
-                    Else
-                        form.FormSpreadsheet.SetCellValue(iv1prop, iv1val)
-                    End If
-                    If Me.chkIndVar2.Checked Then
-                        If iv2id <> "SpreadsheetCell" And iv2id <> "ReactionProperty" Then
-                            form.Collections.FlowsheetObjectCollection(iv2id).SetPropertyValue(iv2prop, iv2val)
-                        ElseIf iv2id = "ReactionProperty" Then
-                            Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv2prop.Split("|")(0)).FirstOrDefault
-                            rx.SetPropertyValue(iv2prop.Split("|")(1), iv2val)
-                        Else
-                            form.FormSpreadsheet.SetCellValue(iv2prop, iv2val)
-                        End If
-                    End If
-                    'run simulation
-                    Dim exceptions = FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(form, Settings.SolverMode)
-                    If exceptions.Count > 0 Then Throw New AggregateException(exceptions)
-                    Application.DoEvents()
-                    'get the value of the dependent variable
-                    If rbExp.Checked Then
-                        Me.selectedsacase.econtext = New ExpressionContext
-                        Me.selectedsacase.expression = Me.tbExpression.Text
-                        With Me.selectedsacase.econtext
-                            .Options.ParseCulture = Globalization.CultureInfo.InvariantCulture
-                            .Imports.AddType(GetType(System.Math))
-                            For Each var As SAVariable In selectedsacase.variables.Values
-                                If var.objectID = "SpreadsheetCell" Then
-                                    .Variables.Add(var.name, form.FormSpreadsheet.GetCellValue(var.propID).Data)
-                                ElseIf var.objectID = "FlowsheetResult" Then
-                                    .Variables.Add(var.name, form.GetResultValue(var.propID))
-                                Else
-                                    .Variables.Add(var.name, SystemsOfUnits.Converter.ConvertFromSI(var.unit, form.Collections.FlowsheetObjectCollection(var.objectID).GetPropertyValue(var.propID)))
-                                End If
-                            Next
-                            Me.selectedsacase.exbase = Me.selectedsacase.econtext.CompileGeneric(Of Double)(Me.selectedsacase.expression)
-                        End With
-                        dvval = Me.selectedsacase.exbase.Evaluate
-                        'store results
-                        res.Add(New Double() {iv1val, iv2val, dvval})
-                    Else
-                        'store results
-                        Dim currresults As New ArrayList
-                        currresults.Add(iv1val)
-                        currresults.Add(iv2val)
-                        For Each var As SAVariable In selectedsacase.depvariables.Values
-                            If var.objectID = "SpreadsheetCell" Then
-                                var.currentvalue = form.FormSpreadsheet.GetCellValue(var.propID).Data
-                            ElseIf var.objectID = "FlowsheetResult" Then
-                                var.currentvalue = form.GetResultValue(var.propID)
-                            Else
-                                var.currentvalue = form.Collections.FlowsheetObjectCollection(var.objectID).GetPropertyValue(var.propID)
-                            End If
-                            currresults.Add(var.currentvalue)
-                        Next
-                        res.Add(currresults.ToArray(Type.GetType("System.Double")))
-                    End If
-                    If rbExp.Checked Then
-                        Me.dgvResults.Rows.Add(New Object() {Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv1.unit, iv1val), nf), Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv2.unit, iv2val), nf), Format(dvval, nf)})
-                    Else
-                        Dim formattedvalues As New ArrayList
-                        formattedvalues.Add(Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv1.unit, iv1val), nf))
-                        formattedvalues.Add(Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv2.unit, iv2val), nf))
-                        For Each var As SAVariable In selectedsacase.depvariables.Values
-                            formattedvalues.Add(Format(SystemsOfUnits.Converter.ConvertFromSI(var.unit, var.currentvalue), nf))
-                        Next
-                        Me.dgvResults.Rows.Add(formattedvalues.ToArray())
-                    End If
-                    Me.dgvResults.FirstDisplayedScrollingRowIndex = Me.dgvResults.Rows.Count - 1
-                    counter += 1
-                    Me.tbStats.Text += "Run #" & counter & " completed..." & vbCrLf
-                    Me.tbStats.SelectionStart = Me.tbStats.Text.Length - 1
-                    Me.tbStats.SelectionLength = 1
-                    Me.tbStats.ScrollToCaret()
-                    If Me.abortCalc Then Exit Sub
+            If Me.rbExp.Checked Then
+                .Columns.Add("DV", "EXP Val")
+            Else
+                For Each var As SAVariable In selectedsacase.depvariables.Values
+                    .Columns.Add(var.propID, var.objectTAG & " - " & form.GetTranslatedString1(var.propID) & " (" & var.unit & ")")
                 Next
-            Next
-        Catch ex As Exception
-            Me.tbStats.Text += "Error: " & ex.Message.ToString & vbCrLf
-        Finally
-            Me.btnRun.Enabled = True
-            Me.btnAbort.Enabled = False
-            're-run simulation to restore original state
-            Me.tbStats.Text += "Restoring simulation to its original state..." & vbCrLf
-            Me.tbStats.SelectionStart = Me.tbStats.Text.Length - 1
-            Me.tbStats.SelectionLength = 1
-            Me.tbStats.ScrollToCaret()
-            If iv1id <> "SpreadsheetCell" And iv1id <> "ReactionProperty" Then
-                form.Collections.FlowsheetObjectCollection(iv1id).SetPropertyValue(iv1prop, iv1val0)
-            ElseIf iv1id = "ReactionProperty" Then
-                Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv1prop.Split("|")(0)).FirstOrDefault
-                rx.SetPropertyValue(iv1prop.Split("|")(1), iv1val)
+            End If
+        End With
+        'store original values
+        If iv1id <> "SpreadsheetCell" And iv1id <> "ReactionProperty" Then
+            iv1val0 = form.Collections.FlowsheetObjectCollection(iv1id).GetPropertyValue(iv1prop)
+        ElseIf iv1id = "ReactionProperty" Then
+            Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv1prop.Split("|")(0)).FirstOrDefault
+            iv1val0 = rx.GetPropertyValue(iv1prop.Split("|")(1))
+        Else
+            iv1val0 = form.FormSpreadsheet.GetCellValue(iv1prop).Data
+        End If
+        If Me.chkIndVar2.Checked Then
+            If iv2id <> "SpreadsheetCell" And iv2id <> "ReactionProperty" Then
+                iv2val0 = form.Collections.FlowsheetObjectCollection(iv2id).GetPropertyValue(iv2prop)
+            ElseIf iv2id = "ReactionProperty" Then
+                Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv2prop.Split("|")(0)).FirstOrDefault
+                iv2val0 = rx.GetPropertyValue(iv2prop.Split("|")(1))
             Else
-                form.FormSpreadsheet.SetCellValue(iv1prop, iv1val0)
+                iv2val0 = form.FormSpreadsheet.GetCellValue(iv2prop).Data
             End If
-            If Me.chkIndVar2.Checked Then
-                If iv2id <> "SpreadsheetCell" And iv2id <> "ReactionProperty" Then
-                    form.Collections.FlowsheetObjectCollection(iv2id).SetPropertyValue(iv2prop, iv2val0)
-                ElseIf iv2id = "ReactionProperty" Then
-                    Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv2prop.Split("|")(0)).FirstOrDefault
-                    rx.SetPropertyValue(iv2prop.Split("|")(1), iv2val)
-                Else
-                    form.FormSpreadsheet.SetCellValue(iv2prop, iv2val0)
-                End If
-            End If
-            FlowsheetSolver.FlowsheetSolver.SolveFlowsheet(form, Settings.SolverMode)
-            Me.tbStats.Text += "Done!" & vbCrLf
-            Me.tbStats.SelectionStart = Me.tbStats.Text.Length - 1
-            Me.tbStats.SelectionLength = 1
-            Me.tbStats.ScrollToCaret()
-            Me.BtnDrawChart.Enabled = True
+        Else
+            iv2val0 = 0.0#
+        End If
 
-            If My.Application.UtilityPlugins.ContainsKey("DF7368D6-5A06-4856-9B7A-D7F09D81F71F") Then
-
-                btnRegressData.Enabled = True
-
-            End If
-
-            btnExportToNewSheet.Enabled = True
-
-            FillChartData()
-        End Try
+        TaskHelper.Run(Sub()
+                           form.SupressMessages = True
+                           For i = 0 To iv1np
+                               For j = 0 To iv2np
+                                   Dim iv1val, iv2val, dvval As Double
+                                   iv1val = iv1ll + i * (iv1ul - iv1ll) / iv1np
+                                   If Me.chkIndVar2.Checked Then iv2val = iv2ll + j * (iv2ul - iv2ll) / iv2np Else iv2val = 0
+                                   'set object properties
+                                   If iv1id <> "SpreadsheetCell" And iv1id <> "ReactionProperty" Then
+                                       form.Collections.FlowsheetObjectCollection(iv1id).SetPropertyValue(iv1prop, iv1val)
+                                   ElseIf iv1id = "ReactionProperty" Then
+                                       Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv1prop.Split("|")(0)).FirstOrDefault
+                                       rx.SetPropertyValue(iv1prop.Split("|")(1), iv1val)
+                                   Else
+                                       form.FormSpreadsheet.SetCellValue(iv1prop, iv1val)
+                                   End If
+                                   If Me.chkIndVar2.Checked Then
+                                       If iv2id <> "SpreadsheetCell" And iv2id <> "ReactionProperty" Then
+                                           form.Collections.FlowsheetObjectCollection(iv2id).SetPropertyValue(iv2prop, iv2val)
+                                       ElseIf iv2id = "ReactionProperty" Then
+                                           Dim rx = form.Reactions.Values.Where(Function(x) x.Name = iv2prop.Split("|")(0)).FirstOrDefault
+                                           rx.SetPropertyValue(iv2prop.Split("|")(1), iv2val)
+                                       Else
+                                           form.FormSpreadsheet.SetCellValue(iv2prop, iv2val)
+                                       End If
+                                   End If
+                                   'run simulation
+                                   form.RequestCalculationAndWait()
+                                   'get the value of the dependent variable
+                                   If rbExp.Checked Then
+                                       Me.selectedsacase.econtext = New ExpressionContext
+                                       Me.selectedsacase.expression = Me.tbExpression.Text
+                                       With Me.selectedsacase.econtext
+                                           .Options.ParseCulture = Globalization.CultureInfo.InvariantCulture
+                                           .Imports.AddType(GetType(System.Math))
+                                           For Each var As SAVariable In selectedsacase.variables.Values
+                                               If var.objectID = "SpreadsheetCell" Then
+                                                   .Variables.Add(var.name, form.FormSpreadsheet.GetCellValue(var.propID).Data)
+                                               ElseIf var.objectID = "FlowsheetResult" Then
+                                                   .Variables.Add(var.name, form.GetResultValue(var.propID))
+                                               Else
+                                                   .Variables.Add(var.name, SystemsOfUnits.Converter.ConvertFromSI(var.unit, form.Collections.FlowsheetObjectCollection(var.objectID).GetPropertyValue(var.propID)))
+                                               End If
+                                           Next
+                                           Me.selectedsacase.exbase = Me.selectedsacase.econtext.CompileGeneric(Of Double)(Me.selectedsacase.expression)
+                                       End With
+                                       dvval = Me.selectedsacase.exbase.Evaluate
+                                       'store results
+                                       res.Add(New Double() {iv1val, iv2val, dvval})
+                                   Else
+                                       'store results
+                                       Dim currresults As New List(Of Double)
+                                       currresults.Add(iv1val)
+                                       currresults.Add(iv2val)
+                                       For Each var As SAVariable In selectedsacase.depvariables.Values
+                                           If var.objectID = "SpreadsheetCell" Then
+                                               var.currentvalue = form.FormSpreadsheet.GetCellValue(var.propID).Data
+                                           ElseIf var.objectID = "FlowsheetResult" Then
+                                               var.currentvalue = form.GetResultValue(var.propID)
+                                           Else
+                                               var.currentvalue = form.Collections.FlowsheetObjectCollection(var.objectID).GetPropertyValue(var.propID)
+                                           End If
+                                           currresults.Add(var.currentvalue)
+                                       Next
+                                       res.Add(currresults.ToArray())
+                                   End If
+                                   Dim formattedvalues As New List(Of Object) From {
+                                       Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv1.unit, iv1val), nf),
+                                       Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv2.unit, iv2val), nf)
+                                   }
+                                   For Each var As SAVariable In selectedsacase.depvariables.Values
+                                       formattedvalues.Add(Format(SystemsOfUnits.Converter.ConvertFromSI(var.unit, var.currentvalue), nf))
+                                   Next
+                                   UIThread(Sub()
+                                                If rbExp.Checked Then
+                                                    Me.dgvResults.Rows.Add(New Object() {Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv1.unit, iv1val), nf), Format(SystemsOfUnits.Converter.ConvertFromSI(sacase.iv2.unit, iv2val), nf), Format(dvval, nf)})
+                                                Else
+                                                    Me.dgvResults.Rows.Add(formattedvalues.ToArray())
+                                                End If
+                                                Me.dgvResults.FirstDisplayedScrollingRowIndex = Me.dgvResults.Rows.Count - 1
+                                                counter += 1
+                                                Me.tbStats.Text += "Run #" & counter & " completed..." & vbCrLf
+                                                Me.tbStats.SelectionStart = Me.tbStats.Text.Length - 1
+                                                Me.tbStats.SelectionLength = 1
+                                                Me.tbStats.ScrollToCaret()
+                                            End Sub)
+                                   If Me.abortCalc Then Exit Sub
+                               Next
+                           Next
+                       End Sub).ContinueWith(
+                       Sub(tsk)
+                           form.ClearLog()
+                           form.SupressMessages = False
+                           If tsk.Exception IsNot Nothing Then
+                               UIThread(Sub()
+                                            For Each ex In tsk.Exception.InnerExceptions
+                                                Me.tbStats.Text += "Error: " & ex.ToString() & vbCrLf
+                                            Next
+                                        End Sub)
+                           End If
+                           EndAction.Invoke()
+                       End Sub)
+        If Me.abortCalc Then Exit Sub
 
     End Sub
     Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnAbort.Click
-        abortCalc = True
+
+        If MessageBox.Show(form.GetTranslatedString1("ConfirmOperation"),
+           form.GetTranslatedString1("Ateno"),
+           MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
+
+            abortCalc = True
+
+        End If
+
     End Sub
 
     Private Sub LinkLabel1_LinkClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.LinkLabelLinkClickedEventArgs)
@@ -899,13 +1048,21 @@ Public Class FormSensAnalysis
     End Sub
 
     Private Sub tsbDelVar_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles tsbDelVar.Click
-        If Me.dgVariables.SelectedRows.Count > 0 Then
-            For i As Integer = 0 To Me.dgVariables.SelectedRows.Count - 1
-                Me.dgVariables.Rows.Remove(Me.dgVariables.SelectedRows(0))
-            Next
-        ElseIf Me.dgVariables.RowCount = 1 Then
-            Me.dgVariables.Rows.RemoveAt(0)
+
+        If MessageBox.Show(form.GetTranslatedString1("ConfirmOperation"),
+           form.GetTranslatedString1("Ateno"),
+           MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
+
+            If Me.dgVariables.SelectedRows.Count > 0 Then
+                For i As Integer = 0 To Me.dgVariables.SelectedRows.Count - 1
+                    Me.dgVariables.Rows.Remove(Me.dgVariables.SelectedRows(0))
+                Next
+            ElseIf Me.dgVariables.RowCount = 1 Then
+                Me.dgVariables.Rows.RemoveAt(0)
+            End If
+
         End If
+
     End Sub
 
     Private Sub dgVariables_CellValueChanged(ByVal sender As Object, ByVal e As System.Windows.Forms.DataGridViewCellEventArgs) Handles dgVariables.CellValueChanged
@@ -1035,13 +1192,21 @@ Public Class FormSensAnalysis
     End Sub
 
     Private Sub ToolStripButton2_Click(sender As System.Object, e As System.EventArgs) Handles ToolStripButton2.Click
-        If Me.dgDepVariables.SelectedRows.Count > 0 Then
-            For i As Integer = 0 To Me.dgDepVariables.SelectedRows.Count - 1
-                Me.dgDepVariables.Rows.Remove(Me.dgDepVariables.SelectedRows(0))
-            Next
-        ElseIf Me.dgDepVariables.RowCount = 1 Then
-            Me.dgDepVariables.Rows.RemoveAt(0)
+
+        If MessageBox.Show(form.GetTranslatedString1("ConfirmOperation"),
+           form.GetTranslatedString1("Ateno"),
+           MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
+
+            If Me.dgDepVariables.SelectedRows.Count > 0 Then
+                For i As Integer = 0 To Me.dgDepVariables.SelectedRows.Count - 1
+                    Me.dgDepVariables.Rows.Remove(Me.dgDepVariables.SelectedRows(0))
+                Next
+            ElseIf Me.dgDepVariables.RowCount = 1 Then
+                Me.dgDepVariables.Rows.RemoveAt(0)
+            End If
+
         End If
+
     End Sub
 
     Private Sub tbCaseName_TextChanged(sender As System.Object, e As System.EventArgs) Handles tbCaseName.TextChanged
@@ -1235,6 +1400,12 @@ Public Class FormSensAnalysis
         If selected Then
             form.Collections.OPT_SensAnalysisCollection(Me.lbCases.SelectedIndex).description = Me.tbCaseDesc.Text
         End If
+    End Sub
+
+    Private Sub FormSensAnalysis_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+
+        If form IsNot Nothing Then RemoveHandler form.NewDataLoaded, AddressOf NewDataEventHandler
+
     End Sub
 
 End Class

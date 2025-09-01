@@ -19,7 +19,8 @@
 ''' <summary>
 ''' This interface defines the constant properties of a compound.
 ''' </summary>
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface ICompoundConstantProperties
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface ICompoundConstantProperties
 
     ''' <summary>
     ''' Dynamically added properties.
@@ -1334,5 +1335,7 @@
     Property IsSolid As Boolean
 
     Property ChemSepFamily As Integer
+
+    Property StandardHeatOfCombustion_LHV As Double
 
 End Interface

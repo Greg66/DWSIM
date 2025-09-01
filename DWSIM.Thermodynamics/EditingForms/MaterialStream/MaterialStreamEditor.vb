@@ -677,9 +677,12 @@ Public Class MaterialStreamEditor
                 refval = p.Properties.kinematic_viscosity.GetValueOrDefault
                 If refval.HasValue Then val = Converter.ConvertFromSI(units.cinematic_viscosity, refval)
                 .Add(New Object() {MatStream.FlowSheet.GetTranslatedString("Viscosidadecinemtica"), val, units.cinematic_viscosity})
-                refval = p.Properties.viscosity.GetValueOrDefault
+                refval = p.Properties.viscosity
                 If refval.HasValue Then val = Converter.ConvertFromSI(units.viscosity, refval)
                 .Add(New Object() {MatStream.FlowSheet.GetTranslatedString("Viscosidadedinmica"), val, units.viscosity})
+
+                refval = p.Properties.volumetricFraction.GetValueOrDefault()
+                .Add(New Object() {MatStream.FlowSheet.GetTranslatedString("Phase Volumetric Fraction"), refval.Value, ""})
 
             End If
 
@@ -777,6 +780,20 @@ Public Class MaterialStreamEditor
 
                 End If
 
+            ElseIf p.Name = "Solid" Then
+
+                If MatStream.PropertyPackage IsNot Nothing Then
+
+                    refval = MatStream.Phases(7).Properties.particleSize_Mean.GetValueOrDefault
+                    val = Converter.ConvertFromSI(units.diameter, refval)
+                    .Add(New Object() {"Mean Particle Size", val, units.diameter})
+
+                    refval = MatStream.Phases(7).Properties.particleSize_StdDev.GetValueOrDefault
+                    val = Converter.ConvertFromSI(units.diameter, refval)
+                    .Add(New Object() {"Particle Size Standard Deviation", val, units.diameter})
+
+                End If
+
             End If
 
         End With
@@ -803,12 +820,15 @@ Public Class MaterialStreamEditor
         tbEnth.Enabled = False
         tbEntr.Enabled = False
         tbFracSpec.Enabled = False
+        PanelComposition.Enabled = False
 
     End Sub
 
     Public Sub UpdateEditableStatus()
 
         DisableEditableStatus()
+
+        PanelComposition.Enabled = True
 
         MatStream.SpecType = cbSpec.SelectedIndex
 

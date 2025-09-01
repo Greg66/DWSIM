@@ -43,15 +43,11 @@ namespace DWSIM.UI.Forms.Forms
             Minimizable = false;
 
             int w = (int)(sf * 400);
-            int h = (int)(sf * 160);
+            int h = (int)(sf * 200);
 
-            var center = Screen.PrimaryScreen.WorkingArea.Center;
-            center.X -= w / 2;
-            center.Y -= h / 2;
+            Size = new Size(w, h);
 
-            Location = new Point(center);
-
-            ClientSize = new Size(w, h);
+            DWSIM.UI.Shared.Common.Center(this);
 
         }
     }

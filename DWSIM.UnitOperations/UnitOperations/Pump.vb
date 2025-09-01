@@ -203,6 +203,12 @@ Namespace UnitOperations
 
         <NonSerialized> <Xml.Serialization.XmlIgnore> Public f As EditingForm_Pump
 
+        Public Overrides ReadOnly Property EquipmentTypes As List(Of String)
+            Get
+                Return New List(Of String) From {"", "Centrifugal", "Diaphragm", "Gear"}
+            End Get
+        End Property
+
         Public Enum CalculationMode
             Delta_P = 0
             OutletPressure = 1
@@ -439,6 +445,29 @@ Namespace UnitOperations
                 m_ignorephase = value
             End Set
         End Property
+
+        Public Overrides Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Flow, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Pressure, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.PressureDifference, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Efficiency, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Head, .IsUserDefined = False})
+            Dimensions.Add(New Dimension With {.Name = DimensionName.Power, .IsUserDefined = False})
+
+        End Sub
+
+        Public Overrides Sub UpdateDimensionsList()
+
+            Dimensions(0).Value = GetInletMaterialStream(0).GetVolumetricFlow()
+            Dimensions(1).Value = Pout
+            Dimensions(2).Value = PressureIncrease
+            Dimensions(3).Value = Efficiency
+            Dimensions(4).Value = Head
+            Dimensions(5).Value = HeatDuty
+
+        End Sub
 
         Public Sub New()
 
@@ -1129,6 +1158,8 @@ Namespace UnitOperations
                         value = Pout.ConvertFromSI(su.pressure)
                     Case 6
                         value = Head.ConvertFromSI(su.distance)
+                    Case 7
+                        value = NPSH.GetValueOrDefault.ConvertFromSI(su.distance)
                 End Select
 
                 Return value
@@ -1142,7 +1173,7 @@ Namespace UnitOperations
             Dim proplist As New ArrayList
             Dim basecol = MyBase.GetProperties(proptype)
             If basecol.Length > 0 Then proplist.AddRange(basecol)
-            For i = 0 To 6
+            For i = 0 To 7
                 proplist.Add("PROP_PU_" + CStr(i))
             Next
             Return proplist.ToArray(GetType(System.String))
@@ -1203,6 +1234,8 @@ Namespace UnitOperations
                         value = su.pressure
                     Case 6
                         value = su.distance
+                    Case 7
+                        value = su.distance
                 End Select
 
                 Return value
@@ -1239,6 +1272,12 @@ Namespace UnitOperations
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.pump
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.pump.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

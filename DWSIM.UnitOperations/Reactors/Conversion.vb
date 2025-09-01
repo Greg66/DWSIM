@@ -910,6 +910,7 @@ Namespace Reactors
                 ms = FlowSheet.SimulationObjects(cp.AttachedConnector.AttachedTo.Name)
                 With ms
                     .SpecType = StreamSpec.Temperature_and_Pressure
+                    .DefinedFlow = FlowSpec.Mass
                     .Phases(0).Properties.temperature = T
                     .Phases(0).Properties.pressure = P
                     Dim comp As BaseClasses.Compound
@@ -936,6 +937,7 @@ Namespace Reactors
                 ms = FlowSheet.SimulationObjects(cp.AttachedConnector.AttachedTo.Name)
                 With ms
                     .SpecType = StreamSpec.Temperature_and_Pressure
+                    .DefinedFlow = FlowSpec.Mass
                     .Phases(0).Properties.temperature = T
                     .Phases(0).Properties.pressure = P
                     Dim comp As BaseClasses.Compound
@@ -1218,6 +1220,12 @@ Namespace Reactors
 
         Public Overrides Function GetIconBitmap() As Object
             Return My.Resources.reactor_conversion
+        End Function
+
+        Public Overrides Function GetIconBitmapBytes() As Byte()
+
+            Return GetBytesFromResource("DWSIM.UnitOperations.reactor_conversion.png")
+
         End Function
 
         Public Overrides Function GetDisplayDescription() As String

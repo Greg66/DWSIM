@@ -48,10 +48,46 @@ Namespace UnitOperations
 
         Public Property ExternalSolverConfigData As String = ""
 
+        Public Property ParticleSizeDistributions As New Dictionary(Of String, String)
+
+        Public Overridable ReadOnly Property SupportsParticleSizeDistributions As Boolean = False
+
+        Public Overridable ReadOnly Property SupportsRestoreStateAfterError As Boolean = True
+
         Public Sub New()
 
             MyBase.CreateNew()
+            CreateDimensionsList()
 
+        End Sub
+
+        Public Overridable Sub CreateDimensionsList()
+
+            Dimensions = New List(Of IDimension)
+
+        End Sub
+
+        Public Overridable Sub UpdateDimensionsList()
+
+
+        End Sub
+
+        Public Overrides Sub Solve()
+            If FlowSheet IsNot Nothing AndAlso
+                FlowSheet.FlowsheetOptions.RestoreUnitOperationStateAfterError And
+                SupportsRestoreStateAfterError Then
+                Dim cstate = SaveData()
+                Try
+                    MyBase.Solve()
+                    UpdateDimensionsList()
+                Catch ex As Exception
+                    LoadData(cstate)
+                    Throw ex
+                End Try
+            Else
+                MyBase.Solve()
+                UpdateDimensionsList()
+            End If
         End Sub
 
         Public Overridable Function SetCalculationMode(modeID As Integer)
@@ -234,7 +270,15 @@ Namespace UnitOperations
 
 #Region "   DWSIM Specific"
 
+        Public Property Dimensions As List(Of IDimension) = New List(Of IDimension) Implements IUnitOperation.Dimensions
+
+        Public Property SelectedEquipmentType As String = "" Implements IUnitOperation.SelectedEquipmentType
+
+        Public Overridable ReadOnly Property EquipmentTypes As List(Of String) = New List(Of String)() Implements IUnitOperation.EquipmentTypes
+
         Public Overrides Function GetEnergyConsumption() As Double
+
+            If GraphicObject Is Nothing Then Return 0.0
 
             Dim ec As Double = 0
             For Each ic In GraphicObject.InputConnectors
@@ -402,7 +446,9 @@ Namespace UnitOperations
         Public Overrides Property ObjectClass As SimulationObjectClass = SimulationObjectClass.Logical
 
         Public Sub New()
+
             MyBase.CreateNew()
+
         End Sub
 
     End Class

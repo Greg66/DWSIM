@@ -27,10 +27,14 @@ Public NotInheritable Class SplashScreen
 
         ExtensionMethods.ChangeDefaultFont(Me)
 
+#If NOADS Then
+        lblVersion.Text = "Version " & My.Application.Info.Version.Major & "." & My.Application.Info.Version.Minor & "." & My.Application.Info.Version.Build & " (Patreon Supporters Build)"
+#Else
         lblVersion.Text = "Version " & My.Application.Info.Version.Major & "." & My.Application.Info.Version.Minor & "." & My.Application.Info.Version.Build
+#End If
 
 #If DEBUG Then
-        lblVersion.Text += "-" + IO.File.GetLastWriteTimeUtc(Assembly.GetExecutingAssembly().Location).ToString()
+        lblVersion.Text += " (" + IO.File.GetLastWriteTimeUtc(Assembly.GetExecutingAssembly().Location).ToString("s", Globalization.CultureInfo.InvariantCulture).Replace("T", " ") + ")"
 #End If
 
         If Environment.Is64BitProcess Then
@@ -43,16 +47,25 @@ Public NotInheritable Class SplashScreen
 
         lblPatrons.Text += SharedClasses.Patrons.GetList()
 
+        bg = My.Resources.DWSIM_splash_v9
+
     End Sub
 
     Protected Overrides Sub OnPaint(ByVal e As System.Windows.Forms.PaintEventArgs)
-        ' Do nothing here!
+
     End Sub
+
+    Private bg As Image
 
     Protected Overrides Sub OnPaintBackground(ByVal pevent As System.Windows.Forms.PaintEventArgs)
 
-        pevent.Graphics.DrawImage(My.Resources.DWSIM_splash_v8, New Rectangle(0, 0, Me.Width, Me.Height))
+        pevent.Graphics.DrawImage(bg, New Rectangle(0, 0, Me.Width, Me.Height))
 
     End Sub
 
+    Private Sub SplashScreen_FormClosed(sender As Object, e As FormClosedEventArgs) Handles Me.FormClosed
+
+        bg.Dispose()
+
+    End Sub
 End Class

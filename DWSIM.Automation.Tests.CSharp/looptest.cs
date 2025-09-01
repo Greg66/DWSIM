@@ -9,33 +9,28 @@ public class LoopTest
     static void Main()
     {
 
-        System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+        Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 
         //create automation manager
 
-        var sw = new Stopwatch();
-        sw.Start();
-
         var interf = new DWSIM.Automation.Automation3();
-
-        var sim = interf.LoadFlowsheet(Path.Combine("samples", "Biodiesel Production.dwxmz"));
-
-        sim.SetMessageListener((s, mt) => Console.WriteLine(s));
-
         for (int i = 0; i < 100; i++)
         {
-
+            var sw = new Stopwatch();
+            sw.Start();
+            var sim = interf.LoadFlowsheet("C:\\Users\\danie\\Downloads\\capeopen.dwxmz");
+            sim.SetMessageListener((s, mt) => Console.WriteLine(s));
             interf.CalculateFlowsheet2(sim);
-
+            //unvell.ReoGrid.IWorkbook  ssheet = (unvell.ReoGrid.IWorkbook)sim.GetSpreadsheetObject();
+            //var val1 = ssheet.Worksheets[0].Cells["C4"].Data;
+            //var val2 = ssheet.Worksheets[0].Cells["C5"].Data;
+            //var val3 = ssheet.Worksheets[0].Cells["E4"].Data;
+            //ssheet.Worksheets[0].Recalculate();
+            sim.ReleaseResources();
+            sim = null;
+            Console.WriteLine(String.Format("Finished in {0} ms.", sw.ElapsedMilliseconds));
         }
-
-        sim = null;
-
         interf.ReleaseResources();
-
-        sw.Stop();
-
-        Console.WriteLine("Finished.");
 
         Console.ReadLine();
     }

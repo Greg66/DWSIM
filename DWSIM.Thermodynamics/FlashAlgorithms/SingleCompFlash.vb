@@ -89,26 +89,52 @@ Namespace PropertyPackages.Auxiliary.FlashAlgorithms
 
             Dim HsatV, HsatL, HsatS, HfusL, HfusS As Double
 
-            If Tfus <= Tsat Then
-                HsatV = PP.DW_CalcEnthalpy(Vz, Tsat, P, State.Vapor)
-                HsatL = PP.DW_CalcEnthalpy(Vz, Tsat, P, State.Liquid)
-                HsatS = PP.DW_CalcEnthalpy(Vz, Tsat, P, State.Solid)
-                HfusL = PP.DW_CalcEnthalpy(Vz, Tfus, P, State.Liquid)
-                HfusS = PP.DW_CalcEnthalpy(Vz, Tfus, P, State.Solid)
-            End If
+            HsatV = PP.DW_CalcEnthalpy(Vz, Tsat, P, State.Vapor)
+            HsatL = PP.DW_CalcEnthalpy(Vz, Tsat, P, State.Liquid)
+            HsatS = PP.DW_CalcEnthalpy(Vz, Tsat, P, State.Solid)
+            HfusL = PP.DW_CalcEnthalpy(Vz, Tfus, P, State.Liquid)
+            HfusS = PP.DW_CalcEnthalpy(Vz, Tfus, P, State.Solid)
+
+            Dim names = PP.RET_VNAMES()
 
             Dim Hfus = PP.RET_HFUSM(Vz, Tfus)
 
-            If Tfus > Tsat Then
+            Dim CO2checkOK As Boolean = True
+
+            If names.Contains("Carbon dioxide") And Math.Abs(Tfus - Tsat) < 1.0 Then
+                CO2checkOK = False
+            End If
+
+            If Tfus > Tsat And CO2checkOK Then
 
                 'compound can't be liquid at current pressure
 
-                V = 1.0
-                S = 0.0
-                T = New Brent().BrentOpt2(Tfus * 1.05, 2000, 10, 0.000001, 100,
+                If H > HsatS And P <= Pfus And Abs(Hfus) > 0.0001 Then
+
+                    'partial sublimation from solid
+
+                    V = (H - HsatS) / (HsatV - HsatS)
+                    S = 1 - V
+                    If V >= 1.0 Then
+                        V = 1.0
+                        S = 0.0
+                        T = New Brent().BrentOpt2(10, 2000, 10, 0.000001, 100,
                                           Function(Tx)
                                               Return OBJ_FUNC_PH_FLASH(H, "PT", Tx, P, Vz, PP, False, Nothing)(0)
                                           End Function)
+                    Else
+                        T = Tsat
+                    End If
+
+                Else
+
+                    V = 1.0
+                    S = 0.0
+                    T = New Brent().BrentOpt2(10, 2000, 10, 0.000001, 100,
+                                          Function(Tx)
+                                              Return OBJ_FUNC_PH_FLASH(H, "PT", Tx, P, Vz, PP, False, Nothing)(0)
+                                          End Function)
+                End If
 
             Else
 
@@ -174,7 +200,7 @@ Namespace PropertyPackages.Auxiliary.FlashAlgorithms
 
                 End If
 
-                End If
+            End If
 
             Return New Object() {1.0 - V - S, V, Vz, Vz, T, 0.0, New Double() {1.0}, 0.0, Vz, S, Vz}
 

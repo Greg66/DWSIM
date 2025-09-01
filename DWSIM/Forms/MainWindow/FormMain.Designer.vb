@@ -30,9 +30,10 @@ Partial Class FormMain
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FormMain))
         Me.MenuStrip1 = New System.Windows.Forms.MenuStrip()
+        Me.ToolStripMenuItem2 = New System.Windows.Forms.ToolStripMenuItem()
         Me.FileTSMI = New System.Windows.Forms.ToolStripMenuItem()
         Me.NewToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.NovoEstudoDoCriadorDeComponentesToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.tsmiNewCompoundCreatorStudy = New System.Windows.Forms.ToolStripMenuItem()
         Me.tsmiNewCompoundWizard = New System.Windows.Forms.ToolStripMenuItem()
         Me.NovoEstudoDeRegressaoDeDadosToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.NovoRegressaoUNIFACIPs = New System.Windows.Forms.ToolStripMenuItem()
@@ -48,19 +49,13 @@ Partial Class FormMain
         Me.tsmiFOSSEE = New System.Windows.Forms.ToolStripMenuItem()
         Me.tsmiSamples = New System.Windows.Forms.ToolStripMenuItem()
         Me.tsFileSeparator = New System.Windows.Forms.ToolStripSeparator()
+        Me.ToolStripMenuItem1 = New System.Windows.Forms.ToolStripMenuItem()
         Me.ExitToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.EditTSMI = New System.Windows.Forms.ToolStripMenuItem()
         Me.PreferenciasDoDWSIMToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolsTSMI = New System.Windows.Forms.ToolStripMenuItem()
         Me.DatabaseManagerToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.RegistroCAPEOPENToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.DownloadSupplementarySoftwareToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.NNUOToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.PNUOToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.CapitalCostToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.OPCPluginToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.DTLToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.PsycrometrySimulationTemplateToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.WindowsMenu = New System.Windows.Forms.ToolStripMenuItem()
         Me.CascadeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.TileVerticalToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -71,19 +66,19 @@ Partial Class FormMain
         Me.HelpTSMI = New System.Windows.Forms.ToolStripMenuItem()
         Me.UsersGuideToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.tsmiProUG = New System.Windows.Forms.ToolStripMenuItem()
+        Me.WhatsNewToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.DWSIMNaInternetToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.WikiToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ForumToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.RastreamentoDeBugsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.DIscordChannelToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.WhatsNewToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.AboutToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.tsmiPrivateSupport = New System.Windows.Forms.ToolStripMenuItem()
         Me.tsmiFreeProTrial = New System.Windows.Forms.ToolStripMenuItem()
+        Me.tsmiProUserGuide = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStrip1 = New System.Windows.Forms.ToolStrip()
         Me.NewToolStripButton = New System.Windows.Forms.ToolStripButton()
         Me.OpenToolStripButton = New System.Windows.Forms.ToolStripButton()
         Me.OpenFileS365 = New System.Windows.Forms.ToolStripButton()
+        Me.ToolStripSeparator5 = New System.Windows.Forms.ToolStripSeparator()
+        Me.tsbAutoSave = New System.Windows.Forms.ToolStripButton()
         Me.SaveToolStripButton = New System.Windows.Forms.ToolStripButton()
         Me.SaveFileS365 = New System.Windows.Forms.ToolStripButton()
         Me.ToolStripButton1 = New System.Windows.Forms.ToolStripButton()
@@ -100,7 +95,6 @@ Partial Class FormMain
         Me.LoginButton = New System.Windows.Forms.ToolStripButton()
         Me.LogoutDropdown = New System.Windows.Forms.ToolStripDropDownButton()
         Me.DashboardToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.LoggedInS365Button = New System.Windows.Forms.ToolStripMenuItem()
         Me.LogoutToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.CheckingCredentialsLabel = New System.Windows.Forms.ToolStripLabel()
         Me.BgLoadComp = New System.ComponentModel.BackgroundWorker()
@@ -118,8 +112,9 @@ Partial Class FormMain
         Me.tsblDonate = New System.Windows.Forms.ToolStripStatusLabel()
         Me.tsbdonate1 = New System.Windows.Forms.ToolStripDropDownButton()
         Me.tsbdonate2 = New System.Windows.Forms.ToolStripDropDownButton()
+        Me.ToolStripSplitButton1 = New System.Windows.Forms.ToolStripDropDownButton()
+        Me.ToolStripSplitButton2 = New System.Windows.Forms.ToolStripDropDownButton()
         Me.ToolStripStatusLabel2 = New System.Windows.Forms.ToolStripStatusLabel()
-        Me.tsbQuickQuestion = New System.Windows.Forms.ToolStripDropDownButton()
         Me.MenuStrip1.SuspendLayout()
         Me.ToolStrip1.SuspendLayout()
         Me.SettingsPanel.SuspendLayout()
@@ -131,16 +126,23 @@ Partial Class FormMain
         resources.ApplyResources(Me.MenuStrip1, "MenuStrip1")
         Me.MenuStrip1.AllowItemReorder = True
         Me.MenuStrip1.ImageScalingSize = New System.Drawing.Size(20, 20)
-        Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.FileTSMI, Me.EditTSMI, Me.ToolsTSMI, Me.WindowsMenu, Me.ViewTSMI, Me.HelpTSMI, Me.tsmiPrivateSupport, Me.tsmiFreeProTrial})
+        Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripMenuItem2, Me.FileTSMI, Me.EditTSMI, Me.ToolsTSMI, Me.WindowsMenu, Me.ViewTSMI, Me.HelpTSMI, Me.tsmiFreeProTrial, Me.tsmiProUserGuide})
         Me.MenuStrip1.MdiWindowListItem = Me.WindowsMenu
         Me.MenuStrip1.Name = "MenuStrip1"
         Me.MenuStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional
         Me.MenuStrip1.ShowItemToolTips = True
         '
+        'ToolStripMenuItem2
+        '
+        resources.ApplyResources(Me.ToolStripMenuItem2, "ToolStripMenuItem2")
+        Me.ToolStripMenuItem2.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
+        Me.ToolStripMenuItem2.Image = Global.DWSIM.My.Resources.Resources.home_30px
+        Me.ToolStripMenuItem2.Name = "ToolStripMenuItem2"
+        '
         'FileTSMI
         '
         resources.ApplyResources(Me.FileTSMI, "FileTSMI")
-        Me.FileTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripMenuItem, Me.NovoEstudoDoCriadorDeComponentesToolStripMenuItem, Me.tsmiNewCompoundWizard, Me.NovoEstudoDeRegressaoDeDadosToolStripMenuItem, Me.NovoRegressaoUNIFACIPs, Me.OpenToolStripMenuItem, Me.AbrirDoDashboardToolStripMenuItem, Me.toolStripSeparator, Me.SaveToDashboardTSMI, Me.SaveToolStripMenuItem, Me.SaveAsToolStripMenuItem, Me.ToolStripSeparator2, Me.CloseAllToolstripMenuItem, Me.toolStripSeparator1, Me.tsmiFOSSEE, Me.tsmiSamples, Me.tsFileSeparator, Me.ExitToolStripMenuItem})
+        Me.FileTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripMenuItem, Me.tsmiNewCompoundCreatorStudy, Me.tsmiNewCompoundWizard, Me.NovoEstudoDeRegressaoDeDadosToolStripMenuItem, Me.NovoRegressaoUNIFACIPs, Me.OpenToolStripMenuItem, Me.AbrirDoDashboardToolStripMenuItem, Me.toolStripSeparator, Me.SaveToDashboardTSMI, Me.SaveToolStripMenuItem, Me.SaveAsToolStripMenuItem, Me.ToolStripSeparator2, Me.CloseAllToolstripMenuItem, Me.toolStripSeparator1, Me.tsmiFOSSEE, Me.tsmiSamples, Me.tsFileSeparator, Me.ToolStripMenuItem1, Me.ExitToolStripMenuItem})
         Me.FileTSMI.Name = "FileTSMI"
         Me.FileTSMI.Overflow = System.Windows.Forms.ToolStripItemOverflow.AsNeeded
         '
@@ -150,11 +152,11 @@ Partial Class FormMain
         Me.NewToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.file_80px
         Me.NewToolStripMenuItem.Name = "NewToolStripMenuItem"
         '
-        'NovoEstudoDoCriadorDeComponentesToolStripMenuItem
+        'tsmiNewCompoundCreatorStudy
         '
-        resources.ApplyResources(Me.NovoEstudoDoCriadorDeComponentesToolStripMenuItem, "NovoEstudoDoCriadorDeComponentesToolStripMenuItem")
-        Me.NovoEstudoDoCriadorDeComponentesToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.test_tube_80px
-        Me.NovoEstudoDoCriadorDeComponentesToolStripMenuItem.Name = "NovoEstudoDoCriadorDeComponentesToolStripMenuItem"
+        resources.ApplyResources(Me.tsmiNewCompoundCreatorStudy, "tsmiNewCompoundCreatorStudy")
+        Me.tsmiNewCompoundCreatorStudy.Image = Global.DWSIM.My.Resources.Resources.test_tube_80px
+        Me.tsmiNewCompoundCreatorStudy.Name = "tsmiNewCompoundCreatorStudy"
         '
         'tsmiNewCompoundWizard
         '
@@ -242,6 +244,12 @@ Partial Class FormMain
         resources.ApplyResources(Me.tsFileSeparator, "tsFileSeparator")
         Me.tsFileSeparator.Name = "tsFileSeparator"
         '
+        'ToolStripMenuItem1
+        '
+        resources.ApplyResources(Me.ToolStripMenuItem1, "ToolStripMenuItem1")
+        Me.ToolStripMenuItem1.Image = Global.DWSIM.My.Resources.Resources.home_30px
+        Me.ToolStripMenuItem1.Name = "ToolStripMenuItem1"
+        '
         'ExitToolStripMenuItem
         '
         resources.ApplyResources(Me.ExitToolStripMenuItem, "ExitToolStripMenuItem")
@@ -264,8 +272,10 @@ Partial Class FormMain
         'ToolsTSMI
         '
         resources.ApplyResources(Me.ToolsTSMI, "ToolsTSMI")
-        Me.ToolsTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.DatabaseManagerToolStripMenuItem, Me.RegistroCAPEOPENToolStripMenuItem, Me.DownloadSupplementarySoftwareToolStripMenuItem})
+        Me.ToolsTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.DatabaseManagerToolStripMenuItem, Me.RegistroCAPEOPENToolStripMenuItem})
+        Me.ToolsTSMI.MergeIndex = 1
         Me.ToolsTSMI.Name = "ToolsTSMI"
+        Me.ToolsTSMI.Overflow = System.Windows.Forms.ToolStripItemOverflow.AsNeeded
         '
         'DatabaseManagerToolStripMenuItem
         '
@@ -278,43 +288,6 @@ Partial Class FormMain
         resources.ApplyResources(Me.RegistroCAPEOPENToolStripMenuItem, "RegistroCAPEOPENToolStripMenuItem")
         Me.RegistroCAPEOPENToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.colan2
         Me.RegistroCAPEOPENToolStripMenuItem.Name = "RegistroCAPEOPENToolStripMenuItem"
-        '
-        'DownloadSupplementarySoftwareToolStripMenuItem
-        '
-        resources.ApplyResources(Me.DownloadSupplementarySoftwareToolStripMenuItem, "DownloadSupplementarySoftwareToolStripMenuItem")
-        Me.DownloadSupplementarySoftwareToolStripMenuItem.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right
-        Me.DownloadSupplementarySoftwareToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NNUOToolStripMenuItem, Me.PNUOToolStripMenuItem, Me.CapitalCostToolStripMenuItem, Me.OPCPluginToolStripMenuItem, Me.DTLToolStripMenuItem, Me.PsycrometrySimulationTemplateToolStripMenuItem})
-        Me.DownloadSupplementarySoftwareToolStripMenuItem.Name = "DownloadSupplementarySoftwareToolStripMenuItem"
-        '
-        'NNUOToolStripMenuItem
-        '
-        resources.ApplyResources(Me.NNUOToolStripMenuItem, "NNUOToolStripMenuItem")
-        Me.NNUOToolStripMenuItem.Name = "NNUOToolStripMenuItem"
-        '
-        'PNUOToolStripMenuItem
-        '
-        resources.ApplyResources(Me.PNUOToolStripMenuItem, "PNUOToolStripMenuItem")
-        Me.PNUOToolStripMenuItem.Name = "PNUOToolStripMenuItem"
-        '
-        'CapitalCostToolStripMenuItem
-        '
-        resources.ApplyResources(Me.CapitalCostToolStripMenuItem, "CapitalCostToolStripMenuItem")
-        Me.CapitalCostToolStripMenuItem.Name = "CapitalCostToolStripMenuItem"
-        '
-        'OPCPluginToolStripMenuItem
-        '
-        resources.ApplyResources(Me.OPCPluginToolStripMenuItem, "OPCPluginToolStripMenuItem")
-        Me.OPCPluginToolStripMenuItem.Name = "OPCPluginToolStripMenuItem"
-        '
-        'DTLToolStripMenuItem
-        '
-        resources.ApplyResources(Me.DTLToolStripMenuItem, "DTLToolStripMenuItem")
-        Me.DTLToolStripMenuItem.Name = "DTLToolStripMenuItem"
-        '
-        'PsycrometrySimulationTemplateToolStripMenuItem
-        '
-        resources.ApplyResources(Me.PsycrometrySimulationTemplateToolStripMenuItem, "PsycrometrySimulationTemplateToolStripMenuItem")
-        Me.PsycrometrySimulationTemplateToolStripMenuItem.Name = "PsycrometrySimulationTemplateToolStripMenuItem"
         '
         'WindowsMenu
         '
@@ -373,7 +346,7 @@ Partial Class FormMain
         'HelpTSMI
         '
         resources.ApplyResources(Me.HelpTSMI, "HelpTSMI")
-        Me.HelpTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.UsersGuideToolStripMenuItem, Me.tsmiProUG, Me.DWSIMNaInternetToolStripMenuItem, Me.WhatsNewToolStripMenuItem, Me.AboutToolStripMenuItem})
+        Me.HelpTSMI.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.UsersGuideToolStripMenuItem, Me.tsmiProUG, Me.WhatsNewToolStripMenuItem, Me.DWSIMNaInternetToolStripMenuItem, Me.AboutToolStripMenuItem})
         Me.HelpTSMI.MergeAction = System.Windows.Forms.MergeAction.Insert
         Me.HelpTSMI.MergeIndex = 102
         Me.HelpTSMI.Name = "HelpTSMI"
@@ -390,53 +363,36 @@ Partial Class FormMain
         Me.tsmiProUG.Image = Global.DWSIM.My.Resources.Resources.Icon128
         Me.tsmiProUG.Name = "tsmiProUG"
         '
-        'DWSIMNaInternetToolStripMenuItem
-        '
-        resources.ApplyResources(Me.DWSIMNaInternetToolStripMenuItem, "DWSIMNaInternetToolStripMenuItem")
-        Me.DWSIMNaInternetToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.WikiToolStripMenuItem, Me.ForumToolStripMenuItem, Me.RastreamentoDeBugsToolStripMenuItem, Me.DIscordChannelToolStripMenuItem})
-        Me.DWSIMNaInternetToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.collaboration_female_male_48px
-        Me.DWSIMNaInternetToolStripMenuItem.Name = "DWSIMNaInternetToolStripMenuItem"
-        '
-        'WikiToolStripMenuItem
-        '
-        resources.ApplyResources(Me.WikiToolStripMenuItem, "WikiToolStripMenuItem")
-        Me.WikiToolStripMenuItem.Name = "WikiToolStripMenuItem"
-        '
-        'ForumToolStripMenuItem
-        '
-        resources.ApplyResources(Me.ForumToolStripMenuItem, "ForumToolStripMenuItem")
-        Me.ForumToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.world_go
-        Me.ForumToolStripMenuItem.Name = "ForumToolStripMenuItem"
-        '
-        'RastreamentoDeBugsToolStripMenuItem
-        '
-        resources.ApplyResources(Me.RastreamentoDeBugsToolStripMenuItem, "RastreamentoDeBugsToolStripMenuItem")
-        Me.RastreamentoDeBugsToolStripMenuItem.Name = "RastreamentoDeBugsToolStripMenuItem"
-        '
-        'DIscordChannelToolStripMenuItem
-        '
-        resources.ApplyResources(Me.DIscordChannelToolStripMenuItem, "DIscordChannelToolStripMenuItem")
-        Me.DIscordChannelToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.icons8_discord
-        Me.DIscordChannelToolStripMenuItem.Name = "DIscordChannelToolStripMenuItem"
-        '
         'WhatsNewToolStripMenuItem
         '
         resources.ApplyResources(Me.WhatsNewToolStripMenuItem, "WhatsNewToolStripMenuItem")
         Me.WhatsNewToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.new_60px
         Me.WhatsNewToolStripMenuItem.Name = "WhatsNewToolStripMenuItem"
         '
+        'DWSIMNaInternetToolStripMenuItem
+        '
+        resources.ApplyResources(Me.DWSIMNaInternetToolStripMenuItem, "DWSIMNaInternetToolStripMenuItem")
+        Me.DWSIMNaInternetToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.WikiToolStripMenuItem, Me.RastreamentoDeBugsToolStripMenuItem})
+        Me.DWSIMNaInternetToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.collaboration_female_male_48px
+        Me.DWSIMNaInternetToolStripMenuItem.Name = "DWSIMNaInternetToolStripMenuItem"
+        '
+        'WikiToolStripMenuItem
+        '
+        resources.ApplyResources(Me.WikiToolStripMenuItem, "WikiToolStripMenuItem")
+        Me.WikiToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.discussion_forum_40px
+        Me.WikiToolStripMenuItem.Name = "WikiToolStripMenuItem"
+        '
+        'RastreamentoDeBugsToolStripMenuItem
+        '
+        resources.ApplyResources(Me.RastreamentoDeBugsToolStripMenuItem, "RastreamentoDeBugsToolStripMenuItem")
+        Me.RastreamentoDeBugsToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.website_bug_48px
+        Me.RastreamentoDeBugsToolStripMenuItem.Name = "RastreamentoDeBugsToolStripMenuItem"
+        '
         'AboutToolStripMenuItem
         '
         resources.ApplyResources(Me.AboutToolStripMenuItem, "AboutToolStripMenuItem")
-        Me.AboutToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.DWSIM_ico_64
+        Me.AboutToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.DWSIM_Icon_Vector_2
         Me.AboutToolStripMenuItem.Name = "AboutToolStripMenuItem"
-        '
-        'tsmiPrivateSupport
-        '
-        resources.ApplyResources(Me.tsmiPrivateSupport, "tsmiPrivateSupport")
-        Me.tsmiPrivateSupport.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right
-        Me.tsmiPrivateSupport.Image = Global.DWSIM.My.Resources.Resources.icons8_technical_support
-        Me.tsmiPrivateSupport.Name = "tsmiPrivateSupport"
         '
         'tsmiFreeProTrial
         '
@@ -445,12 +401,18 @@ Partial Class FormMain
         Me.tsmiFreeProTrial.Image = Global.DWSIM.My.Resources.Resources.Icon1281
         Me.tsmiFreeProTrial.Name = "tsmiFreeProTrial"
         '
+        'tsmiProUserGuide
+        '
+        resources.ApplyResources(Me.tsmiProUserGuide, "tsmiProUserGuide")
+        Me.tsmiProUserGuide.Image = Global.DWSIM.My.Resources.Resources.user_manual_80px
+        Me.tsmiProUserGuide.Name = "tsmiProUserGuide"
+        '
         'ToolStrip1
         '
         resources.ApplyResources(Me.ToolStrip1, "ToolStrip1")
         Me.ToolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden
         Me.ToolStrip1.ImageScalingSize = New System.Drawing.Size(20, 20)
-        Me.ToolStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripButton, Me.OpenToolStripButton, Me.OpenFileS365, Me.SaveToolStripButton, Me.SaveFileS365, Me.ToolStripButton1, Me.ToolStripSeparator3, Me.ToolStripButton2, Me.tsbInspector, Me.ToolStripSeparator4, Me.ToolStripButton3, Me.ToolStripButton5, Me.ToolStripButton4, Me.ToolStripSeparator6, Me.tsbRegCO, Me.ToolStripSeparator8, Me.LoginButton, Me.LogoutDropdown, Me.CheckingCredentialsLabel})
+        Me.ToolStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewToolStripButton, Me.OpenToolStripButton, Me.OpenFileS365, Me.ToolStripSeparator5, Me.tsbAutoSave, Me.SaveToolStripButton, Me.SaveFileS365, Me.ToolStripButton1, Me.ToolStripSeparator3, Me.ToolStripButton2, Me.tsbInspector, Me.ToolStripSeparator4, Me.ToolStripButton3, Me.ToolStripButton5, Me.ToolStripButton4, Me.ToolStripSeparator6, Me.tsbRegCO, Me.ToolStripSeparator8, Me.LoginButton, Me.LogoutDropdown, Me.CheckingCredentialsLabel})
         Me.ToolStrip1.Name = "ToolStrip1"
         Me.ToolStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional
         '
@@ -474,6 +436,18 @@ Partial Class FormMain
         Me.OpenFileS365.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
         Me.OpenFileS365.Image = Global.DWSIM.My.Resources.Resources.open_file_s365
         Me.OpenFileS365.Name = "OpenFileS365"
+        '
+        'ToolStripSeparator5
+        '
+        resources.ApplyResources(Me.ToolStripSeparator5, "ToolStripSeparator5")
+        Me.ToolStripSeparator5.Name = "ToolStripSeparator5"
+        '
+        'tsbAutoSave
+        '
+        resources.ApplyResources(Me.tsbAutoSave, "tsbAutoSave")
+        Me.tsbAutoSave.CheckOnClick = True
+        Me.tsbAutoSave.Image = Global.DWSIM.My.Resources.Resources.cancel_30px
+        Me.tsbAutoSave.Name = "tsbAutoSave"
         '
         'SaveToolStripButton
         '
@@ -570,7 +544,7 @@ Partial Class FormMain
         '
         resources.ApplyResources(Me.LogoutDropdown, "LogoutDropdown")
         Me.LogoutDropdown.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right
-        Me.LogoutDropdown.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.DashboardToolStripMenuItem, Me.LoggedInS365Button, Me.LogoutToolStripMenuItem})
+        Me.LogoutDropdown.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.DashboardToolStripMenuItem, Me.LogoutToolStripMenuItem})
         Me.LogoutDropdown.Name = "LogoutDropdown"
         '
         'DashboardToolStripMenuItem
@@ -578,12 +552,6 @@ Partial Class FormMain
         resources.ApplyResources(Me.DashboardToolStripMenuItem, "DashboardToolStripMenuItem")
         Me.DashboardToolStripMenuItem.Image = Global.DWSIM.My.Resources.Resources.s365_logo_login
         Me.DashboardToolStripMenuItem.Name = "DashboardToolStripMenuItem"
-        '
-        'LoggedInS365Button
-        '
-        resources.ApplyResources(Me.LoggedInS365Button, "LoggedInS365Button")
-        Me.LoggedInS365Button.Image = Global.DWSIM.My.Resources.Resources.s365_logo_login
-        Me.LoggedInS365Button.Name = "LoggedInS365Button"
         '
         'LogoutToolStripMenuItem
         '
@@ -641,7 +609,7 @@ Partial Class FormMain
         'StatusStrip1
         '
         resources.ApplyResources(Me.StatusStrip1, "StatusStrip1")
-        Me.StatusStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripDropDownButton1, Me.tsblDonate, Me.tsbdonate1, Me.tsbdonate2, Me.ToolStripStatusLabel2, Me.tsbQuickQuestion})
+        Me.StatusStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripDropDownButton1, Me.tsblDonate, Me.tsbdonate1, Me.tsbdonate2, Me.ToolStripSplitButton1, Me.ToolStripSplitButton2, Me.ToolStripStatusLabel2})
         Me.StatusStrip1.Name = "StatusStrip1"
         Me.StatusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional
         Me.StatusStrip1.SizingGrip = False
@@ -674,19 +642,26 @@ Partial Class FormMain
         Me.tsbdonate2.Name = "tsbdonate2"
         Me.tsbdonate2.ShowDropDownArrow = False
         '
+        'ToolStripSplitButton1
+        '
+        resources.ApplyResources(Me.ToolStripSplitButton1, "ToolStripSplitButton1")
+        Me.ToolStripSplitButton1.Image = Global.DWSIM.My.Resources.Resources.Pix_48px
+        Me.ToolStripSplitButton1.Name = "ToolStripSplitButton1"
+        Me.ToolStripSplitButton1.ShowDropDownArrow = False
+        '
+        'ToolStripSplitButton2
+        '
+        resources.ApplyResources(Me.ToolStripSplitButton2, "ToolStripSplitButton2")
+        Me.ToolStripSplitButton2.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
+        Me.ToolStripSplitButton2.Image = Global.DWSIM.My.Resources.Resources.copy
+        Me.ToolStripSplitButton2.Name = "ToolStripSplitButton2"
+        Me.ToolStripSplitButton2.ShowDropDownArrow = False
+        '
         'ToolStripStatusLabel2
         '
         resources.ApplyResources(Me.ToolStripStatusLabel2, "ToolStripStatusLabel2")
         Me.ToolStripStatusLabel2.Name = "ToolStripStatusLabel2"
         Me.ToolStripStatusLabel2.Spring = True
-        '
-        'tsbQuickQuestion
-        '
-        resources.ApplyResources(Me.tsbQuickQuestion, "tsbQuickQuestion")
-        Me.tsbQuickQuestion.ForeColor = System.Drawing.Color.Red
-        Me.tsbQuickQuestion.Image = Global.DWSIM.My.Resources.Resources.unverified_account_48px
-        Me.tsbQuickQuestion.Name = "tsbQuickQuestion"
-        Me.tsbQuickQuestion.ShowDropDownArrow = False
         '
         'FormMain
         '
@@ -702,7 +677,6 @@ Partial Class FormMain
         Me.IsMdiContainer = True
         Me.MainMenuStrip = Me.MenuStrip1
         Me.Name = "FormMain"
-        Me.WindowState = System.Windows.Forms.FormWindowState.Maximized
         Me.MenuStrip1.ResumeLayout(False)
         Me.MenuStrip1.PerformLayout()
         Me.ToolStrip1.ResumeLayout(False)
@@ -931,7 +905,6 @@ Partial Class FormMain
 
     Public WithEvents DWSIMNaInternetToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
     Public WithEvents WikiToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
-    Public WithEvents ForumToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
     Public WithEvents RastreamentoDeBugsToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
     Public WithEvents ToolStripSeparator3 As System.Windows.Forms.ToolStripSeparator
     Public WithEvents ToolStripButton2 As System.Windows.Forms.ToolStripButton
@@ -943,7 +916,6 @@ Partial Class FormMain
     Friend WithEvents NovoToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
     Public WithEvents NewToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
     Friend WithEvents NovoEstudoDeRegressaoDeDadosToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
-    Friend WithEvents NovoEstudoDoCriadorDeComponentesToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
     Public WithEvents tsmiSamples As System.Windows.Forms.ToolStripMenuItem
     Friend WithEvents NovoRegressaoUNIFACIPs As System.Windows.Forms.ToolStripMenuItem
     Friend WithEvents SettingsPanel As System.Windows.Forms.Panel
@@ -959,36 +931,33 @@ Partial Class FormMain
     Public WithEvents WelcomePanel As Panel
     Friend WithEvents tsbInspector As ToolStripButton
     Friend WithEvents tsFileSeparator As ToolStripSeparator
-    Friend WithEvents NNUOToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents PNUOToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents CapitalCostToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents OPCPluginToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents DTLToolStripMenuItem As ToolStripMenuItem
     Public WithEvents PainelDeBoasvindasToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents PsycrometrySimulationTemplateToolStripMenuItem As ToolStripMenuItem
-    Public WithEvents DownloadSupplementarySoftwareToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents LoginButton As ToolStripButton
     Friend WithEvents LogoutDropdown As ToolStripDropDownButton
     Friend WithEvents LogoutToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents LoggedInS365Button As ToolStripMenuItem
     Friend WithEvents tsmiFreeProTrial As ToolStripMenuItem
     Public WithEvents AbrirDoDashboardToolStripMenuItem As ToolStripMenuItem
     Public WithEvents SaveToDashboardTSMI As ToolStripMenuItem
     Public WithEvents OpenFileS365 As ToolStripButton
     Public WithEvents SaveFileS365 As ToolStripButton
     Friend WithEvents DashboardToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents DIscordChannelToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents tsblDonate As ToolStripStatusLabel
     Friend WithEvents tsbdonate1 As ToolStripDropDownButton
     Friend WithEvents tsbdonate2 As ToolStripDropDownButton
     Friend WithEvents ToolStripStatusLabel2 As ToolStripStatusLabel
     Public WithEvents StatusStrip1 As StatusStrip
     Friend WithEvents WhatsNewToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents tsmiPrivateSupport As ToolStripMenuItem
-    Public WithEvents tsbQuickQuestion As ToolStripDropDownButton
     Friend WithEvents UsersGuideToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents tsmiProUG As ToolStripMenuItem
-    Friend WithEvents tsmiNewCompoundWizard As ToolStripMenuItem
     Friend WithEvents CheckingCredentialsLabel As ToolStripLabel
     Friend WithEvents ToolStripDropDownButton1 As ToolStripDropDownButton
+    Public WithEvents tsmiNewCompoundWizard As ToolStripMenuItem
+    Public WithEvents tsmiNewCompoundCreatorStudy As ToolStripMenuItem
+    Friend WithEvents ToolStripSeparator5 As ToolStripSeparator
+    Public WithEvents tsbAutoSave As ToolStripButton
+    Friend WithEvents tsmiProUserGuide As ToolStripMenuItem
+    Friend WithEvents ToolStripMenuItem1 As ToolStripMenuItem
+    Friend WithEvents ToolStripMenuItem2 As ToolStripMenuItem
+    Friend WithEvents ToolStripSplitButton1 As ToolStripDropDownButton
+    Friend WithEvents ToolStripSplitButton2 As ToolStripDropDownButton
 End Class

@@ -16,7 +16,8 @@
 '    You should have received a copy of the GNU General Public License
 '    along with DWSIM.  If not, see <http://www.gnu.org/licenses/>.
 
-<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)> Public Interface IPhaseProperties
+<InterfaceType(ComInterfaceType.InterfaceIsIDispatch)>
+Public Interface IPhaseProperties
 
     Property osmoticCoefficient As Nullable(Of Double)
     Property freezingPointDepression As Nullable(Of Double)
@@ -78,5 +79,8 @@
     Property CO2partialpressure As Double?
     Property H2Sloading As Double?
     Property H2Spartialpressure As Double?
+    Property particleSize_Mean As Double?
+    Property particleSize_StdDev As Double?
+    Property volumetricFraction As Double?
 
 End Interface
