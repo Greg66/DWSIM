@@ -146,8 +146,10 @@ Public Class FormFlowsheet
     Private MessagePump As New Concurrent.ConcurrentQueue(Of Tuple(Of String, Interfaces.IFlowsheet.MessageType, String))
 
     Public Shared DoNotOpenSimulationWizard As Boolean = False
+
     Public Property SignalRGuid As String
     Public Property FileVersion As Decimal = 0.00D
+    Public Property S365FileId As String
 
     Private toolstripButtonDict As New Dictionary(Of String, ToolStripButton)
 
@@ -206,18 +208,12 @@ Public Class FormFlowsheet
 
         My.Application.ActiveSimulation = Me
 
-        If FormMain.EnableUpdatesActiveSimulationUsersBadgeCount Then
-            If FormMain.Update_ActiveSimulation_UsersBadge_Count IsNot Nothing Then
-                If Not String.IsNullOrEmpty(Me.FilePath) Then
+        If FormMain.EnableUpdatesActiveSimulationUsersBadgeCount AndAlso FormMain.Update_ActiveSimulation_UsersBadge_Count IsNot Nothing Then
 
-                    If Me.Options IsNot Nothing Then
+            If Me.Options IsNot Nothing Then
 
-                        Dim fileName = Path.GetFileName(Me.FilePath)
+                FormMain.Update_ActiveSimulation_UsersBadge_Count(Me)
 
-                        FormMain.Update_ActiveSimulation_UsersBadge_Count(fileName)
-
-                    End If
-                End If
             End If
         End If
 
@@ -259,11 +255,11 @@ Public Class FormFlowsheet
             Me.ToolStrip1.ImageScalingSize = New Size(20 * Settings.DpiScale, 20 * Settings.DpiScale)
             Me.MenuStrip1.ImageScalingSize = New Size(20 * Settings.DpiScale, 20 * Settings.DpiScale)
 
-            If FormMain.EnableActiveUsersButton Then
+            If FormMain.EnableActiveUsersButton AndAlso FormMain.SetupActiveUsersButton IsNot Nothing Then
                 Dim tsb = FormMain.SetupActiveUsersButton(Me, Me.ToolStrip1)
 
                 If tsb IsNot Nothing Then
-                    If Not toolstripButtonDict.ContainsKey(SignalRGuid) Then
+                    If Not String.IsNullOrEmpty(SignalRGuid) AndAlso Not toolstripButtonDict.ContainsKey(SignalRGuid) Then
                         toolstripButtonDict(SignalRGuid) = tsb
                     End If
                 End If
@@ -779,25 +775,25 @@ Public Class FormFlowsheet
 
         If FormMain.IsPro Then Task.Delay(3000).ContinueWith(Sub() UIThread(Sub() ProcessTransition()))
 
-        If SignalRGuid IsNot Nothing Then
-            If toolstripButtonDict.ContainsKey(Me.SignalRGuid) Then
 
-                If Me.SignalRGuid IsNot Nothing Then
-                    Dim sheetSignalRGuid As Guid = Guid.Parse(Me.SignalRGuid)
+        If Not String.IsNullOrEmpty(Me.SignalRGuid) AndAlso toolstripButtonDict.ContainsKey(Me.SignalRGuid) Then
 
-                    If sheetSignalRGuid <> Guid.Empty AndAlso FormMain.EnableNotificationBadge Then
+            If Me.SignalRGuid IsNot Nothing Then
+                Dim sheetSignalRGuid As Guid = Guid.Parse(Me.SignalRGuid)
 
-                        Dim tsb = toolstripButtonDict(Me.SignalRGuid)
+                If sheetSignalRGuid <> Guid.Empty AndAlso
+                   FormMain.EnableNotificationBadge AndAlso
+                   FormMain.ShowNotificationBadge IsNot Nothing Then
 
-                        If Me.Options IsNot Nothing Then
-                            FormMain.ShowNotificationBadge(sheetSignalRGuid, Path.GetFileName(Me.FilePath), tsb)
-                        End If
+                    Dim tsb = toolstripButtonDict(Me.SignalRGuid)
 
+                    If Me.Options IsNot Nothing Then
+                        FormMain.ShowNotificationBadge(sheetSignalRGuid, Path.GetFileName(Me.FilePath), tsb)
                     End If
+
                 End If
             End If
         End If
-
     End Sub
 
     Private Sub FormChild2_FormClosed(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosedEventArgs) Handles Me.FormClosed
@@ -1147,9 +1143,8 @@ Public Class FormFlowsheet
             Dim x = MessageBox.Show(DWSIM.App.GetLocalString("Desejasalvarasaltera"), DWSIM.App.GetLocalString("Fechando") & " " & Me.Options.SimulationName & " (" & System.IO.Path.GetFileName(Me.Options.FilePath) & ") ...", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question)
 
             If Not x = MsgBoxResult.Cancel Then
-                If FormMain.EnableLeaveCollaborationGroup Then
-                    Dim fileName = Path.GetFileName(Me.FilePath)
-                    FormMain.LeaveCollaborationGroup(fileName, Me.SignalRGuid)
+                If FormMain.EnableLeaveCollaborationGroup AndAlso FormMain.LeaveCollaborationGroup IsNot Nothing Then
+                    FormMain.LeaveCollaborationGroup(Me)
                 End If
             End If
 
